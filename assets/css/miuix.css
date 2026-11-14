@@ -1,0 +1,641 @@
+/**
+ * Echo — Miuix (HyperOS) 风格层
+ *
+ * 复刻小米 HyperOS / Miuix 设计语言：
+ * - Surface 分层：background(白) / surface(#F7F7F7) / surfaceContainer(白卡片)
+ * - 主色 primary #3482FF，onPrimary #FFF
+ * - 中性容器 secondaryVariant / secondaryContainer #F0F0F0
+ * - 选中容器 tertiaryContainer #EAF2FF
+ * - 摘要文字 rgba(0,0,0,.55)，次要操作 rgba(0,0,0,.4)
+ * - 大圆角（squircle 视觉近似）、留白优先、减少硬边框
+ */
+
+/* ==========================================================================
+   1. 覆盖主题变量
+   ========================================================================== */
+body.echo-style-miuix {
+    --echo-bg: #ffffff;
+    --echo-bg-alt: #f7f7f7;
+    --echo-surface: #ffffff;
+    --echo-text: #000000;
+    --echo-text-secondary: rgba(0, 0, 0, 0.75);
+    --echo-text-muted: rgba(0, 0, 0, 0.55);
+    --echo-border: #e0e0e0;
+    --echo-primary: #3482ff;
+    --echo-primary-hover: #277af7;
+    --echo-radius: 20px;
+    --echo-radius-sm: 14px;
+    --echo-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --echo-shadow-lg: 0 6px 20px rgba(0, 0, 0, 0.08);
+    --echo-font: "MiSans", -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", sans-serif;
+
+    font-family: var(--echo-font);
+    background-color: var(--echo-bg-alt);
+    color: var(--echo-text);
+    letter-spacing: 0.01em;
+}
+
+/* Miuix 补充变量 */
+body.echo-style-miuix {
+    --miuix-surface: #f7f7f7;
+    --miuix-surface-container: #ffffff;
+    --miuix-secondary-container: #f0f0f0;
+    --miuix-tertiary-container: #eaf2ff;
+    --miuix-summary: rgba(0, 0, 0, 0.55);
+    --miuix-actions: rgba(0, 0, 0, 0.4);
+    --miuix-outline: #d9d9d9;
+    --miuix-divider: #e0e0e0;
+    --miuix-error: #e94634;
+}
+
+/* ==========================================================================
+   2. 顶部导航（Miuix TopAppBar）
+   ========================================================================== */
+body.echo-style-miuix .echo-header {
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: none;
+    box-shadow: 0 0.5px 0 var(--miuix-divider);
+}
+
+body.echo-style-miuix .echo-header__inner {
+    height: 60px;
+}
+
+body.echo-style-miuix .echo-brand {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+body.echo-style-miuix .echo-brand__dot {
+    width: 9px;
+    height: 9px;
+    box-shadow: none;
+}
+
+body.echo-style-miuix .echo-nav li a {
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-weight: 500;
+    color: var(--miuix-summary);
+    transition: all 0.18s ease;
+}
+
+body.echo-style-miuix .echo-nav li a:hover,
+body.echo-style-miuix .echo-nav li.current-menu-item a {
+    color: var(--echo-primary);
+    background: var(--miuix-tertiary-container);
+}
+
+body.echo-style-miuix .echo-search-toggle,
+body.echo-style-miuix .echo-nav-toggle {
+    border: none;
+    border-radius: 999px;
+    background: var(--miuix-secondary-container);
+    color: rgba(0, 0, 0, 0.7);
+    width: 38px;
+    height: 38px;
+}
+
+body.echo-style-miuix .echo-search-toggle:hover {
+    background: #e6e6e6;
+    color: var(--echo-primary);
+}
+
+/* ==========================================================================
+   3. 卡片（Miuix Card：surfaceContainer + 大圆角 + 无边框）
+   ========================================================================== */
+body.echo-style-miuix .echo-card {
+    background: var(--miuix-surface-container);
+    border: none;
+    border-radius: var(--echo-radius);
+    padding: 24px;
+    box-shadow: none;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+body.echo-style-miuix .echo-card:hover {
+    transform: none;
+    background: #fcfcfc;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+body.echo-style-miuix .echo-thumbnail {
+    margin: -24px -24px 20px;
+    border-radius: var(--echo-radius) var(--echo-radius) 0 0;
+    overflow: hidden;
+}
+
+body.echo-style-miuix .echo-card:hover .echo-thumbnail img {
+    transform: scale(1.02);
+}
+
+/* 卡片内标题 */
+body.echo-style-miuix .echo-card__title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.45em;
+}
+
+body.echo-style-miuix .echo-card__excerpt {
+    color: var(--miuix-summary);
+    font-size: 0.95rem;
+    line-height: 1.7;
+}
+
+/* 分类徽章：Miuix tertiaryContainer 胶囊 */
+body.echo-style-miuix .echo-category-badge {
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: var(--miuix-tertiary-container);
+    color: var(--echo-primary);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+body.echo-style-miuix .echo-card__meta {
+    gap: 10px;
+    font-size: 0.8rem;
+    color: var(--miuix-summary);
+    margin-bottom: 14px;
+}
+
+body.echo-style-miuix .echo-card__meta a {
+    color: var(--miuix-summary);
+}
+
+/* 阅读全文：Miuix TextButton 风格 */
+body.echo-style-miuix .echo-card__readmore {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 7px 16px;
+    border-radius: 999px;
+    background: var(--miuix-secondary-container);
+    color: var(--echo-primary);
+    font-size: 0.86rem;
+    font-weight: 600;
+    transition: background 0.18s ease;
+}
+
+body.echo-style-miuix .echo-card__readmore:hover {
+    background: #e6e6e6;
+}
+
+/* ==========================================================================
+   4. 文章列表容器与页面
+   ========================================================================== */
+body.echo-style-miuix .echo-post-list {
+    gap: 14px;
+}
+
+body.echo-style-miuix .echo-layout {
+    gap: 24px;
+    padding: 28px 0;
+}
+
+/* 页面标题横幅 */
+body.echo-style-miuix .echo-page-header {
+    background: transparent;
+    border-bottom: none;
+    padding: 32px 0 8px;
+    margin-bottom: 16px;
+}
+
+body.echo-style-miuix .echo-page-header__title {
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+body.echo-style-miuix .echo-page-header__desc {
+    color: var(--miuix-summary);
+    font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   5. 单篇文章
+   ========================================================================== */
+body.echo-style-miuix .echo-single {
+    background: var(--miuix-surface-container);
+    border: none;
+    border-radius: var(--echo-radius);
+    padding: 36px;
+    box-shadow: none;
+}
+
+body.echo-style-miuix .echo-single__header {
+    border-bottom: none;
+    padding-bottom: 18px;
+    margin-bottom: 20px;
+}
+
+body.echo-style-miuix .echo-single__title {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+}
+
+body.echo-style-miuix .echo-single__meta {
+    gap: 14px;
+    font-size: 0.85rem;
+    color: var(--miuix-summary);
+}
+
+body.echo-style-miuix .echo-single__meta a {
+    color: var(--miuix-summary);
+}
+
+body.echo-style-miuix .echo-single__author .avatar,
+body.echo-style-miuix .echo-card__author .avatar {
+    border-radius: 999px;
+}
+
+/* Miuix 正文排版 */
+body.echo-style-miuix .echo-entry-content {
+    font-size: 1.02rem;
+    line-height: 1.8;
+    color: rgba(0, 0, 0, 0.86);
+}
+
+body.echo-style-miuix .echo-entry-content h2 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    padding-left: 0;
+    border-left: none;
+    margin-top: 2em;
+}
+
+body.echo-style-miuix .echo-entry-content h3 {
+    font-size: 1.18rem;
+    font-weight: 700;
+}
+
+body.echo-style-miuix .echo-entry-content blockquote {
+    border-left: none;
+    border-radius: var(--echo-radius-sm);
+    background: var(--miuix-surface);
+    padding: 18px 22px;
+    color: var(--miuix-summary);
+}
+
+body.echo-style-miuix .echo-entry-content code {
+    background: var(--miuix-secondary-container);
+    color: #d63384;
+    border: none;
+    border-radius: 6px;
+    padding: 2px 7px;
+}
+
+body.echo-style-miuix .echo-entry-content pre {
+    border-radius: var(--echo-radius-sm);
+    background: #1c1c1e;
+}
+
+body.echo-style-miuix .echo-entry-content img {
+    border-radius: var(--echo-radius-sm);
+    box-shadow: none;
+}
+
+body.echo-style-miuix .echo-entry-content table {
+    border-radius: var(--echo-radius-sm);
+    box-shadow: none;
+    border: 1px solid var(--miuix-divider);
+}
+
+body.echo-style-miuix .echo-entry-content th {
+    background: var(--miuix-surface);
+    border-color: var(--miuix-divider);
+}
+
+body.echo-style-miuix .echo-entry-content td {
+    border-color: var(--miuix-divider);
+}
+
+body.echo-style-miuix .echo-entry-content tr:nth-child(even) td {
+    background: #fafafa;
+}
+
+body.echo-style-miuix .echo-entry-content > p:first-of-type {
+    font-size: 1.06rem;
+    color: rgba(0, 0, 0, 0.7);
+}
+
+/* 标签 */
+body.echo-style-miuix .echo-tags {
+    border-top: none;
+    padding-top: 8px;
+    margin-top: 28px;
+}
+
+body.echo-style-miuix .echo-tags a {
+    border: none;
+    border-radius: 999px;
+    background: var(--miuix-secondary-container);
+    color: var(--miuix-summary);
+    padding: 5px 13px;
+}
+
+body.echo-style-miuix .echo-tags a:hover {
+    background: var(--miuix-tertiary-container);
+    color: var(--echo-primary);
+}
+
+/* 上一篇/下一篇 */
+body.echo-style-miuix .echo-post-nav a {
+    border: none;
+    border-radius: var(--echo-radius);
+    background: var(--miuix-surface-container);
+    box-shadow: none;
+    padding: 18px 22px;
+    color: var(--miuix-summary);
+}
+
+body.echo-style-miuix .echo-post-nav a:hover {
+    background: #fcfcfc;
+    color: var(--echo-primary);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+body.echo-style-miuix .echo-post-nav__label {
+    color: var(--miuix-actions);
+    font-size: 0.75rem;
+}
+
+/* ==========================================================================
+   6. 侧边栏（Miuix Card 分组）
+   ========================================================================== */
+body.echo-style-miuix .echo-widget {
+    background: var(--miuix-surface-container);
+    border: none;
+    border-radius: var(--echo-radius);
+    padding: 22px;
+    box-shadow: none;
+}
+
+body.echo-style-miuix .echo-widget__title {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 14px;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+body.echo-style-miuix .echo-widget ul li {
+    border-bottom: none;
+    padding: 7px 0;
+}
+
+body.echo-style-miuix .echo-widget ul li a {
+    color: var(--miuix-summary);
+    font-size: 0.92rem;
+}
+
+body.echo-style-miuix .echo-widget ul li a:hover {
+    color: var(--echo-primary);
+}
+
+/* ==========================================================================
+   7. 评论（Miuix 分组卡片）
+   ========================================================================== */
+body.echo-style-miuix .echo-comments {
+    background: var(--miuix-surface-container);
+    border: none;
+    border-radius: var(--echo-radius);
+    padding: 28px;
+    box-shadow: none;
+    margin-top: 14px;
+}
+
+body.echo-style-miuix .echo-comments__title {
+    border-bottom: none;
+    padding-bottom: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+body.echo-style-miuix .comment-list .comment-body {
+    background: var(--miuix-surface);
+    border-radius: var(--echo-radius-sm);
+    padding: 18px;
+}
+
+body.echo-style-miuix .comment-list .comment-body:hover {
+    background: var(--miuix-surface);
+}
+
+body.echo-style-miuix .comment-list .children {
+    border-left: none;
+    padding-left: 24px;
+    margin-top: 12px;
+}
+
+body.echo-style-miuix .comment-author .fn {
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+body.echo-style-miuix .bypostauthor > .comment-body .comment-author .fn::after {
+    background: var(--echo-primary);
+    border-radius: 999px;
+    font-weight: 500;
+}
+
+body.echo-style-miuix .comment-metadata {
+    color: var(--miuix-actions);
+    font-size: 0.75rem;
+}
+
+body.echo-style-miuix .comment-metadata a {
+    color: var(--miuix-actions);
+}
+
+body.echo-style-miuix .comment-list .comment-text {
+    color: rgba(0, 0, 0, 0.78);
+    font-size: 0.92rem;
+}
+
+body.echo-style-miuix .comment-reply-link {
+    border: none;
+    border-radius: 999px;
+    background: var(--miuix-secondary-container);
+    color: var(--miuix-summary);
+    padding: 5px 14px;
+}
+
+body.echo-style-miuix .comment-reply-link:hover {
+    background: var(--miuix-tertiary-container);
+    color: var(--echo-primary);
+    border: none;
+}
+
+/* 评论表单 */
+body.echo-style-miuix .comment-respond {
+    border-top: none;
+    padding-top: 8px;
+    margin-top: 20px;
+}
+
+body.echo-style-miuix .comment-reply-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+body.echo-style-miuix .comment-form input[type="text"],
+body.echo-style-miuix .comment-form input[type="email"],
+body.echo-style-miuix .comment-form input[type="url"],
+body.echo-style-miuix .comment-form textarea {
+    border: none;
+    border-radius: var(--echo-radius-sm);
+    background: var(--miuix-secondary-container);
+    padding: 14px 18px;
+    font-size: 0.95rem;
+}
+
+body.echo-style-miuix .comment-form input:focus,
+body.echo-style-miuix .comment-form textarea:focus {
+    border: none;
+    box-shadow: 0 0 0 2px var(--echo-primary);
+    background: #ffffff;
+}
+
+body.echo-style-miuix .comment-form .submit {
+    border-radius: 999px;
+    padding: 12px 32px;
+    background: var(--echo-primary);
+    font-weight: 600;
+    box-shadow: none;
+}
+
+body.echo-style-miuix .comment-form .submit:hover {
+    background: var(--echo-primary-hover);
+    transform: none;
+}
+
+body.echo-style-miuix .comment-form label {
+    font-size: 0.86rem;
+    color: var(--miuix-summary);
+    font-weight: 500;
+}
+
+/* ==========================================================================
+   8. 按钮（Miuix Button）
+   ========================================================================== */
+body.echo-style-miuix .echo-btn {
+    padding: 11px 24px;
+    border-radius: 999px;
+    background: var(--echo-primary);
+    font-weight: 600;
+    box-shadow: none;
+    transition: background 0.18s ease, transform 0.18s ease;
+}
+
+body.echo-style-miuix .echo-btn:hover {
+    background: var(--echo-primary-hover);
+    transform: scale(0.98);
+}
+
+body.echo-style-miuix .echo-btn--outline {
+    background: var(--miuix-secondary-container);
+    border: none;
+    color: rgba(0, 0, 0, 0.7);
+}
+
+body.echo-style-miuix .echo-btn--outline:hover {
+    background: #e6e6e6;
+    color: var(--echo-primary);
+    border: none;
+}
+
+/* ==========================================================================
+   9. 分页（Miuix）
+   ========================================================================== */
+body.echo-style-miuix .echo-pagination .page-numbers {
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--miuix-summary);
+    min-width: 38px;
+    height: 38px;
+    transition: all 0.18s ease;
+}
+
+body.echo-style-miuix .echo-pagination .page-numbers:hover {
+    background: var(--miuix-secondary-container);
+    color: var(--echo-primary);
+    border: none;
+}
+
+body.echo-style-miuix .echo-pagination .page-numbers.current {
+    background: var(--echo-primary);
+    color: #ffffff;
+}
+
+body.echo-style-miuix .echo-pagination .page-numbers.current:hover {
+    background: var(--echo-primary-hover);
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   10. 搜索浮层（Miuix）
+   ========================================================================== */
+body.echo-style-miuix .echo-search-overlay {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(12px);
+}
+
+body.echo-style-miuix .echo-search-overlay__box {
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.16);
+}
+
+body.echo-style-miuix .echo-search-overlay__form input {
+    border: none;
+    border-radius: 999px;
+    background: var(--miuix-secondary-container);
+    padding: 13px 20px;
+}
+
+body.echo-style-miuix .echo-search-overlay__form input:focus {
+    border: none;
+    box-shadow: 0 0 0 2px var(--echo-primary);
+    background: #ffffff;
+}
+
+/* ==========================================================================
+   11. 页脚
+   ========================================================================== */
+body.echo-style-miuix .echo-footer {
+    background: transparent;
+    border-top: none;
+    margin-top: 32px;
+    padding: 28px 0;
+}
+
+body.echo-style-miuix .echo-footer__inner {
+    color: var(--miuix-actions);
+    font-size: 0.82rem;
+}
+
+body.echo-style-miuix .echo-footer__inner a {
+    color: var(--miuix-summary);
+}
+
+/* ==========================================================================
+   12. 404
+   ========================================================================== */
+body.echo-style-miuix .echo-404__code {
+    font-size: 5rem;
+    font-weight: 800;
+    color: var(--echo-primary);
+    letter-spacing: -0.04em;
+}
+
+body.echo-style-miuix .echo-404__text {
+    color: var(--miuix-summary);
+    font-size: 1.05rem;
+}
