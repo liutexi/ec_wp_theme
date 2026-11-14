@@ -26,6 +26,8 @@ function echo_user_defaults() {
 		'user_base'            => 'uid',
 		'user_allow_edit'      => true,
 		'user_allow_password'  => true,
+		'user_allow_avatar'    => true,
+		'user_avatar_max_kb'   => 2048,
 		'user_avatar_size'     => 96,
 		'user_recent_posts'    => 5,
 		'user_recent_comments' => 5,
@@ -235,6 +237,161 @@ function echo_user_can_edit( $uid ) {
 	return get_current_user_id() === $uid || current_user_can( 'edit_user', $uid );
 }
 
+/* ============================================================
+ * 自定义头像
+ * ============================================================ */
+
+/**
+ * 读取自定义头像数据
+ *
+ * @param int $uid 用户 ID。
+ * @return array|null array( url, file, v ) 或 null。
+ */
+function echo_user_avatar_data( $uid ) {
+	$data = get_user_meta( absint( $uid ), 'echo_custom_avatar', true );
+	if ( is_array( $data ) && ! empty( $data['url'] ) ) {
+		return $data;
+	}
+	return null;
+}
+
+/**
+ * 全站头像优先使用自定义头像
+ *
+ * @param array        $args        头像参数。
+ * @param mixed        $id_or_email 用户 ID / 邮箱 / WP_User / WP_Comment。
+ * @return array
+ */
+function echo_user_filter_avatar( $args, $id_or_email ) {
+	$uid = 0;
+	if ( is_numeric( $id_or_email ) ) {
+		$uid = absint( $id_or_email );
+	} elseif ( $id_or_email instanceof WP_User ) {
+		$uid = (int) $id_or_email->ID;
+	} elseif ( $id_or_email instanceof WP_Comment ) {
+		$uid = absint( $id_or_email->user_id );
+	} elseif ( is_object( $id_or_email ) && isset( $id_or_email->user_id ) ) {
+		$uid = absint( $id_or_email->user_id );
+	} elseif ( is_string( $id_or_email ) && false === strpos( $id_or_email, '@md5.gravatar.com' ) ) {
+		$by_email = get_user_by( 'email', $id_or_email );
+		if ( $by_email ) {
+			$uid = (int) $by_email->ID;
+		}
+	}
+
+	if ( ! $uid ) {
+		return $args;
+	}
+
+	$data = echo_user_avatar_data( $uid );
+	if ( $data ) {
+		$args['url'] = add_query_arg( 'v', isset( $data['v'] ) ? (string) $data['v'] : '1', $data['url'] );
+	}
+	return $args;
+}
+add_filter( 'pre_get_avatar_data', 'echo_user_filter_avatar', 10, 2 );
+
+/**
+ * 删除自定义头像（含文件）
+ *
+ * @param int $uid 用户 ID。
+ * @return void
+ */
+function echo_user_delete_avatar( $uid ) {
+	$data = echo_user_avatar_data( $uid );
+	if ( ! $data || empty( $data['file'] ) ) {
+		delete_user_meta( $uid, 'echo_custom_avatar' );
+		return;
+	}
+
+	$uploads = wp_get_upload_dir();
+	$file    = wp_normalize_path( $data['file'] );
+	$base    = wp_normalize_path( $uploads['basedir'] );
+	if ( 0 === strpos( $file, $base . '/' ) && file_exists( $file ) ) {
+		wp_delete_file( $file );
+	}
+	delete_user_meta( $uid, 'echo_custom_avatar' );
+}
+
+/**
+ * 处理头像上传 / 恢复默认
+ *
+ * @param int $uid 目标用户 ID。
+ * @return bool true = 无需处理或成功；false = 出错（已写入反馈）。
+ */
+function echo_user_handle_avatar_upload( $uid ) {
+	if ( ! echo_user_config( 'user_allow_avatar', true ) ) {
+		return true;
+	}
+
+	// 恢复默认头像
+	if ( ! empty( $_POST['remove_avatar'] ) && '1' === (string) $_POST['remove_avatar'] ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		echo_user_delete_avatar( $uid );
+		return true;
+	}
+
+	// 未选择文件，跳过
+	if ( empty( $_FILES['echo_user_avatar'] ) || ! isset( $_FILES['echo_user_avatar']['error'] ) || UPLOAD_ERR_NO_FILE === (int) $_FILES['echo_user_avatar']['error'] ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		return true;
+	}
+
+	$file = $_FILES['echo_user_avatar']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+
+	if ( UPLOAD_ERR_OK !== (int) $file['error'] ) {
+		echo_user_set_feedback( 'error', __( '头像上传失败，请重试。', 'echo' ) );
+		return false;
+	}
+
+	$max_kb = max( 256, min( 8192, absint( echo_user_config( 'user_avatar_max_kb', 2048 ) ) ) );
+	if ( (int) $file['size'] > $max_kb * 1024 ) {
+		echo_user_set_feedback( 'error', sprintf( /* translators: %d: 最大 KB */ __( '头像文件超过 %d KB 限制。', 'echo' ), $max_kb ) );
+		return false;
+	}
+
+	if ( ! function_exists( 'wp_handle_upload' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+	}
+
+	$overrides = array(
+		'test_form' => false,
+		'mimes'     => array(
+			'jpg|jpeg|jpe' => 'image/jpeg',
+			'png'          => 'image/png',
+			'gif'          => 'image/gif',
+			'webp'         => 'image/webp',
+		),
+	);
+
+	$moved = wp_handle_upload( $file, $overrides );
+	if ( ! is_array( $moved ) || isset( $moved['error'] ) ) {
+		echo_user_set_feedback( 'error', is_array( $moved ) && isset( $moved['error'] ) ? wp_strip_all_tags( $moved['error'] ) : __( '头像上传失败，请重试。', 'echo' ) );
+		return false;
+	}
+
+	// 真实内容必须是图片
+	$info = function_exists( 'getimagesize' ) ? @getimagesize( $moved['file'] ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+	if ( ! $info || empty( $info['mime'] ) || 0 !== strpos( (string) $info['mime'], 'image/' ) ) {
+		wp_delete_file( $moved['file'] );
+		echo_user_set_feedback( 'error', __( '文件不是有效的图片。', 'echo' ) );
+		return false;
+	}
+
+	// 换新前删旧
+	echo_user_delete_avatar( $uid );
+
+	update_user_meta(
+		$uid,
+		'echo_custom_avatar',
+		array(
+			'url'  => esc_url_raw( $moved['url'] ),
+			'file' => $moved['file'],
+			'v'    => time(),
+		)
+	);
+
+	return true;
+}
+
 /**
  * 写入反馈
  *
@@ -316,6 +473,11 @@ function echo_user_handle_update( $uid ) {
 	}
 	if ( function_exists( 'mb_strlen' ) && mb_strlen( $display_name ) > 50 ) {
 		echo_user_set_feedback( 'error', __( '昵称不能超过 50 个字符。', 'echo' ) );
+		return;
+	}
+
+	// 头像上传 / 恢复默认
+	if ( ! echo_user_handle_avatar_upload( $uid ) ) {
 		return;
 	}
 
@@ -573,9 +735,43 @@ function echo_user_section_edit( $user ) {
 		<details class="echo-user-edit"<?php echo $open; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 			<summary class="echo-user-edit__summary"><?php esc_html_e( '编辑资料', 'echo' ); ?></summary>
 
-			<form class="echo-user-form" method="post" action="<?php echo esc_url( echo_user_url( $user->ID ) ); ?>" novalidate>
+			<form class="echo-user-form" method="post" action="<?php echo esc_url( echo_user_url( $user->ID ) ); ?>" enctype="multipart/form-data" novalidate>
 				<?php wp_nonce_field( 'echo_user_update', 'echo_user_nonce' ); ?>
 				<input type="hidden" name="echo_user_action" value="update" />
+
+				<?php if ( echo_user_config( 'user_allow_avatar', true ) ) : ?>
+					<?php $custom_avatar = echo_user_avatar_data( $user->ID ); ?>
+					<fieldset class="echo-user-fieldset echo-user-avatar-fieldset">
+						<legend><?php esc_html_e( '头像', 'echo' ); ?></legend>
+						<?php if ( $custom_avatar ) : ?>
+							<div class="echo-user-avatar-row">
+								<img class="echo-user-avatar-row__img"
+									src="<?php echo esc_url( add_query_arg( 'v', isset( $custom_avatar['v'] ) ? (string) $custom_avatar['v'] : '1', $custom_avatar['url'] ) ); ?>"
+									alt="<?php esc_attr_e( '当前头像', 'echo' ); ?>" />
+								<span class="echo-user-hint"><?php esc_html_e( '当前使用自定义头像。', 'echo' ); ?></span>
+							</div>
+							<label class="echo-user-check">
+								<input type="checkbox" name="remove_avatar" value="1" />
+								<?php esc_html_e( '恢复默认头像（Gravatar）', 'echo' ); ?>
+							</label>
+						<?php else : ?>
+							<p class="echo-user-hint"><?php esc_html_e( '当前使用 Gravatar 头像（基于你的邮箱）。', 'echo' ); ?></p>
+						<?php endif; ?>
+						<p class="echo-user-field">
+							<label for="echo-user-avatar"><?php esc_html_e( '上传新头像', 'echo' ); ?></label>
+							<input id="echo-user-avatar" name="echo_user_avatar" type="file" accept="image/jpeg,image/png,image/gif,image/webp" />
+							<span class="echo-user-hint">
+								<?php
+								printf(
+									/* translators: %d: 最大 KB */
+									esc_html__( '支持 JPG / PNG / GIF / WebP，最大 %d KB；不更换头像请保持不选择文件。', 'echo' ),
+									esc_html( (string) max( 256, min( 8192, absint( echo_user_config( 'user_avatar_max_kb', 2048 ) ) ) ) )
+								);
+								?>
+							</span>
+						</p>
+					</fieldset>
+				<?php endif; ?>
 
 				<p class="echo-user-field">
 					<label for="echo-user-display"><?php esc_html_e( '昵称', 'echo' ); ?></label>
@@ -730,6 +926,7 @@ function echo_sanitize_user_settings( $input, &$output ) {
 		'user_enabled',
 		'user_allow_edit',
 		'user_allow_password',
+		'user_allow_avatar',
 		'user_show_stats',
 		'user_show_posts',
 		'user_show_comments',
@@ -743,6 +940,8 @@ function echo_sanitize_user_settings( $input, &$output ) {
 	$output['user_base'] = '' !== $base ? $base : 'uid';
 
 	$output['user_avatar_size'] = max( 32, min( 256, absint( isset( $input['user_avatar_size'] ) ? $input['user_avatar_size'] : $defaults['user_avatar_size'] ) ) );
+
+	$output['user_avatar_max_kb'] = max( 256, min( 8192, absint( isset( $input['user_avatar_max_kb'] ) ? $input['user_avatar_max_kb'] : $defaults['user_avatar_max_kb'] ) ) );
 
 	$clamp = function ( $value, $max ) {
 		$n = absint( $value );
