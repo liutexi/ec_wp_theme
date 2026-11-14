@@ -1,0 +1,282 @@
+/**
+ * Echo 后台「文章」相关页面增强样式
+ * 遵循 WordPress 后台原生视觉：细边框、克制的圆角、WP 蓝。
+ * 仅在文章列表 / 编辑器 / Echo 设置页加载。
+ */
+
+/* ==========================================================================
+   1. 文章列表：自定义列
+   --------------------------------------------------------------------------
+   用 table-layout: fixed + 明确列宽，避免长 slug 撑爆 min-content 后
+   把「标题 / 作者」列挤压成竖排（WP 默认 auto 布局会按最长内容分配）。
+   ========================================================================== */
+.post-type-post .wp-list-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.post-type-post .wp-list-table th,
+.post-type-post .wp-list-table td {
+    overflow: hidden;
+}
+
+.post-type-post .wp-list-table .check-column       { width: 2.5%; }
+.post-type-post .wp-list-table .column-echo_thumb  { width: 7%; }
+.post-type-post .wp-list-table .column-title       { width: 23%; }
+.post-type-post .wp-list-table .column-author      { width: 8%; }
+.post-type-post .wp-list-table .column-categories  { width: 10%; }
+.post-type-post .wp-list-table .column-tags        { width: 8%; }
+.post-type-post .wp-list-table .column-comments    { width: 6%; }
+.post-type-post .wp-list-table .column-date        { width: 10%; }
+.post-type-post .wp-list-table .column-echo_id     { width: 5%; }
+.post-type-post .wp-list-table .column-echo_words  { width: 6%; }
+.post-type-post .wp-list-table .column-echo_permalink { width: 14.5%; }
+
+/* 标题列保持可读，不能被 nowrap 掐断操作链接 */
+.post-type-post .wp-list-table .column-title {
+    overflow: visible;
+}
+
+.echo-admin-thumb {
+    display: block;
+    width: 52px;
+    max-width: 100%;
+    height: 38px;
+    object-fit: cover;
+    border: 1px solid #c3c4c7;
+    border-radius: 3px;
+    background: #f6f7f7;
+}
+
+.echo-admin-thumb--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-style: dashed;
+    color: #a7aaad;
+    font-size: 13px;
+}
+
+.echo-admin-id,
+.echo-admin-words {
+    color: #646970;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.echo-admin-permalink {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: Consolas, "SF Mono", monospace;
+    font-size: 11px;
+    color: #2271b1;
+}
+
+.echo-admin-permalink:hover {
+    text-decoration: underline;
+}
+
+.post-type-post .wp-list-table td.column-echo_permalink {
+    overflow: hidden;
+}
+
+/* 列表整体微调 */
+.post-type-post .wp-list-table tbody tr:hover .echo-admin-thumb {
+    border-color: #8c8f94;
+}
+
+/* 窄屏交回 WP 原生响应式处理 */
+@media screen and (max-width: 782px) {
+    .post-type-post .wp-list-table {
+        table-layout: auto;
+    }
+}
+
+/* ==========================================================================
+   2. 编辑器：Echo 文章选项 meta box
+   ========================================================================== */
+.echo-post-meta-box p {
+    margin: 0 0 14px;
+}
+
+.echo-post-meta-box p:last-child {
+    margin-bottom: 0;
+}
+
+.echo-post-meta-box label > strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.echo-post-meta-box .description {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #646970;
+    font-style: normal;
+}
+
+.echo-post-meta-box__check {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.echo-post-meta-box__check strong {
+    margin: 0 !important;
+}
+
+/* ==========================================================================
+   3. Echo 设置页：文章管理区块
+   ========================================================================== */
+.echo-post-manager {
+    margin: 28px 0 0;
+    padding-top: 20px;
+    border-top: 1px solid #dcdcde;
+}
+
+.echo-post-manager > h2 {
+    margin: 0 0 4px;
+    padding: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.echo-post-manager > .description {
+    margin: 0 0 12px;
+}
+
+.echo-post-add-form {
+    padding: 14px 16px;
+    margin: 0 0 12px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 2px;
+}
+
+.echo-post-add-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 16px;
+    margin-bottom: 10px;
+}
+
+.echo-post-add-grid label > span,
+.echo-post-add-content-label > span,
+.echo-post-bulk label > span {
+    display: block;
+    margin-bottom: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.echo-post-add-grid input,
+.echo-post-add-grid select,
+.echo-post-add-content-label textarea {
+    width: 100%;
+    max-width: 100%;
+}
+
+.echo-post-add-content-label {
+    display: block;
+}
+
+.echo-post-add-form p {
+    margin: 10px 0 0;
+}
+
+.echo-post-bulk {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    margin: 0 0 10px;
+    padding: 10px 14px;
+    background: #f6f7f7;
+    border: 1px solid #c3c4c7;
+    border-radius: 2px;
+}
+
+.echo-post-bulk label {
+    margin: 0;
+}
+
+.echo-post-bulk select {
+    min-width: 160px;
+}
+
+.echo-post-list {
+    border: 1px solid #c3c4c7;
+    border-radius: 2px;
+}
+
+.echo-post-list th,
+.echo-post-list td {
+    padding: 8px 12px;
+}
+
+.echo-post-list td {
+    vertical-align: middle;
+    font-size: 13px;
+}
+
+.echo-post-list .check-column {
+    width: 30px;
+    padding-left: 10px;
+}
+
+.echo-post-title a {
+    font-weight: 600;
+}
+
+.echo-post-status {
+    display: inline-block;
+    padding: 1px 8px;
+    border: 1px solid #c3c4c7;
+    border-radius: 2px;
+    background: #f6f7f7;
+    color: #50575e;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.echo-post-status--publish {
+    border-color: #b7e2c2;
+    background: #edfaef;
+    color: #1a6831;
+}
+
+.echo-post-status--draft {
+    border-color: #e3e3e3;
+    background: #f6f7f7;
+    color: #646970;
+}
+
+.echo-post-status--pending {
+    border-color: #f5d9a8;
+    background: #fef8ee;
+    color: #8a6116;
+}
+
+.echo-post-note {
+    margin-top: 10px;
+}
+
+@media (max-width: 782px) {
+    .echo-post-add-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .echo-post-bulk {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
