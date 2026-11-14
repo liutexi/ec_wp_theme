@@ -1,15 +1,15 @@
 <?php
 /**
- * 登录 / 注册界面
+ * 登录 / 注册 / 找回密码（单页三态）
  *
- * 与「我的」界面相同的组织方式：默认项、前台渲染、后台字段、清洗集中在
- * 本文件，所有选项统一存入 echo_settings，走主表单保存。
+ * 同一页面通过 ?view=login|register|lostpassword|reset 切换：
+ * - 登录：wp_signon()
+ * - 注册：wp_insert_user()（自设密码）或 register_new_user()
+ * - 找回密码：retrieve_password()，并把邮件里的重置链接改写回本页
+ * - 重置密码：check_password_reset_key() + reset_password()
  *
- * 设计要点：
- * - 登录走 wp_signon()，注册走 wp_insert_user() / register_new_user()，
- *   完全复用 WordPress 自身的账号体系与钩子。
- * - 表单提交在本页处理（不跳 wp-login.php），因此错误提示、跳转都可控。
- * - nonce + 蜜罐 + 频率限制三层防滥用。
+ * 所有选项存入 echo_settings，走主表单保存。
+ * 安全：nonce + 蜜罐 + 按 IP 频率限制 + 防开放跳转。
  *
  * @package Echo
  */
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * 登录 / 注册默认设置
+ * 默认设置
  *
  * @return array
  */
@@ -27,6 +27,7 @@ function echo_auth_defaults() {
 	return array(
 		'auth_enabled'            => true,
 		'auth_login_slug'         => 'login',
+		// 保留旧键以兼容历史配置；单页模式下不再使用独立注册页别名。
 		'auth_register_slug'      => 'register',
 		'auth_show_nav'           => true,
 		'auth_nav_login_label'    => '登录',
@@ -45,6 +46,7 @@ function echo_auth_defaults() {
 		'auth_terms_text'         => '',
 		'auth_login_title'        => '登录',
 		'auth_register_title'     => '注册',
+		'auth_lostpassword_title' => '找回密码',
 		'auth_welcome'            => '',
 		'auth_shortcode'          => '',
 		'auth_layout'             => 'auto',
@@ -55,7 +57,7 @@ function echo_auth_defaults() {
 }
 
 /**
- * 读取一项或全部登录/注册设置
+ * 读取一项或全部设置
  *
  * @param string|null $key     键名，null 返回全部。
  * @param mixed       $default 缺省值。
@@ -70,9 +72,7 @@ function echo_auth_config( $key = null, $default = null ) {
 }
 
 /**
- * 是否允许在前台注册
- *
- * 同时要求主题设置开启、且 WordPress「设置 → 常规」允许任何人注册。
+ * 是否允许前台注册
  *
  * @return bool
  */
@@ -81,28 +81,73 @@ function echo_auth_registration_allowed() {
 }
 
 /**
- * 解析页面地址（优先实际页面，其次回退到 WordPress 原生地址）
+ * 认证页的实际固定链接（页面不存在时返回空串）
  *
- * @param string $mode login|register。
  * @return string
  */
-function echo_auth_url( $mode = 'login' ) {
-	$mode = 'register' === $mode ? 'register' : 'login';
-	$key  = 'register' === $mode ? 'auth_register_slug' : 'auth_login_slug';
-	$slug = sanitize_title( echo_auth_config( $key, $mode ) );
+function echo_auth_page_permalink() {
+	$slug = sanitize_title( echo_auth_config( 'auth_login_slug', 'login' ) );
 	if ( '' === $slug ) {
-		$slug = $mode;
+		$slug = 'login';
 	}
-
 	$page = get_page_by_path( $slug );
 	if ( $page && 'publish' === $page->post_status ) {
 		return get_permalink( $page );
 	}
+	return '';
+}
 
-	if ( 'register' === $mode ) {
+/**
+ * 各视图的地址
+ *
+ * 页面存在时统一指回同一页并带 ?view=；不存在时回退到 WordPress 原生地址。
+ *
+ * @param string $view login|register|lostpassword|reset。
+ * @return string
+ */
+function echo_auth_url( $view = 'login' ) {
+	$valid = array( 'login', 'register', 'lostpassword', 'reset' );
+	$view  = in_array( $view, $valid, true ) ? $view : 'login';
+
+	$base = echo_auth_page_permalink();
+	if ( '' !== $base ) {
+		if ( 'login' === $view ) {
+			return $base;
+		}
+		return add_query_arg( 'view', $view, $base );
+	}
+
+	if ( 'register' === $view ) {
 		return get_option( 'users_can_register' ) ? wp_registration_url() : wp_login_url();
 	}
+	if ( 'lostpassword' === $view ) {
+		return wp_lostpassword_url();
+	}
 	return wp_login_url();
+}
+
+/**
+ * 当前视图
+ *
+ * @param string $default 没有 ?view= 时的默认视图。
+ * @return string
+ */
+function echo_auth_current_view( $default = 'login' ) {
+	$valid   = array( 'login', 'register', 'lostpassword', 'reset' );
+	$default = in_array( $default, $valid, true ) ? $default : 'login';
+
+	$view = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : '';
+	if ( ! in_array( $view, $valid, true ) ) {
+		$view = $default;
+	}
+
+	if ( 'register' === $view && ! echo_auth_registration_allowed() ) {
+		$view = 'login';
+	}
+	if ( in_array( $view, array( 'lostpassword', 'reset' ), true ) && ! echo_auth_config( 'auth_show_lostpassword', true ) ) {
+		$view = 'login';
+	}
+	return $view;
 }
 
 /**
@@ -133,9 +178,9 @@ function echo_auth_after_login_url() {
 }
 
 /**
- * 频率限制的 transient 键（按 IP + 动作）
+ * 频率限制键
  *
- * @param string $action login|register。
+ * @param string $action 动作。
  * @return string
  */
 function echo_auth_throttle_key( $action ) {
@@ -146,32 +191,38 @@ function echo_auth_throttle_key( $action ) {
 /**
  * 是否已被限流
  *
- * @param string $action login|register。
+ * @param string $action 动作。
  * @return bool
  */
 function echo_auth_is_throttled( $action ) {
-	$data  = get_transient( echo_auth_throttle_key( $action ) );
-	$limit = 'register' === $action ? 6 : 12;
+	$data   = get_transient( echo_auth_throttle_key( $action ) );
+	$limits = array(
+		'login'        => 12,
+		'register'     => 6,
+		'lostpassword' => 8,
+		'reset'        => 8,
+	);
+	$limit = isset( $limits[ $action ] ) ? $limits[ $action ] : 10;
 	return is_array( $data ) && isset( $data['count'] ) && (int) $data['count'] >= $limit;
 }
 
 /**
- * 记录一次失败
+ * 记录一次
  *
- * @param string $action login|register。
+ * @param string $action 动作。
  * @return void
  */
 function echo_auth_throttle_hit( $action ) {
-	$key  = echo_auth_throttle_key( $action );
-	$data = get_transient( $key );
+	$key   = echo_auth_throttle_key( $action );
+	$data  = get_transient( $key );
 	$count = ( is_array( $data ) && isset( $data['count'] ) ) ? (int) $data['count'] : 0;
 	set_transient( $key, array( 'count' => $count + 1 ), 15 * MINUTE_IN_SECONDS );
 }
 
 /**
- * 成功后清除计数
+ * 清除计数
  *
- * @param string $action login|register。
+ * @param string $action 动作。
  * @return void
  */
 function echo_auth_throttle_clear( $action ) {
@@ -179,7 +230,7 @@ function echo_auth_throttle_clear( $action ) {
 }
 
 /**
- * 写入一条反馈（错误或提示）
+ * 写入反馈
  *
  * @param string $type error|notice。
  * @param string $text 文案。
@@ -196,12 +247,35 @@ function echo_auth_set_feedback( $type, $text ) {
 }
 
 /**
- * 处理表单提交（在模板输出前调用）
+ * 重置密码表单的 key / login（先看 POST，再看 GET）
  *
- * @param string $mode 当前页面 login|register。
+ * @return array
+ */
+function echo_auth_reset_credentials() {
+	$key   = '';
+	$login = '';
+
+	if ( isset( $_POST['key'] ) ) {
+		$key = sanitize_text_field( wp_unslash( $_POST['key'] ) );
+	} elseif ( isset( $_GET['key'] ) ) {
+		$key = sanitize_text_field( wp_unslash( $_GET['key'] ) );
+	}
+
+	if ( isset( $_POST['login'] ) ) {
+		$login = sanitize_text_field( wp_unslash( $_POST['login'] ) );
+	} elseif ( isset( $_GET['login'] ) ) {
+		$login = sanitize_text_field( wp_unslash( $_GET['login'] ) );
+	}
+
+	return array( $key, $login );
+}
+
+/**
+ * 处理提交（在输出前调用）
+ *
  * @return void
  */
-function echo_auth_handle_request( $mode = 'login' ) {
+function echo_auth_handle_request() {
 	if ( ! echo_auth_config( 'auth_enabled', true ) ) {
 		return;
 	}
@@ -213,9 +287,15 @@ function echo_auth_handle_request( $mode = 'login' ) {
 		);
 	}
 
-	// 注册成功后的回跳提示
+	// 跳转回来的提示
 	if ( isset( $_GET['registered'] ) ) {
 		echo_auth_set_feedback( 'notice', __( '注册成功，请使用新账号登录。', 'echo' ) );
+	}
+	if ( isset( $_GET['reset'] ) ) {
+		echo_auth_set_feedback( 'notice', __( '密码已更新，请用新密码登录。', 'echo' ) );
+	}
+	if ( isset( $_GET['sent'] ) ) {
+		echo_auth_set_feedback( 'notice', __( '如果该账号存在，重置链接已发送到注册邮箱，请查收（含垃圾箱）。', 'echo' ) );
 	}
 
 	if ( empty( $_POST['echo_auth_action'] ) ) {
@@ -223,7 +303,7 @@ function echo_auth_handle_request( $mode = 'login' ) {
 	}
 
 	$action = sanitize_key( wp_unslash( $_POST['echo_auth_action'] ) );
-	if ( ! in_array( $action, array( 'login', 'register' ), true ) ) {
+	if ( ! in_array( $action, array( 'login', 'register', 'lostpassword', 'reset' ), true ) ) {
 		return;
 	}
 
@@ -232,21 +312,29 @@ function echo_auth_handle_request( $mode = 'login' ) {
 		return;
 	}
 
-	// 蜜罐字段：正常用户看不到，填了即视为机器人
 	if ( ! empty( $_POST['echo_auth_hp'] ) ) {
 		echo_auth_set_feedback( 'error', __( '提交失败，请稍后重试。', 'echo' ) );
 		return;
 	}
 
-	if ( 'login' === $action ) {
-		echo_auth_do_login();
-	} else {
-		echo_auth_do_register();
+	switch ( $action ) {
+		case 'login':
+			echo_auth_do_login();
+			break;
+		case 'register':
+			echo_auth_do_register();
+			break;
+		case 'lostpassword':
+			echo_auth_do_lostpassword();
+			break;
+		case 'reset':
+			echo_auth_do_reset();
+			break;
 	}
 }
 
 /**
- * 执行登录
+ * 登录
  *
  * @return void
  */
@@ -258,7 +346,7 @@ function echo_auth_do_login() {
 	}
 
 	$login    = isset( $_POST['log'] ) ? sanitize_text_field( wp_unslash( $_POST['log'] ) ) : '';
-	$password = isset( $_POST['pwd'] ) ? (string) $_POST['pwd'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- 密码不能清洗，否则会改变原值。
+	$password = isset( $_POST['pwd'] ) ? (string) $_POST['pwd'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- 密码不能清洗。
 	$remember = ! empty( $_POST['rememberme'] );
 
 	if ( '' === $login || '' === $password ) {
@@ -281,7 +369,6 @@ function echo_auth_do_login() {
 		}
 		$code = $user->get_error_code();
 		if ( in_array( $code, array( 'invalid_username', 'incorrect_password', 'invalid_email', 'invalidcombo' ), true ) ) {
-			// 不区分「用户名不存在」与「密码错误」，避免泄露账号是否存在
 			echo_auth_set_feedback( 'error', __( '用户名或密码不正确。', 'echo' ) );
 		} else {
 			echo_auth_set_feedback( 'error', wp_strip_all_tags( $user->get_error_message() ) );
@@ -308,7 +395,7 @@ function echo_auth_do_login() {
 }
 
 /**
- * 执行注册
+ * 注册
  *
  * @return void
  */
@@ -324,7 +411,7 @@ function echo_auth_do_register() {
 		return;
 	}
 
-	// 不使用 strict，保留中文用户名（strict 会剔除全部非 ASCII 字符）
+	// 非 strict：保留中文用户名。
 	$login = isset( $_POST['user_login'] ) ? sanitize_user( wp_unslash( $_POST['user_login'] ) ) : '';
 	$email = isset( $_POST['user_email'] ) ? sanitize_email( wp_unslash( $_POST['user_email'] ) ) : '';
 
@@ -348,7 +435,6 @@ function echo_auth_do_register() {
 		echo_auth_set_feedback( 'error', __( '该邮箱已注册。', 'echo' ) );
 		return;
 	}
-
 	if ( echo_auth_config( 'auth_terms_enabled', false ) && empty( $_POST['echo_auth_terms'] ) ) {
 		echo_auth_set_feedback( 'error', __( '请先阅读并同意相关条款。', 'echo' ) );
 		return;
@@ -356,34 +442,9 @@ function echo_auth_do_register() {
 
 	$set_password = (bool) echo_auth_config( 'auth_register_password', true );
 
-	if ( $set_password ) {
-		$password = isset( $_POST['user_pass'] ) ? (string) $_POST['user_pass'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-		$confirm  = isset( $_POST['user_pass2'] ) ? (string) $_POST['user_pass2'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-		$min      = max( 6, min( 32, absint( echo_auth_config( 'auth_password_min', 6 ) ) ) );
-
-		if ( '' === $password || '' === $confirm ) {
-			echo_auth_set_feedback( 'error', __( '请设置并确认密码。', 'echo' ) );
-			return;
-		}
-		if ( $password !== $confirm ) {
-			echo_auth_set_feedback( 'error', __( '两次输入的密码不一致。', 'echo' ) );
-			return;
-		}
-		if ( strlen( $password ) < $min ) {
-			echo_auth_set_feedback( 'error', sprintf( /* translators: %d: 最小密码长度 */ __( '密码至少需要 %d 位。', 'echo' ), $min ) );
-			return;
-		}
-
-		$user_id = wp_insert_user(
-			array(
-				'user_login'   => $login,
-				'user_email'   => $email,
-				'user_pass'    => $password,
-				'display_name' => $login,
-				'role'         => get_option( 'default_role' ),
-			)
-		);
-
+	if ( ! $set_password ) {
+		// WordPress 生成随机密码并邮件发送
+		$user_id = register_new_user( $login, $email );
 		if ( is_wp_error( $user_id ) ) {
 			if ( $throttle ) {
 				echo_auth_throttle_hit( 'register' );
@@ -391,27 +452,40 @@ function echo_auth_do_register() {
 			echo_auth_set_feedback( 'error', wp_strip_all_tags( $user_id->get_error_message() ) );
 			return;
 		}
-
-		// 通知管理员有新用户（不向用户发密码邮件，因为密码由本人设置）
-		wp_new_user_notification( $user_id, null, 'admin' );
-
 		if ( $throttle ) {
 			echo_auth_throttle_clear( 'register' );
 		}
-
-		if ( echo_auth_config( 'auth_auto_login', true ) ) {
-			wp_set_current_user( $user_id );
-			wp_set_auth_cookie( $user_id, true, is_ssl() );
-			wp_safe_redirect( echo_auth_after_login_url() );
-			exit;
-		}
-
 		wp_safe_redirect( add_query_arg( 'registered', '1', echo_auth_url( 'login' ) ) );
 		exit;
 	}
 
-	// 由 WordPress 生成随机密码并邮件发送
-	$user_id = register_new_user( $login, $email );
+	$password = isset( $_POST['user_pass'] ) ? (string) $_POST['user_pass'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	$confirm  = isset( $_POST['user_pass2'] ) ? (string) $_POST['user_pass2'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	$min      = max( 6, min( 32, absint( echo_auth_config( 'auth_password_min', 6 ) ) ) );
+
+	if ( '' === $password || '' === $confirm ) {
+		echo_auth_set_feedback( 'error', __( '请设置并确认密码。', 'echo' ) );
+		return;
+	}
+	if ( $password !== $confirm ) {
+		echo_auth_set_feedback( 'error', __( '两次输入的密码不一致。', 'echo' ) );
+		return;
+	}
+	if ( strlen( $password ) < $min ) {
+		echo_auth_set_feedback( 'error', sprintf( /* translators: %d: 最小密码长度 */ __( '密码至少需要 %d 位。', 'echo' ), $min ) );
+		return;
+	}
+
+	$user_id = wp_insert_user(
+		array(
+			'user_login'   => $login,
+			'user_email'   => $email,
+			'user_pass'    => $password,
+			'display_name' => $login,
+			'role'         => get_option( 'default_role' ),
+		)
+	);
+
 	if ( is_wp_error( $user_id ) ) {
 		if ( $throttle ) {
 			echo_auth_throttle_hit( 'register' );
@@ -420,8 +494,17 @@ function echo_auth_do_register() {
 		return;
 	}
 
+	wp_new_user_notification( $user_id, null, 'admin' );
+
 	if ( $throttle ) {
 		echo_auth_throttle_clear( 'register' );
+	}
+
+	if ( echo_auth_config( 'auth_auto_login', true ) ) {
+		wp_set_current_user( $user_id );
+		wp_set_auth_cookie( $user_id, true, is_ssl() );
+		wp_safe_redirect( echo_auth_after_login_url() );
+		exit;
 	}
 
 	wp_safe_redirect( add_query_arg( 'registered', '1', echo_auth_url( 'login' ) ) );
@@ -429,7 +512,127 @@ function echo_auth_do_register() {
 }
 
 /**
- * 已登录用户访问登录 / 注册页时跳到目标页
+ * 找回密码：发送重置邮件
+ *
+ * @return void
+ */
+function echo_auth_do_lostpassword() {
+	$throttle = (bool) echo_auth_config( 'auth_throttle', true );
+	if ( $throttle && echo_auth_is_throttled( 'lostpassword' ) ) {
+		echo_auth_set_feedback( 'error', __( '操作过于频繁，请 15 分钟后再试。', 'echo' ) );
+		return;
+	}
+
+	$login = isset( $_POST['user_login'] ) ? sanitize_text_field( wp_unslash( $_POST['user_login'] ) ) : '';
+	if ( '' === $login ) {
+		echo_auth_set_feedback( 'error', __( '请填写用户名或邮箱。', 'echo' ) );
+		return;
+	}
+
+	// 防止邮件轰炸：每次请求都计数。
+	if ( $throttle ) {
+		echo_auth_throttle_hit( 'lostpassword' );
+	}
+
+	$result = retrieve_password( $login );
+
+	// 无论账号是否存在都跳回同一提示，避免枚举账号。
+	if ( is_wp_error( $result ) && 'retrieve_password_email_failure' === $result->get_error_code() ) {
+		echo_auth_set_feedback( 'error', __( '邮件发送失败，请联系管理员。', 'echo' ) );
+		return;
+	}
+
+	wp_safe_redirect( add_query_arg( 'sent', '1', echo_auth_url( 'lostpassword' ) ) );
+	exit;
+}
+
+/**
+ * 重置密码：校验 key 并写入新密码
+ *
+ * @return void
+ */
+function echo_auth_do_reset() {
+	$throttle = (bool) echo_auth_config( 'auth_throttle', true );
+	if ( $throttle && echo_auth_is_throttled( 'reset' ) ) {
+		echo_auth_set_feedback( 'error', __( '操作过于频繁，请 15 分钟后再试。', 'echo' ) );
+		return;
+	}
+
+	list( $key, $login ) = echo_auth_reset_credentials();
+
+	if ( '' === $key || '' === $login ) {
+		echo_auth_set_feedback( 'error', __( '重置链接不完整，请重新申请。', 'echo' ) );
+		return;
+	}
+
+	$user = check_password_reset_key( $key, $login );
+	if ( is_wp_error( $user ) ) {
+		if ( $throttle ) {
+			echo_auth_throttle_hit( 'reset' );
+		}
+		echo_auth_set_feedback( 'error', __( '重置链接无效或已过期，请重新申请。', 'echo' ) );
+		return;
+	}
+
+	$password = isset( $_POST['user_pass'] ) ? (string) $_POST['user_pass'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	$confirm  = isset( $_POST['user_pass2'] ) ? (string) $_POST['user_pass2'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	$min      = max( 6, min( 32, absint( echo_auth_config( 'auth_password_min', 6 ) ) ) );
+
+	if ( '' === $password || '' === $confirm ) {
+		echo_auth_set_feedback( 'error', __( '请填写并确认新密码。', 'echo' ) );
+		return;
+	}
+	if ( $password !== $confirm ) {
+		echo_auth_set_feedback( 'error', __( '两次输入的密码不一致。', 'echo' ) );
+		return;
+	}
+	if ( strlen( $password ) < $min ) {
+		echo_auth_set_feedback( 'error', sprintf( /* translators: %d: 最小密码长度 */ __( '密码至少需要 %d 位。', 'echo' ), $min ) );
+		return;
+	}
+
+	reset_password( $user, $password );
+
+	if ( $throttle ) {
+		echo_auth_throttle_clear( 'reset' );
+	}
+
+	wp_safe_redirect( add_query_arg( 'reset', '1', echo_auth_url( 'login' ) ) );
+	exit;
+}
+
+/**
+ * 把重置邮件里的 wp-login 链接改写回本页
+ *
+ * @param string $message    邮件正文。
+ * @param string $key        重置 key。
+ * @param string $user_login 用户名。
+ * @return string
+ */
+function echo_auth_rewrite_reset_link( $message, $key, $user_login ) {
+	$base = echo_auth_page_permalink();
+	if ( '' === $base ) {
+		return $message;
+	}
+
+	$url = add_query_arg(
+		array(
+			'view'  => 'reset',
+			'key'   => $key,
+			'login' => rawurlencode( $user_login ),
+		),
+		$base
+	);
+
+	$pattern  = '#https?://[^\s<>]*wp-login\.php\?action=rp[^\s<>]*#i';
+	$replaced = preg_replace( $pattern, $url, $message );
+
+	return ( null === $replaced || '' === $replaced ) ? $message : $replaced;
+}
+add_filter( 'retrieve_password_message', 'echo_auth_rewrite_reset_link', 10, 3 );
+
+/**
+ * 已登录用户访问认证页时跳走
  *
  * @return void
  */
@@ -440,7 +643,7 @@ function echo_auth_redirect_logged_in() {
 	if ( ! is_user_logged_in() ) {
 		return;
 	}
-	if ( ! is_page_template( array( 'template-login.php', 'template-register.php' ) ) ) {
+	if ( ! is_page_template( array( 'template-auth.php', 'template-login.php', 'template-register.php' ) ) ) {
 		return;
 	}
 
@@ -453,7 +656,7 @@ function echo_auth_redirect_logged_in() {
 add_action( 'template_redirect', 'echo_auth_redirect_logged_in' );
 
 /**
- * 渲染一条反馈
+ * 输出反馈
  *
  * @return void
  */
@@ -463,49 +666,51 @@ function echo_auth_render_feedback() {
 		: array( 'error' => '', 'notice' => '' );
 
 	if ( ! empty( $fb['error'] ) ) {
-		printf(
-			'<div class="echo-auth__alert echo-auth__alert--error" role="alert">%s</div>',
-			esc_html( $fb['error'] )
-		);
+		printf( '<div class="echo-auth__alert echo-auth__alert--error" role="alert">%s</div>', esc_html( $fb['error'] ) );
 	}
 	if ( ! empty( $fb['notice'] ) ) {
-		printf(
-			'<div class="echo-auth__alert echo-auth__alert--success" role="status">%s</div>',
-			esc_html( $fb['notice'] )
-		);
+		printf( '<div class="echo-auth__alert echo-auth__alert--success" role="status">%s</div>', esc_html( $fb['notice'] ) );
 	}
 }
 
 /**
- * 标签页（登录 / 注册互相切换）
+ * 登录 / 注册两个标签页
  *
- * @param string $mode 当前模式。
+ * 找回密码不占标签位，作为登录表单里的「忘记密码？」链接进入独立视图。
+ *
+ * @param string $view 当前视图。
  * @return void
  */
-function echo_auth_render_tabs( $mode ) {
-	if ( ! echo_auth_config( 'auth_show_tabs', true ) ) {
+function echo_auth_render_tabs( $view ) {
+	if ( ! echo_auth_config( 'auth_show_tabs', true ) || in_array( $view, array( 'reset', 'lostpassword' ), true ) ) {
 		return;
 	}
 
-	$show_register = echo_auth_registration_allowed();
-	if ( 'register' === $mode && ! $show_register ) {
-		return;
+	$items = array(
+		'login' => array(
+			'label' => echo_auth_config( 'auth_login_title', __( '登录', 'echo' ) ),
+			'url'   => echo_auth_url( 'login' ),
+		),
+	);
+	if ( echo_auth_registration_allowed() ) {
+		$items['register'] = array(
+			'label' => echo_auth_config( 'auth_register_title', __( '注册', 'echo' ) ),
+			'url'   => echo_auth_url( 'register' ),
+		);
 	}
-	if ( 'login' === $mode && ! $show_register ) {
+
+	if ( count( $items ) < 2 ) {
 		return;
 	}
 	?>
 	<nav class="echo-auth__tabs" aria-label="<?php esc_attr_e( '登录与注册', 'echo' ); ?>">
-		<a class="echo-auth__tab<?php echo 'login' === $mode ? ' is-active' : ''; ?>"
-			href="<?php echo esc_url( echo_auth_url( 'login' ) ); ?>"
-			<?php echo 'login' === $mode ? 'aria-current="page"' : ''; ?>>
-			<?php echo esc_html( echo_auth_config( 'auth_login_title', __( '登录', 'echo' ) ) ); ?>
-		</a>
-		<a class="echo-auth__tab<?php echo 'register' === $mode ? ' is-active' : ''; ?>"
-			href="<?php echo esc_url( echo_auth_url( 'register' ) ); ?>"
-			<?php echo 'register' === $mode ? 'aria-current="page"' : ''; ?>>
-			<?php echo esc_html( echo_auth_config( 'auth_register_title', __( '注册', 'echo' ) ) ); ?>
-		</a>
+		<?php foreach ( $items as $key => $item ) : ?>
+			<a class="echo-auth__tab<?php echo $key === $view ? ' is-active' : ''; ?>"
+				href="<?php echo esc_url( $item['url'] ); ?>"
+				<?php echo $key === $view ? 'aria-current="page"' : ''; ?>>
+				<?php echo esc_html( $item['label'] ); ?>
+			</a>
+		<?php endforeach; ?>
 	</nav>
 	<?php
 }
@@ -568,7 +773,7 @@ function echo_auth_form_login() {
 				<span></span>
 			<?php endif; ?>
 			<?php if ( echo_auth_config( 'auth_show_lostpassword', true ) ) : ?>
-				<a class="echo-auth__link" href="<?php echo esc_url( wp_lostpassword_url( echo_auth_url( 'login' ) ) ); ?>"><?php esc_html_e( '忘记密码？', 'echo' ); ?></a>
+				<a class="echo-auth__link" href="<?php echo esc_url( echo_auth_url( 'lostpassword' ) ); ?>"><?php esc_html_e( '忘记密码？', 'echo' ); ?></a>
 			<?php endif; ?>
 		</div>
 
@@ -641,25 +846,87 @@ function echo_auth_form_register() {
 }
 
 /**
- * 主渲染入口
+ * 找回密码表单
  *
- * @param string $mode login|register。
  * @return void
  */
-function echo_auth_render( $mode = 'login' ) {
-	$mode = 'register' === $mode ? 'register' : 'login';
+function echo_auth_form_lostpassword() {
+	?>
+	<form class="echo-auth__form" method="post" action="<?php echo esc_url( echo_auth_url( 'lostpassword' ) ); ?>" novalidate>
+		<?php wp_nonce_field( 'echo_auth', 'echo_auth_nonce' ); ?>
+		<input type="hidden" name="echo_auth_action" value="lostpassword" />
+
+		<p class="echo-auth__field">
+			<label for="echo-auth-lost"><?php esc_html_e( '用户名或邮箱', 'echo' ); ?></label>
+			<input id="echo-auth-lost" name="user_login" type="text" autocomplete="username" required
+				value="<?php echo isset( $_POST['user_login'] ) ? esc_attr( sanitize_text_field( wp_unslash( $_POST['user_login'] ) ) ) : ''; ?>" />
+			<span class="echo-auth__hint"><?php esc_html_e( '我们会向该账号的注册邮箱发送重置链接。', 'echo' ); ?></span>
+		</p>
+
+		<input class="echo-auth__hp" type="text" name="echo_auth_hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
+		<button type="submit" class="echo-auth__submit"><?php esc_html_e( '发送重置链接', 'echo' ); ?></button>
+	</form>
+	<?php
+}
+
+/**
+ * 重置密码表单
+ *
+ * @param string $key   重置 key。
+ * @param string $login 用户名。
+ * @return void
+ */
+function echo_auth_form_reset( $key, $login ) {
+	$min = max( 6, min( 32, absint( echo_auth_config( 'auth_password_min', 6 ) ) ) );
+	?>
+	<form class="echo-auth__form" method="post" action="<?php echo esc_url( echo_auth_url( 'reset' ) ); ?>" novalidate>
+		<?php wp_nonce_field( 'echo_auth', 'echo_auth_nonce' ); ?>
+		<input type="hidden" name="echo_auth_action" value="reset" />
+		<input type="hidden" name="key" value="<?php echo esc_attr( $key ); ?>" />
+		<input type="hidden" name="login" value="<?php echo esc_attr( $login ); ?>" />
+
+		<p class="echo-auth__field">
+			<label for="echo-auth-newpass"><?php esc_html_e( '新密码', 'echo' ); ?></label>
+			<span class="echo-auth__pwd-wrap">
+				<input id="echo-auth-newpass" name="user_pass" type="password" autocomplete="new-password" required />
+				<?php echo_auth_eye_button(); ?>
+			</span>
+			<span class="echo-auth__hint"><?php echo esc_html( sprintf( /* translators: %d: 最小密码长度 */ __( '至少 %d 位字符。', 'echo' ), $min ) ); ?></span>
+		</p>
+
+		<p class="echo-auth__field">
+			<label for="echo-auth-newpass2"><?php esc_html_e( '确认新密码', 'echo' ); ?></label>
+			<span class="echo-auth__pwd-wrap">
+				<input id="echo-auth-newpass2" name="user_pass2" type="password" autocomplete="new-password" required />
+				<?php echo_auth_eye_button(); ?>
+			</span>
+		</p>
+
+		<input class="echo-auth__hp" type="text" name="echo_auth_hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
+		<button type="submit" class="echo-auth__submit"><?php esc_html_e( '保存新密码', 'echo' ); ?></button>
+	</form>
+	<?php
+}
+
+/**
+ * 主渲染入口
+ *
+ * @param string $default_view 没有 ?view= 时的默认视图。
+ * @return void
+ */
+function echo_auth_render( $default_view = 'login' ) {
+	$view = echo_auth_current_view( $default_view );
 
 	if ( ! echo_auth_config( 'auth_enabled', true ) ) {
 		echo '<p class="echo-auth__notice">' . esc_html__( '登录 / 注册功能已关闭，请在「Echo 设置 → 登录 / 注册」中开启。', 'echo' ) . '</p>';
 		return;
 	}
 
-	$layout  = echo_auth_config( 'auth_layout', 'auto' );
-	$title   = 'register' === $mode ? echo_auth_config( 'auth_register_title', __( '注册', 'echo' ) ) : echo_auth_config( 'auth_login_title', __( '登录', 'echo' ) );
-	$welcome = (string) echo_auth_config( 'auth_welcome', '' );
-	$short   = trim( (string) echo_auth_config( 'auth_shortcode', '' ) );
+	$layout = echo_auth_config( 'auth_layout', 'auto' );
 
-	if ( 'register' === $mode && ! echo_auth_registration_allowed() ) {
+	if ( 'register' === $view && ! echo_auth_registration_allowed() ) {
 		?>
 		<div class="echo-auth echo-auth--<?php echo esc_attr( $layout ); ?>">
 			<div class="echo-auth__card">
@@ -673,44 +940,129 @@ function echo_auth_render( $mode = 'login' ) {
 		<?php
 		return;
 	}
+
+	// 标题
+	switch ( $view ) {
+		case 'register':
+			$title = echo_auth_config( 'auth_register_title', __( '注册', 'echo' ) );
+			break;
+		case 'lostpassword':
+			$title = echo_auth_config( 'auth_lostpassword_title', __( '找回密码', 'echo' ) );
+			break;
+		case 'reset':
+			$title = __( '设置新密码', 'echo' );
+			break;
+		case 'login':
+		default:
+			$title = echo_auth_config( 'auth_login_title', __( '登录', 'echo' ) );
+			break;
+	}
+
+	$welcome = (string) echo_auth_config( 'auth_welcome', '' );
+	$short   = trim( (string) echo_auth_config( 'auth_shortcode', '' ) );
 	?>
 	<div class="echo-auth echo-auth--<?php echo esc_attr( $layout ); ?>">
 		<div class="echo-auth__card">
 			<h1 class="echo-auth__title"><?php echo esc_html( $title ); ?></h1>
 
-			<?php if ( '' !== $welcome ) : ?>
+			<?php if ( '' !== $welcome && in_array( $view, array( 'login', 'register' ), true ) ) : ?>
 				<p class="echo-auth__desc"><?php echo esc_html( $welcome ); ?></p>
 			<?php endif; ?>
 
 			<?php
-			echo_auth_render_tabs( $mode );
+			echo_auth_render_tabs( $view );
 			echo_auth_render_feedback();
 
-			if ( 'register' === $mode ) {
-				echo_auth_form_register();
-			} else {
-				echo_auth_form_login();
+			switch ( $view ) {
+				case 'register':
+					echo_auth_form_register();
+					break;
+				case 'lostpassword':
+					echo_auth_form_lostpassword();
+					break;
+				case 'reset':
+					list( $key, $login ) = echo_auth_reset_credentials();
+					$reset_user          = ( '' !== $key && '' !== $login ) ? check_password_reset_key( $key, $login ) : null;
+
+					if ( ! $reset_user || is_wp_error( $reset_user ) ) {
+						echo '<p class="echo-auth__desc">' . esc_html__( '重置链接无效或已过期，请重新申请一封邮件。', 'echo' ) . '</p>';
+						echo '<p class="echo-auth__footer"><a class="echo-btn" href="' . esc_url( echo_auth_url( 'lostpassword' ) ) . '">' . esc_html__( '重新申请', 'echo' ) . '</a></p>';
+					} else {
+						echo_auth_form_reset( $key, $login );
+					}
+					break;
+				case 'login':
+				default:
+					echo_auth_form_login();
+					break;
+			}
+
+			if ( '' !== $short && in_array( $view, array( 'login', 'register' ), true ) ) {
+				echo '<div class="echo-auth__shortcode">' . do_shortcode( $short ) . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 			?>
 
-			<?php if ( '' !== $short ) : ?>
-				<div class="echo-auth__shortcode"><?php echo do_shortcode( $short ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
-			<?php endif; ?>
-
 			<p class="echo-auth__footer">
-				<?php if ( 'register' === $mode ) : ?>
+				<?php if ( 'register' === $view ) : ?>
 					<?php esc_html_e( '已有账号？', 'echo' ); ?>
 					<a class="echo-auth__link" href="<?php echo esc_url( echo_auth_url( 'login' ) ); ?>"><?php esc_html_e( '直接登录', 'echo' ); ?></a>
-				<?php elseif ( echo_auth_registration_allowed() ) : ?>
-					<?php esc_html_e( '还没有账号？', 'echo' ); ?>
-					<a class="echo-auth__link" href="<?php echo esc_url( echo_auth_url( 'register' ) ); ?>"><?php esc_html_e( '立即注册', 'echo' ); ?></a>
+				<?php elseif ( 'lostpassword' === $view ) : ?>
+					<?php esc_html_e( '想起密码了？', 'echo' ); ?>
+					<a class="echo-auth__link" href="<?php echo esc_url( echo_auth_url( 'login' ) ); ?>"><?php esc_html_e( '返回登录', 'echo' ); ?></a>
+				<?php elseif ( 'reset' === $view ) : ?>
+					<a class="echo-auth__link" href="<?php echo esc_url( echo_auth_url( 'login' ) ); ?>"><?php esc_html_e( '返回登录', 'echo' ); ?></a>
+				<?php else : ?>
+					<?php if ( echo_auth_registration_allowed() ) : ?>
+						<?php esc_html_e( '还没有账号？', 'echo' ); ?>
+						<a class="echo-auth__link" href="<?php echo esc_url( echo_auth_url( 'register' ) ); ?>"><?php esc_html_e( '立即注册', 'echo' ); ?></a>
+					<?php endif; ?>
 				<?php endif; ?>
-				<span class="echo-auth__dot" aria-hidden="true">·</span>
-				<a class="echo-auth__link" href="<?php echo esc_url( home_url( '/' ) ); ?>"><?php esc_html_e( '返回首页', 'echo' ); ?></a>
+				<?php if ( 'login' === $view ) : ?>
+					<span class="echo-auth__dot" aria-hidden="true">·</span>
+					<a class="echo-auth__link" href="<?php echo esc_url( home_url( '/' ) ); ?>"><?php esc_html_e( '返回首页', 'echo' ); ?></a>
+				<?php endif; ?>
 			</p>
 		</div>
 	</div>
 	<?php
+}
+
+/**
+ * 整页渲染（供各模板复用）
+ *
+ * @param string $default_view 默认视图。
+ * @return void
+ */
+function echo_auth_render_page( $default_view = 'login' ) {
+	echo_auth_handle_request();
+	get_header();
+	?>
+	<main id="primary" class="echo-main">
+		<div class="echo-container">
+			<div class="echo-layout<?php echo echo_auth_config( 'auth_show_sidebar', false ) ? '' : ' echo-layout--full'; ?>">
+				<div class="echo-content">
+					<?php
+					while ( have_posts() ) :
+						the_post();
+						?>
+						<article id="post-<?php the_ID(); ?>" <?php post_class( 'echo-single echo-single--auth' ); ?>>
+							<?php echo_auth_render( $default_view ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+						</article>
+						<?php
+					endwhile;
+					?>
+				</div>
+
+				<?php
+				if ( echo_auth_config( 'auth_show_sidebar', false ) ) {
+					get_sidebar();
+				}
+				?>
+			</div>
+		</div>
+	</main>
+	<?php
+	get_footer();
 }
 
 /* ============================================================
@@ -718,14 +1070,14 @@ function echo_auth_render( $mode = 'login' ) {
  * ============================================================ */
 
 /**
- * 页面别名字段（附带地址与页面状态）
+ * 页面别名字段（附地址与页面状态）
  *
- * @param array $args 字段参数，需含 mode=login|register。
+ * @param array $args 字段参数，需含 mode。
  * @return void
  */
 function echo_field_auth_slug( $args ) {
 	$mode = isset( $args['mode'] ) ? $args['mode'] : 'login';
-	$key  = isset( $args['label_for'] ) ? $args['label_for'] : ( 'register' === $mode ? 'auth_register_slug' : 'auth_login_slug' );
+	$key  = isset( $args['label_for'] ) ? $args['label_for'] : 'auth_login_slug';
 	$slug = sanitize_title( echo_get_setting( $key, $mode ) );
 	$page = get_page_by_path( $slug );
 	?>
@@ -734,24 +1086,22 @@ function echo_field_auth_slug( $args ) {
 	<p class="description">
 		<?php esc_html_e( '页面地址：', 'echo' ); ?>
 		<code><?php echo esc_html( home_url( '/' . $slug . '/' ) ); ?></code>
+		<?php esc_html_e( '（登录 / 注册 / 找回密码共用此页，通过 ?view= 切换）', 'echo' ); ?>
 	</p>
 	<?php if ( $page ) : ?>
 		<p class="description">
 			<?php esc_html_e( '已找到同名页面。', 'echo' ); ?>
 			<a href="<?php echo esc_url( get_edit_post_link( $page ) ); ?>"><?php esc_html_e( '编辑该页面', 'echo' ); ?></a>
-			<?php
-			echo esc_html(
-				'register' === $mode
-					? __( '，并在「页面属性 → 模板」中选择「注册」。', 'echo' )
-					: __( '，并在「页面属性 → 模板」中选择「登录」。', 'echo' )
-			);
-			?>
+			<?php esc_html_e( '，并在「页面属性 → 模板」中选择「登录 / 注册」。', 'echo' ); ?>
 		</p>
 	<?php else : ?>
 		<p class="description echo-my-slug-warn">
-			<?php esc_html_e( '尚未找到该别名的页面。请新建页面、把别名设为上面的值，并在「页面属性 → 模板」中选择对应模板。', 'echo' ); ?>
+			<?php esc_html_e( '尚未找到该别名的页面。请新建页面、把别名设为上面的值，并在「页面属性 → 模板」中选择「登录 / 注册」。', 'echo' ); ?>
 			<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=page' ) ); ?>"><?php esc_html_e( '新建页面', 'echo' ); ?></a>
 		</p>
+	<?php endif; ?>
+	<?php if ( ! empty( $args['desc'] ) ) : ?>
+		<p class="description"><?php echo esc_html( $args['desc'] ); ?></p>
 	<?php endif;
 }
 
@@ -760,7 +1110,7 @@ function echo_field_auth_slug( $args ) {
  * ============================================================ */
 
 /**
- * 清洗登录 / 注册设置
+ * 清洗设置
  *
  * @param array $input  原始提交。
  * @param array $output 已清洗的输出（按引用追加）。
@@ -769,7 +1119,6 @@ function echo_field_auth_slug( $args ) {
 function echo_sanitize_auth_settings( $input, &$output ) {
 	$defaults = echo_auth_defaults();
 
-	// 旧备份中没有这些字段时保留当前值，避免导入旧配置把登录/注册整组重置。
 	$has_auth = false;
 	foreach ( array_keys( $defaults ) as $auth_key ) {
 		if ( array_key_exists( $auth_key, $input ) ) {
@@ -803,8 +1152,10 @@ function echo_sanitize_auth_settings( $input, &$output ) {
 	}
 
 	$login_slug = isset( $input['auth_login_slug'] ) ? sanitize_title( $input['auth_login_slug'] ) : '';
-	$reg_slug   = isset( $input['auth_register_slug'] ) ? sanitize_title( $input['auth_register_slug'] ) : '';
-	$output['auth_login_slug']    = '' !== $login_slug ? $login_slug : 'login';
+	$output['auth_login_slug'] = '' !== $login_slug ? $login_slug : 'login';
+
+	// 旧键保留（单页模式下不再使用），避免历史配置读取时缺键
+	$reg_slug = isset( $input['auth_register_slug'] ) ? sanitize_title( $input['auth_register_slug'] ) : '';
 	$output['auth_register_slug'] = '' !== $reg_slug ? $reg_slug : 'register';
 
 	$output['auth_nav_login_label'] = isset( $input['auth_nav_login_label'] ) && '' !== trim( $input['auth_nav_login_label'] )
@@ -821,12 +1172,16 @@ function echo_sanitize_auth_settings( $input, &$output ) {
 
 	$output['auth_after_login_url'] = isset( $input['auth_after_login_url'] ) ? esc_url_raw( $input['auth_after_login_url'] ) : '';
 	$output['auth_terms_text']      = isset( $input['auth_terms_text'] ) ? wp_kses_post( $input['auth_terms_text'] ) : '';
-	$output['auth_login_title']     = isset( $input['auth_login_title'] ) && '' !== trim( $input['auth_login_title'] )
+
+	$output['auth_login_title'] = isset( $input['auth_login_title'] ) && '' !== trim( $input['auth_login_title'] )
 		? sanitize_text_field( $input['auth_login_title'] )
 		: $defaults['auth_login_title'];
-	$output['auth_register_title']  = isset( $input['auth_register_title'] ) && '' !== trim( $input['auth_register_title'] )
+	$output['auth_register_title'] = isset( $input['auth_register_title'] ) && '' !== trim( $input['auth_register_title'] )
 		? sanitize_text_field( $input['auth_register_title'] )
 		: $defaults['auth_register_title'];
+	$output['auth_lostpassword_title'] = isset( $input['auth_lostpassword_title'] ) && '' !== trim( $input['auth_lostpassword_title'] )
+		? sanitize_text_field( $input['auth_lostpassword_title'] )
+		: $defaults['auth_lostpassword_title'];
 
 	$output['auth_welcome']   = isset( $input['auth_welcome'] ) ? sanitize_textarea_field( $input['auth_welcome'] ) : '';
 	$output['auth_shortcode'] = isset( $input['auth_shortcode'] ) ? sanitize_text_field( $input['auth_shortcode'] ) : '';
@@ -844,7 +1199,7 @@ function echo_sanitize_auth_settings( $input, &$output ) {
  * ============================================================ */
 
 /**
- * 登录 / 注册页的额外 CSS（自定义 CSS）
+ * 登录 / 注册页的自定义 CSS
  *
  * @return string
  */
@@ -854,7 +1209,7 @@ function echo_auth_css() {
 }
 
 /**
- * 导航栏未登录时的登录 / 注册入口
+ * 导航栏未登录时的入口
  *
  * @return void
  */
