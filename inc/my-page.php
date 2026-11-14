@@ -290,6 +290,11 @@ function echo_my_module_profile() {
 	$size = max( 32, min( 256, absint( echo_my_config( 'my_avatar_size', 96 ) ) ) );
 	$bio  = get_user_meta( $user->ID, 'description', true );
 	$site = $user->user_url;
+
+	// 公开主页地址（用户主页功能开启时）
+	$profile_url = ( function_exists( 'echo_user_url' ) && echo_user_config( 'user_enabled', true ) )
+		? echo_user_url( $user->ID )
+		: '';
 	?>
 	<section class="echo-my-card echo-my-profile">
 		<div class="echo-my-profile__head">
@@ -304,6 +309,11 @@ function echo_my_module_profile() {
 		</div>
 		<?php if ( $bio ) : ?>
 			<p class="echo-my-profile__bio"><?php echo esc_html( $bio ); ?></p>
+		<?php endif; ?>
+		<?php if ( $profile_url ) : ?>
+			<p class="echo-my-profile__links">
+				<a class="echo-my-profile__site" href="<?php echo esc_url( $profile_url ); ?>"><?php esc_html_e( '查看我的主页', 'echo' ); ?></a>
+			</p>
 		<?php endif; ?>
 	</section>
 	<?php
