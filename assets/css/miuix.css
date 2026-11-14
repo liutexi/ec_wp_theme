@@ -678,3 +678,134 @@ body.echo-style-miuix .echo-404__text {
     color: var(--miuix-summary);
     font-size: 1.05rem;
 }
+
+/* 「我的」界面跟随 Miuix（强制经典时跳过） */
+body.echo-style-miuix:not(.echo-my-card-classic) .echo-my-card {
+    border: 0;
+    border-radius: 20px;
+    background: var(--miuix-surface-container);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    padding: 28px 30px;
+}
+
+body.echo-style-miuix:not(.echo-my-card-classic) .echo-my-stats__item {
+    background: var(--miuix-secondary-container);
+    border-radius: 14px;
+}
+
+body.echo-style-miuix:not(.echo-my-card-classic) .echo-my-quicklink {
+    border: 0;
+    border-radius: 999px;
+    background: var(--miuix-secondary-container);
+    text-align: center;
+}
+
+body.echo-style-miuix:not(.echo-my-card-classic) .echo-my-profile__bio {
+    border-top-color: var(--miuix-outline);
+}
+
+body.echo-style-miuix .echo-my-nav-link:hover {
+    background: var(--miuix-tertiary-container);
+    color: var(--echo-primary);
+}
+
+body.echo-style-miuix .echo-back-to-top {
+    border: 0;
+    border-radius: 999px;
+    background: var(--miuix-surface-container);
+}
+
+/* ==========================================================================
+   登录 / 注册（Miuix）
+   ========================================================================== */
+body.echo-style-miuix .echo-auth__card,
+.echo-auth--miuix .echo-auth__card {
+    border: 0;
+    border-radius: 24px;
+    background: var(--miuix-surface-container, #fff);
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.07);
+}
+
+body.echo-style-miuix .echo-auth__tabs,
+.echo-auth--miuix .echo-auth__tabs {
+    padding: 3px;
+    border-radius: 16px;
+    background: var(--miuix-secondary-container, #f0f0f0);
+}
+
+body.echo-style-miuix .echo-auth__tab,
+.echo-auth--miuix .echo-auth__tab {
+    border-radius: 13px;
+    font-weight: 500;
+}
+
+body.echo-style-miuix .echo-auth__tab.is-active,
+.echo-auth--miuix .echo-auth__tab.is-active {
+    background: #fff;
+    color: var(--echo-primary);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+body.echo-style-miuix .echo-auth__field input[type="text"],
+body.echo-style-miuix .echo-auth__field input[type="email"],
+body.echo-style-miuix .echo-auth__field input[type="password"],
+.echo-auth--miuix .echo-auth__field input[type="text"],
+.echo-auth--miuix .echo-auth__field input[type="email"],
+.echo-auth--miuix .echo-auth__field input[type="password"] {
+    padding: 13px 15px;
+    border: 0;
+    border-radius: 16px;
+    background: var(--miuix-secondary-container, #f0f0f0);
+}
+
+body.echo-style-miuix .echo-auth__field input:focus,
+.echo-auth--miuix .echo-auth__field input:focus {
+    background: #fff;
+    box-shadow: 0 0 0 2px var(--echo-primary);
+}
+
+body.echo-style-miuix .echo-auth__submit,
+.echo-auth--miuix .echo-auth__submit {
+    padding: 13px 18px;
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+body.echo-style-miuix .echo-auth__eye,
+.echo-auth--miuix .echo-auth__eye {
+    border-radius: 50%;
+}
+
+body.echo-style-miuix .echo-auth__alert--error,
+.echo-auth--miuix .echo-auth__alert--error {
+    border-left: 0;
+    border-radius: 14px;
+    background: #fdeceb;
+    color: var(--miuix-error, #e94634);
+}
+
+body.echo-style-miuix .echo-auth__alert--success,
+.echo-auth--miuix .echo-auth__alert--success {
+    border-left: 0;
+    border-radius: 14px;
+    background: #eaf7ef;
+    color: #1a7f43;
+}
+
+body.echo-style-miuix .echo-auth__footer,
+.echo-auth--miuix .echo-auth__footer {
+    border-top: 0;
+    padding-top: 4px;
+    color: var(--miuix-summary, rgba(0, 0, 0, 0.55));
+}
+
+body.echo-style-miuix .echo-auth-nav-link--primary,
+.echo-auth-nav-link--primary {
+    border-radius: 999px;
+}
+
+body.echo-style-miuix .echo-auth-nav-link,
+.echo-auth-nav-link {
+    border-radius: 999px;
+}
