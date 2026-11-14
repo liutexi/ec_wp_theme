@@ -550,10 +550,11 @@ body.echo-no-sidebar .echo-sidebar {
     object-fit: cover;
 }
 
-/* 正文排版 */
+/* 正文排版（字号 / 行高 / 宽度由后台「前端微调」控制） */
 .echo-entry-content {
-    font-size: 1.05rem;
-    line-height: 1.85;
+    font-size: var(--echo-entry-font-size, 1.05rem);
+    line-height: var(--echo-entry-line-height, 1.85);
+    max-width: var(--echo-entry-max-width, none);
     color: var(--echo-text);
     word-wrap: break-word;
 }
@@ -1438,4 +1439,758 @@ a.yunhu-oauth-button:focus-visible {
 .echo-single__author .avatar {
     border-radius: 50%;
     object-fit: cover;
+}
+
+/* ==========================================================================
+   「我的」个人中心
+   ========================================================================== */
+/* 外层文章容器改为透明，避免个人中心卡片出现「卡片套卡片」 */
+.echo-single--my,
+body.echo-style-miuix .echo-single--my {
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+
+.echo-single--my .echo-single__header {
+    margin-bottom: 20px !important;
+    padding-bottom: 14px !important;
+    border-bottom: 1px solid var(--echo-border) !important;
+}
+
+.echo-single--my .echo-single__title {
+    font-size: 1.8rem !important;
+}
+
+.echo-my {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 4px 0 12px;
+}
+
+.echo-my-card {
+    background: var(--echo-surface);
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius);
+    padding: 24px 26px;
+    box-shadow: var(--echo-shadow);
+}
+
+.echo-my-card__title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 16px;
+    color: var(--echo-text);
+}
+
+.echo-my-notice {
+    padding: 16px 20px;
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius-sm);
+    background: var(--echo-bg-alt);
+    color: var(--echo-text-secondary);
+    font-size: 0.95rem;
+}
+
+/* 资料卡 */
+.echo-my-profile__head {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.echo-my-profile__avatar .avatar {
+    display: block;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.echo-my-profile__id {
+    min-width: 0;
+}
+
+.echo-my-profile__name {
+    font-size: 1.35rem;
+    margin: 0 0 4px;
+    line-height: 1.3;
+}
+
+.echo-my-profile__handle {
+    margin: 0;
+    color: var(--echo-text-muted);
+    font-size: 0.9rem;
+}
+
+.echo-my-profile__site {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: var(--echo-primary);
+    word-break: break-all;
+}
+
+.echo-my-profile__bio {
+    margin: 18px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--echo-border);
+    color: var(--echo-text-secondary);
+    line-height: 1.75;
+    white-space: pre-line;
+}
+
+/* 数据统计 */
+.echo-my-stats__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.echo-my-stats__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 14px 8px;
+    background: var(--echo-bg-alt);
+    border-radius: var(--echo-radius-sm);
+}
+
+.echo-my-stats__value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--echo-primary);
+    word-break: break-all;
+    text-align: center;
+}
+
+.echo-my-stats__label {
+    font-size: 0.8rem;
+    color: var(--echo-text-muted);
+}
+
+/* 快捷入口 */
+.echo-my-quicklinks__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+.echo-my-quicklink {
+    display: block;
+    padding: 10px 14px;
+    text-align: center;
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius-sm);
+    background: var(--echo-bg-alt);
+    color: var(--echo-text-secondary);
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: border-color var(--echo-transition), color var(--echo-transition), background var(--echo-transition);
+}
+
+.echo-my-quicklink:hover {
+    border-color: var(--echo-primary);
+    color: var(--echo-primary);
+    background: var(--echo-bg-alt);
+}
+
+/* 列表模块 */
+.echo-my-list__items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.echo-my-list__items li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--echo-border);
+    font-size: 0.95rem;
+}
+
+.echo-my-list__items li:last-child {
+    border-bottom: 0;
+}
+
+.echo-my-list__items a {
+    color: var(--echo-text);
+    text-decoration: none;
+}
+
+.echo-my-list__items a:hover {
+    color: var(--echo-primary);
+}
+
+.echo-my-list__date {
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    color: var(--echo-text-muted);
+}
+
+.echo-my-list__items--comments li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.echo-my-list__excerpt {
+    color: var(--echo-text-muted);
+    font-size: 0.85rem;
+}
+
+.echo-my-empty {
+    margin: 0;
+    color: var(--echo-text-muted);
+    font-size: 0.9rem;
+}
+
+/* 未登录区块 */
+.echo-my-guest__message {
+    color: var(--echo-text-secondary);
+    margin: 0 0 18px;
+}
+
+.echo-my-guest .login-username,
+.echo-my-guest .login-password {
+    margin: 0 0 14px;
+}
+
+.echo-my-guest .login-username label,
+.echo-my-guest .login-password label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.88rem;
+    color: var(--echo-text-secondary);
+}
+
+.echo-my-guest input[type="text"],
+.echo-my-guest input[type="password"] {
+    width: 100%;
+    max-width: 340px;
+    padding: 9px 12px;
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius-sm);
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+}
+
+.echo-my-guest input[type="text"]:focus,
+.echo-my-guest input[type="password"]:focus {
+    border-color: var(--echo-primary);
+}
+
+.echo-my-guest .login-remember,
+.echo-my-guest .login-submit {
+    margin: 0 0 12px;
+}
+
+.echo-my-guest .login-submit .button-primary,
+.echo-my-guest__actions .echo-btn {
+    display: inline-block;
+    padding: 9px 20px;
+    border: 1px solid var(--echo-primary);
+    border-radius: var(--echo-radius-sm);
+    background: var(--echo-primary);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.echo-my-guest__actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.echo-btn--ghost {
+    background: transparent;
+    color: var(--echo-primary);
+}
+
+.echo-my-guest__shortcode {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--echo-border);
+}
+
+/* 强制 Miuix 卡片风格（不跟随全局） */
+.echo-my--miuix .echo-my-card,
+body.echo-my-card-miuix .echo-my-card {
+    border: 0;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    padding: 28px 30px;
+}
+
+.echo-my--miuix .echo-my-stats__item,
+body.echo-my-card-miuix .echo-my-stats__item {
+    background: #f0f0f0;
+    border-radius: 14px;
+}
+
+.echo-my--miuix .echo-my-quicklink,
+body.echo-my-card-miuix .echo-my-quicklink {
+    border: 0;
+    border-radius: 999px;
+    background: #f0f0f0;
+    text-align: center;
+}
+
+/* 强制经典卡片风格（覆盖全局 Miuix） */
+body.echo-my-card-classic .echo-my-card {
+    border: 1px solid var(--echo-border) !important;
+    border-radius: var(--echo-radius) !important;
+    background: var(--echo-surface) !important;
+    box-shadow: var(--echo-shadow) !important;
+    padding: 24px 26px !important;
+}
+
+/* ==========================================================================
+   导航栏「我的」入口
+   ========================================================================== */
+.echo-my-nav-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    margin-right: 6px;
+    border-radius: var(--echo-radius-sm);
+    color: var(--echo-text-secondary);
+    font-size: 0.9rem;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background var(--echo-transition), color var(--echo-transition);
+}
+
+.echo-my-nav-link:hover {
+    background: var(--echo-bg-alt);
+    color: var(--echo-primary);
+}
+
+/* ==========================================================================
+   阅读进度条 / 返回顶部
+   ========================================================================== */
+.echo-reading-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    z-index: 10000;
+    background: transparent;
+    pointer-events: none;
+}
+
+.echo-reading-progress__bar {
+    display: block;
+    width: 0;
+    height: 100%;
+    background: var(--echo-primary);
+    transition: width 0.08s linear;
+}
+
+.echo-back-to-top {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--echo-border);
+    border-radius: 50%;
+    background: var(--echo-surface);
+    color: var(--echo-text-secondary);
+    box-shadow: var(--echo-shadow-lg);
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: opacity var(--echo-transition), transform var(--echo-transition), visibility var(--echo-transition);
+}
+
+.echo-back-to-top.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.echo-back-to-top:hover {
+    color: var(--echo-primary);
+    border-color: var(--echo-primary);
+}
+
+@media (max-width: 782px) {
+    .echo-my-card {
+        padding: 18px;
+    }
+
+    .echo-my-profile__head {
+        gap: 14px;
+    }
+
+    .echo-my-nav-link {
+        padding: 5px 8px;
+        font-size: 0.85rem;
+    }
+
+    .echo-back-to-top {
+        right: 16px;
+        bottom: 16px;
+    }
+}
+
+/* ==========================================================================
+   登录 / 注册
+   ========================================================================== */
+.echo-single--auth,
+body.echo-style-miuix .echo-single--auth {
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+
+.echo-auth {
+    display: flex;
+    justify-content: center;
+    padding: 20px 0 32px;
+}
+
+.echo-auth__card {
+    width: 100%;
+    max-width: 460px;
+    padding: 32px 30px;
+    background: var(--echo-surface);
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius);
+    box-shadow: var(--echo-shadow-lg);
+}
+
+.echo-auth__title {
+    margin: 0 0 6px;
+    font-size: 1.6rem;
+    line-height: 1.3;
+    color: var(--echo-text);
+}
+
+.echo-auth__desc {
+    margin: 0 0 18px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--echo-text-secondary);
+}
+
+/* 登录 / 注册 切换 */
+.echo-auth__tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    margin: 0 0 20px;
+    background: var(--echo-bg-alt);
+    border-radius: var(--echo-radius-sm);
+}
+
+.echo-auth__tab {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: 4px;
+    color: var(--echo-text-secondary);
+    font-size: 0.92rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    transition: background var(--echo-transition), color var(--echo-transition);
+}
+
+.echo-auth__tab:hover {
+    color: var(--echo-text);
+}
+
+.echo-auth__tab.is-active {
+    background: var(--echo-surface);
+    color: var(--echo-primary);
+    box-shadow: var(--echo-shadow);
+}
+
+/* 表单 */
+.echo-auth__form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.echo-auth__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+}
+
+.echo-auth__field > label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--echo-text-secondary);
+}
+
+.echo-auth__field input[type="text"],
+.echo-auth__field input[type="email"],
+.echo-auth__field input[type="password"] {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius-sm);
+    background: var(--echo-surface);
+    color: var(--echo-text);
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color var(--echo-transition), box-shadow var(--echo-transition);
+}
+
+.echo-auth__field input[type="text"]:focus,
+.echo-auth__field input[type="email"]:focus,
+.echo-auth__field input[type="password"]:focus {
+    border-color: var(--echo-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.echo-auth__pwd-wrap {
+    position: relative;
+    display: block;
+}
+
+.echo-auth__pwd-wrap input {
+    padding-right: 46px;
+}
+
+.echo-auth__eye {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--echo-radius-sm);
+    background: transparent;
+    color: var(--echo-text-muted);
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: color var(--echo-transition), background var(--echo-transition);
+}
+
+.echo-auth__eye:hover {
+    color: var(--echo-text);
+    background: var(--echo-bg-alt);
+}
+
+.echo-auth__eye svg {
+    display: block;
+}
+
+.echo-auth__eye .echo-auth__eye-off {
+    display: none;
+}
+
+.echo-auth__eye.is-visible .echo-auth__eye-on {
+    display: none;
+}
+
+.echo-auth__eye.is-visible .echo-auth__eye-off {
+    display: block;
+}
+
+.echo-auth__hint {
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--echo-text-muted);
+}
+
+.echo-auth__hint--block {
+    margin: 0;
+}
+
+.echo-auth__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 0.88rem;
+}
+
+.echo-auth__check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    color: var(--echo-text-secondary);
+    cursor: pointer;
+}
+
+.echo-auth__check input {
+    accent-color: var(--echo-primary);
+}
+
+.echo-auth__check--terms {
+    align-items: flex-start;
+    line-height: 1.55;
+    margin: 2px 0;
+}
+
+.echo-auth__check--terms input {
+    margin-top: 3px;
+}
+
+.echo-auth__link {
+    color: var(--echo-primary);
+    font-size: 0.88rem;
+    text-decoration: none;
+}
+
+.echo-auth__link:hover {
+    text-decoration: underline;
+}
+
+.echo-auth__submit {
+    width: 100%;
+    padding: 12px 18px;
+    margin-top: 2px;
+    border: none;
+    border-radius: var(--echo-radius-sm);
+    background: var(--echo-primary);
+    color: #fff;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--echo-transition), transform var(--echo-transition);
+}
+
+.echo-auth__submit:hover {
+    background: var(--echo-primary-hover);
+}
+
+.echo-auth__submit:active {
+    transform: translateY(1px);
+}
+
+/* 提示条 */
+.echo-auth__alert {
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    border-left: 3px solid transparent;
+    border-radius: var(--echo-radius-sm);
+    font-size: 0.88rem;
+    line-height: 1.55;
+}
+
+.echo-auth__alert--error {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+.echo-auth__alert--success {
+    background: #ecfdf5;
+    border-color: #10b981;
+    color: #047857;
+}
+
+.echo-auth__footer {
+    margin: 18px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--echo-border);
+    color: var(--echo-text-muted);
+    font-size: 0.86rem;
+    line-height: 1.7;
+    text-align: center;
+}
+
+.echo-auth__dot {
+    margin: 0 6px;
+}
+
+.echo-auth__shortcode {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--echo-border);
+}
+
+.echo-auth__hp {
+    position: absolute !important;
+    left: -9999px !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+}
+
+.echo-auth__notice {
+    padding: 16px 18px;
+    border: 1px dashed var(--echo-border);
+    border-radius: var(--echo-radius-sm);
+    color: var(--echo-text-secondary);
+    background: var(--echo-bg-alt);
+}
+
+/* 导航栏登录 / 注册入口 */
+.echo-auth-nav-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    margin-right: 6px;
+    border-radius: var(--echo-radius-sm);
+    color: var(--echo-text-secondary);
+    font-size: 0.9rem;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background var(--echo-transition), color var(--echo-transition);
+}
+
+.echo-auth-nav-link:hover {
+    background: var(--echo-bg-alt);
+    color: var(--echo-primary);
+}
+
+.echo-auth-nav-link--primary {
+    border: 1px solid var(--echo-primary);
+    color: var(--echo-primary);
+    font-weight: 600;
+}
+
+.echo-auth-nav-link--primary:hover {
+    background: var(--echo-primary);
+    color: #fff;
+}
+
+@media (max-width: 520px) {
+    .echo-auth {
+        padding: 12px 0 24px;
+    }
+
+    .echo-auth__card {
+        padding: 24px 20px;
+    }
+
+    .echo-auth-nav-link {
+        padding: 5px 8px;
+        font-size: 0.85rem;
+        margin-right: 2px;
+    }
 }
