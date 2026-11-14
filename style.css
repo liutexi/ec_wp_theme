@@ -512,6 +512,24 @@ ul, ol {
     font-size: 0.9rem;
 }
 
+/* 文章副标题（编辑器「Echo 文章选项」） */
+.echo-single__subtitle {
+    margin: -0.3em 0 1.1em;
+    font-size: 1.15rem;
+    line-height: 1.6;
+    font-weight: 400;
+    color: var(--echo-text-secondary);
+}
+
+/* 单篇隐藏侧边栏 */
+body.echo-no-sidebar .echo-layout {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+body.echo-no-sidebar .echo-sidebar {
+    display: none;
+}
+
 .echo-single__meta a {
     color: var(--echo-text-muted);
 }
