@@ -8,10 +8,79 @@
 		// 主题色取色器
 		$('.echo-color-field').wpColorPicker();
 
+		initColorPresets();
+		initWidthSlider();
 		initLogoUploader();
 		initInstantSave();
+		initSwitchState();
 		initToast();
 	});
+
+	/**
+	 * 主题色预设色块：点击填充取色器
+	 */
+	function initColorPresets() {
+		var $presets = $('.echo-color-preset');
+		var $field = $('.echo-color-field');
+
+		if (!$presets.length || !$field.length) {
+			return;
+		}
+
+		$presets.on('click', function () {
+			var color = $(this).data('color');
+
+			// 更新 wpColorPicker 的值（触发 change 让 iris 同步）
+			$field.val(color).trigger('change');
+
+			// 更新取色器色块显示
+			var $wrap = $field.closest('.wp-picker-container');
+			if ($wrap.length) {
+				$wrap.find('.wp-color-result').css('background-color', color);
+			}
+
+			$presets.removeClass('is-active');
+			$(this).addClass('is-active');
+		});
+
+		// 手动改色时，清除预设高亮
+		$field.on('change', function () {
+			var val = String($field.val()).toLowerCase();
+			$presets.removeClass('is-active');
+			$presets.filter(function () {
+				return String($(this).data('color')).toLowerCase() === val;
+			}).addClass('is-active');
+		});
+	}
+
+	/**
+	 * 内容宽度滑块：与数值显示、隐藏字段联动
+	 */
+	function initWidthSlider() {
+		var $range = $('#echo_content_width_range');
+		var $display = $('#echo_content_width_display');
+		var $hidden = $('#echo_content_width');
+
+		if (!$range.length) {
+			return;
+		}
+
+		$range.on('input', function () {
+			var val = $range.val();
+			$display.text(val);
+			$hidden.val(val);
+		});
+	}
+
+	/**
+	 * 开关状态文字：切换时显示「已开启/已关闭」
+	 */
+	function initSwitchState() {
+		$('.echo-switch-label input[type="checkbox"]').on('change', function () {
+			var $state = $(this).siblings('.echo-switch-state');
+			$state.text($(this).is(':checked') ? '已开启' : '已关闭');
+		});
+	}
 
 	/**
 	 * 右下角即时通知（toast）
