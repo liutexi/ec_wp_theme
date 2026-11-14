@@ -627,8 +627,10 @@ function echo_field_checkbox( $args ) {
 	$value = echo_get_setting( $key, false );
 	?>
 	<label class="echo-switch-label">
-		<input type="checkbox" id="<?php echo esc_attr( $key ); ?>" name="echo_settings[<?php echo esc_attr( $key ); ?>]" value="1"
+		<input type="checkbox" class="echo-switch-input" id="<?php echo esc_attr( $key ); ?>"
+			name="echo_settings[<?php echo esc_attr( $key ); ?>]" value="1"
 			<?php checked( $value, true ); ?> data-instant="1" data-key="<?php echo esc_attr( $key ); ?>" />
+		<span class="echo-switch" aria-hidden="true"><span class="echo-switch__knob"></span></span>
 		<span class="echo-switch-state"><?php echo $value ? esc_html__( '已开启', 'echo' ) : esc_html__( '已关闭', 'echo' ); ?></span>
 	</label>
 	<?php
