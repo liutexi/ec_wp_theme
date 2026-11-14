@@ -15,6 +15,10 @@
 
 	<div class="echo-card__meta">
 		<?php echo echo_get_categories(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+		<span class="echo-card__author">
+			<?php echo get_avatar( get_the_author_meta( 'ID' ), 22 ); ?>
+			<?php the_author(); ?>
+		</span>
 		<span class="echo-card__date"><?php echo esc_html( get_the_date() ); ?></span>
 		<span class="echo-card__comments">
 			<?php comments_number( __( '0 条评论', 'echo' ), __( '1 条评论', 'echo' ), __( '% 条评论', 'echo' ) ); ?>
