@@ -818,3 +818,74 @@ body.echo-style-miuix .echo-auth-nav-link,
         top: 60px;
     }
 }
+
+/* ==========================================================================
+   用户主页（Miuix）
+   ========================================================================== */
+body.echo-style-miuix .echo-user-card,
+.echo-user--miuix .echo-user-card {
+    border: 0;
+    border-radius: 22px;
+    background: var(--miuix-surface-container, #fff);
+    box-shadow: none;
+}
+
+body.echo-style-miuix .echo-user-stats__item,
+.echo-user--miuix .echo-user-stats__item {
+    border-radius: 16px;
+    background: var(--miuix-secondary-container, #f0f0f0);
+}
+
+body.echo-style-miuix .echo-user-profile__uid,
+.echo-user--miuix .echo-user-profile__uid {
+    background: var(--miuix-secondary-container, #f0f0f0);
+}
+
+body.echo-style-miuix .echo-user-field input[type="text"],
+body.echo-style-miuix .echo-user-field input[type="url"],
+body.echo-style-miuix .echo-user-field input[type="password"],
+body.echo-style-miuix .echo-user-field textarea,
+.echo-user--miuix .echo-user-field input[type="text"],
+.echo-user--miuix .echo-user-field input[type="url"],
+.echo-user--miuix .echo-user-field input[type="password"],
+.echo-user--miuix .echo-user-field textarea {
+    padding: 13px 15px;
+    border: 0;
+    border-radius: 16px;
+    background: var(--miuix-secondary-container, #f0f0f0);
+}
+
+body.echo-style-miuix .echo-user-field input:focus,
+body.echo-style-miuix .echo-user-field textarea:focus,
+.echo-user--miuix .echo-user-field input:focus,
+.echo-user--miuix .echo-user-field textarea:focus {
+    background: #fff;
+    box-shadow: 0 0 0 2px var(--echo-primary);
+}
+
+body.echo-style-miuix .echo-user-fieldset,
+.echo-user--miuix .echo-user-fieldset {
+    border-color: var(--miuix-divider, #e0e0e0);
+    border-radius: 16px;
+}
+
+body.echo-style-miuix .echo-user-edit__summary::before,
+.echo-user--miuix .echo-user-edit__summary::before {
+    background: var(--miuix-secondary-container, #f0f0f0);
+}
+
+body.echo-style-miuix .echo-user-alert--error,
+.echo-user--miuix .echo-user-alert--error {
+    border-left: 0;
+    border-radius: 14px;
+    background: #fdeceb;
+    color: var(--miuix-error, #e94634);
+}
+
+body.echo-style-miuix .echo-user-alert--success,
+.echo-user--miuix .echo-user-alert--success {
+    border-left: 0;
+    border-radius: 14px;
+    background: #eaf7ef;
+    color: #1a7f43;
+}
