@@ -44,7 +44,7 @@
 				printf(
 					/* translators: %s: 主题名 */
 					esc_html__( '使用 %s 主题', 'echo' ),
-					'<a href="https://github.com/liutexi">Echo</a>'
+					'<a href="' . esc_url( ECHO_REPO_URL ) . '">Echo</a>'
 				);
 				?>
 			</div>
