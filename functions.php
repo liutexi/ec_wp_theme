@@ -18,6 +18,9 @@ require get_template_directory() . '/inc/customizer.php';
 // 引入后台文章功能增强
 require get_template_directory() . '/inc/admin-posts.php';
 
+// 引入配置备份 / 导出 / 导入
+require get_template_directory() . '/inc/backup.php';
+
 /**
  * 主题初始化设置
  */
@@ -278,3 +281,24 @@ function echo_comment( $comment, $args, $depth ) {
 		</div>
 	<?php
 }
+
+/**
+ * 后台页脚致谢文字
+ *
+ * 把 WordPress 默认的「感谢使用 WordPress 进行创作。」
+ * 改为「感谢使用 WordPress 和 Echo 主题协作。」，
+ * 其中 WordPress 与 Echo 主题均为可点击链接。
+ *
+ * 仓库地址可通过 echo_footer_repo_url 过滤器覆盖。
+ *
+ * @param string $text 原有的页脚文字。
+ * @return string
+ */
+function echo_admin_footer_text( $text ) {
+	$wp_url   = 'https://wordpress.org/';
+	$repo_url = apply_filters( 'echo_footer_repo_url', 'https://github.com/ec_wp_theme' );
+
+	return '感谢使用 <a href="' . esc_url( $wp_url ) . '" target="_blank" rel="noopener noreferrer">WordPress</a>'
+		. ' 和 <a href="' . esc_url( $repo_url ) . '" target="_blank" rel="noopener noreferrer">Echo 主题</a> 协作。';
+}
+add_filter( 'admin_footer_text', 'echo_admin_footer_text' );
