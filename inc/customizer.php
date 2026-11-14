@@ -34,6 +34,8 @@ function echo_default_settings() {
 		'exclude_categories' => array(),
 		'show_category_badge' => true,
 		'ui_style'         => 'classic',
+		'ascii_slug'      => false,
+		'admin_post_columns' => true,
 	);
 }
 
@@ -97,6 +99,48 @@ function echo_settings_init() {
 		)
 	);
 
+	// 固定链接
+	add_settings_section(
+		'echo_section_permalink',
+		__( '固定链接', 'echo' ),
+		'echo_section_permalink_desc',
+		'echo-settings'
+	);
+
+	add_settings_field(
+		'echo_permalink_structure',
+		__( '链接结构', 'echo' ),
+		'echo_field_permalink_structure',
+		'echo-settings',
+		'echo_section_permalink',
+		array(
+			'label_for' => 'echo_permalink_structure',
+		)
+	);
+
+	add_settings_field(
+		'echo_rewrite_help',
+		__( '服务器重写配置', 'echo' ),
+		'echo_field_rewrite_help',
+		'echo-settings',
+		'echo_section_permalink',
+		array(
+			'label_for' => 'echo_rewrite_help',
+		)
+	);
+
+	add_settings_field(
+		'echo_ascii_slug',
+		__( '新文章使用纯数字 slug', 'echo' ),
+		'echo_field_checkbox',
+		'echo-settings',
+		'echo_section_permalink',
+		array(
+			'label_for' => 'ascii_slug',
+			'desc'      => __( '中文标题生成的 slug 会被百分号编码。开启后，新文章的 slug 自动改用文章 ID（纯数字），链接永远干净。已有文章不受影响。', 'echo' ),
+		)
+	);
+
 	// 界面风格
 	add_settings_section(
 		'echo_section_style',
@@ -114,6 +158,18 @@ function echo_settings_init() {
 		array(
 			'label_for' => 'ui_style',
 			'desc'      => __( 'Miuix 风格复刻小米 HyperOS 设计语言：大圆角、浅灰 Surface 分层、柔和不刺眼的阴影。', 'echo' ),
+		)
+	);
+
+	add_settings_field(
+		'echo_admin_post_columns',
+		__( '后台文章列表增强', 'echo' ),
+		'echo_field_checkbox',
+		'echo-settings',
+		'echo_section_style',
+		array(
+			'label_for' => 'admin_post_columns',
+			'desc'      => __( '在后台「文章」列表显示封面、ID、字数、链接列。关闭则恢复 WordPress 原生列。', 'echo' ),
 		)
 	);
 
@@ -347,6 +403,18 @@ function echo_sanitize_settings( $input ) {
 	$output['hide_tagline']   = isset( $input['hide_tagline'] ) && '1' === (string) $input['hide_tagline'];
 	$output['hide_admin_bar'] = isset( $input['hide_admin_bar'] ) && '1' === (string) $input['hide_admin_bar'];
 	$output['show_category_badge'] = isset( $input['show_category_badge'] ) && '1' === (string) $input['show_category_badge'];
+	$output['ascii_slug']          = isset( $input['ascii_slug'] ) && '1' === (string) $input['ascii_slug'];
+	$output['admin_post_columns']  = isset( $input['admin_post_columns'] ) && '1' === (string) $input['admin_post_columns'];
+
+	// 固定链接结构：写入 WP 核心选项（仅在变化时）
+	if ( isset( $input['permalink_structure'] ) ) {
+		$structure = echo_sanitize_permalink_structure( $input['permalink_structure'] );
+		if ( '' !== $structure && get_option( 'permalink_structure' ) !== $structure ) {
+			update_option( 'permalink_structure', $structure );
+			// 标记需要刷新重写规则（在 admin_init 之后执行）
+			set_transient( 'echo_flush_rewrite', 1, 60 );
+		}
+	}
 
 	// 排除分类：数组，每项为分类 ID（正整数）
 	$output['exclude_categories'] = array();
@@ -385,17 +453,451 @@ function echo_settings_page_html() {
 			?>
 		</form>
 
+		<?php echo_render_category_manager(); ?>
+		<?php echo_render_post_manager(); ?>
+
 		<!-- 即时保存用的 AJAX 数据（兜底，避免 localize 失效） -->
 		<div id="echo-ajax-data" style="display:none;"
 			data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>"
 			data-nonce="<?php echo esc_attr( wp_create_nonce( 'echo_settings_nonce' ) ); ?>"></div>
+
+		<?php echo_permalink_admin_script(); ?>
 	</div>
 	<?php
 }
 
 /* ============================================================
- * 字段渲染
+ * 分类管理（独立于 options.php 主表单，走 AJAX）
  * ============================================================ */
+
+/**
+ * 取全部文章分类（含空分类）
+ *
+ * @return array
+ */
+function echo_get_all_categories() {
+	return get_categories(
+		array(
+			'taxonomy'   => 'category',
+			'hide_empty' => false,
+			'orderby'    => 'name',
+			'order'      => 'ASC',
+		)
+	);
+}
+
+/**
+ * 生成父级分类下拉选项
+ *
+ * @param int $selected   当前选中项。
+ * @param int $exclude_id 需要排除的分类 ID（编辑时排除自身）。
+ * @return string
+ */
+function echo_render_parent_options( $selected = 0, $exclude_id = 0 ) {
+	$html = '<option value="0">' . esc_html__( '— 无父级 —', 'echo' ) . '</option>';
+
+	foreach ( echo_get_all_categories() as $cat ) {
+		if ( (int) $cat->term_id === (int) $exclude_id ) {
+			continue;
+		}
+
+		$html .= sprintf(
+			'<option value="%1$s" %3$s>%2$s</option>',
+			esc_attr( $cat->term_id ),
+			esc_html( $cat->name ),
+			selected( (int) $selected, (int) $cat->term_id, false )
+		);
+	}
+
+	return $html;
+}
+
+/**
+ * 生成分类表格的全部行（主行 + 隐藏的编辑行）
+ *
+ * @return string
+ */
+function echo_render_category_rows() {
+	$categories   = echo_get_all_categories();
+	$default_cat  = absint( get_option( 'default_category' ) );
+
+	ob_start();
+
+	if ( empty( $categories ) ) {
+		echo '<tr class="echo-cat-empty"><td colspan="4">' . esc_html__( '暂无分类，请在上方添加。', 'echo' ) . '</td></tr>';
+	}
+
+	foreach ( $categories as $cat ) {
+		$id         = (int) $cat->term_id;
+		$is_default = ( $id === $default_cat );
+		?>
+		<tr class="echo-cat-row" data-id="<?php echo esc_attr( $id ); ?>">
+			<td class="echo-cat-name">
+				<?php echo esc_html( $cat->name ); ?>
+				<?php if ( $is_default ) : ?>
+					<span class="echo-cat-default"><?php esc_html_e( '默认', 'echo' ); ?></span>
+				<?php endif; ?>
+			</td>
+			<td><code><?php echo esc_html( $cat->slug ); ?></code></td>
+			<td><?php echo esc_html( absint( $cat->count ) ); ?></td>
+			<td class="echo-cat-actions">
+				<button type="button" class="button button-small echo-cat-edit"><?php esc_html_e( '编辑', 'echo' ); ?></button>
+				<?php if ( ! $is_default ) : ?>
+					<button type="button" class="button button-small echo-cat-set-default"><?php esc_html_e( '设为默认', 'echo' ); ?></button>
+					<button type="button" class="button button-small echo-cat-del"><?php esc_html_e( '删除', 'echo' ); ?></button>
+				<?php endif; ?>
+			</td>
+		</tr>
+		<tr class="echo-cat-edit-row" data-id="<?php echo esc_attr( $id ); ?>" style="display:none;">
+			<td colspan="4">
+				<div class="echo-cat-edit-form">
+					<label>
+						<span><?php esc_html_e( '名称', 'echo' ); ?></span>
+						<input type="text" class="echo-cat-f-name regular-text" value="<?php echo esc_attr( $cat->name ); ?>" />
+					</label>
+					<label>
+						<span><?php esc_html_e( 'Slug', 'echo' ); ?></span>
+						<input type="text" class="echo-cat-f-slug regular-text" value="<?php echo esc_attr( $cat->slug ); ?>" />
+					</label>
+					<label>
+						<span><?php esc_html_e( '父级', 'echo' ); ?></span>
+						<select class="echo-cat-f-parent"><?php echo echo_render_parent_options( $cat->parent, $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?></select>
+					</label>
+					<label>
+						<span><?php esc_html_e( '描述', 'echo' ); ?></span>
+						<textarea class="echo-cat-f-desc large-text" rows="2"><?php echo esc_textarea( $cat->description ); ?></textarea>
+					</label>
+					<div class="echo-cat-edit-actions">
+						<button type="button" class="button button-primary echo-cat-save"><?php esc_html_e( '保存修改', 'echo' ); ?></button>
+						<button type="button" class="button echo-cat-cancel"><?php esc_html_e( '取消', 'echo' ); ?></button>
+					</div>
+				</div>
+			</td>
+		</tr>
+		<?php
+	}
+
+	return ob_get_clean();
+}
+
+/**
+ * 渲染分类管理区块
+ *
+ * @return void
+ */
+function echo_render_category_manager() {
+	if ( ! current_user_can( 'manage_categories' ) ) {
+		return;
+	}
+	?>
+	<div id="echo-cat-manager" class="echo-cat-manager">
+		<h2><?php esc_html_e( '分类管理', 'echo' ); ?></h2>
+		<p class="description"><?php esc_html_e( '等同于后台「文章 → 分类」，此处可直接新增、编辑、删除分类，操作即时生效。', 'echo' ); ?></p>
+
+		<form class="echo-cat-add-form">
+			<div class="echo-cat-add-grid">
+				<label>
+					<span><?php esc_html_e( '名称', 'echo' ); ?></span>
+					<input type="text" class="echo-cat-add-name regular-text" required placeholder="<?php esc_attr_e( '新分类名称', 'echo' ); ?>" />
+				</label>
+				<label>
+					<span><?php esc_html_e( 'Slug', 'echo' ); ?></span>
+					<input type="text" class="echo-cat-add-slug regular-text" placeholder="<?php esc_attr_e( '留空自动生成', 'echo' ); ?>" />
+				</label>
+				<label>
+					<span><?php esc_html_e( '父级', 'echo' ); ?></span>
+					<select class="echo-cat-add-parent"><?php echo echo_render_parent_options( 0, 0 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></select>
+				</label>
+				<label>
+					<span><?php esc_html_e( '描述', 'echo' ); ?></span>
+					<input type="text" class="echo-cat-add-desc regular-text" placeholder="<?php esc_attr_e( '可选', 'echo' ); ?>" />
+				</label>
+			</div>
+			<p><button type="submit" class="button button-primary"><?php esc_html_e( '添加分类', 'echo' ); ?></button></p>
+		</form>
+
+		<table class="widefat striped echo-cat-list">
+			<thead>
+				<tr>
+					<th><?php esc_html_e( '名称', 'echo' ); ?></th>
+					<th><?php esc_html_e( 'Slug', 'echo' ); ?></th>
+					<th><?php esc_html_e( '文章数', 'echo' ); ?></th>
+					<th><?php esc_html_e( '操作', 'echo' ); ?></th>
+				</tr>
+			</thead>
+			<tbody id="echo-cat-rows"><?php echo echo_render_category_rows(); // phpcs:ignore WordPress.Security.EscapeOutput ?></tbody>
+		</table>
+
+		<p class="description echo-cat-note">
+			<?php esc_html_e( '删除分类不会删除文章，该分类下的文章会移动到默认分类。默认分类不可删除。', 'echo' ); ?>
+		</p>
+	</div>
+	<?php
+}
+
+/**
+ * AJAX：新增 / 编辑 / 删除 / 设为默认分类
+ *
+ * @return void
+ */
+function echo_ajax_manage_category() {
+	if ( ! current_user_can( 'manage_categories' ) ) {
+		wp_send_json_error( array( 'message' => __( '无权限', 'echo' ) ), 403 );
+	}
+
+	$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+	if ( ! wp_verify_nonce( $nonce, 'echo_settings_nonce' ) ) {
+		wp_send_json_error( array( 'message' => __( '安全校验失败，请刷新页面后重试', 'echo' ) ), 403 );
+	}
+
+	$op = isset( $_POST['op'] ) ? sanitize_key( wp_unslash( $_POST['op'] ) ) : '';
+	$id = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+
+	$respond = function ( $message ) {
+		wp_send_json_success(
+			array(
+				'message' => $message,
+				'rows'    => echo_render_category_rows(),
+				'options' => echo_render_parent_options( 0, 0 ),
+			)
+		);
+	};
+
+	// 删除
+	if ( 'delete' === $op ) {
+		if ( ! $id ) {
+			wp_send_json_error( array( 'message' => __( '缺少分类 ID', 'echo' ) ), 400 );
+		}
+		if ( $id === absint( get_option( 'default_category' ) ) ) {
+			wp_send_json_error( array( 'message' => __( '默认分类不能删除', 'echo' ) ), 400 );
+		}
+		$result = wp_delete_term( $id, 'category' );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+		}
+		$respond( __( '分类已删除', 'echo' ) );
+	}
+
+	// 设为默认
+	if ( 'set_default' === $op ) {
+		if ( ! $id || ! term_exists( $id, 'category' ) ) {
+			wp_send_json_error( array( 'message' => __( '分类不存在', 'echo' ) ), 400 );
+		}
+		update_option( 'default_category', $id );
+		$respond( __( '已设为默认分类', 'echo' ) );
+	}
+
+	// 新增 / 编辑
+	$name   = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
+	$slug   = isset( $_POST['slug'] ) ? sanitize_title( wp_unslash( $_POST['slug'] ) ) : '';
+	$parent = isset( $_POST['parent'] ) ? absint( $_POST['parent'] ) : 0;
+	$desc   = isset( $_POST['description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['description'] ) ) : '';
+
+	if ( '' === $name ) {
+		wp_send_json_error( array( 'message' => __( '分类名称不能为空', 'echo' ) ), 400 );
+	}
+
+	$args = array(
+		'name'        => $name,
+		'parent'      => $parent,
+		'description' => $desc,
+	);
+	if ( '' !== $slug ) {
+		$args['slug'] = $slug;
+	}
+
+	if ( 'create' === $op ) {
+		$result = wp_insert_term( $name, 'category', $args );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+		}
+		$respond( __( '分类已创建', 'echo' ) );
+	}
+
+	if ( 'update' === $op ) {
+		if ( ! $id ) {
+			wp_send_json_error( array( 'message' => __( '缺少分类 ID', 'echo' ) ), 400 );
+		}
+		// 防止把父级设为自己
+		if ( $parent === $id ) {
+			$args['parent'] = 0;
+		}
+		$result = wp_update_term( $id, 'category', $args );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+		}
+		$respond( __( '分类已更新', 'echo' ) );
+	}
+
+	wp_send_json_error( array( 'message' => __( '未知操作', 'echo' ) ), 400 );
+}
+add_action( 'wp_ajax_echo_manage_category', 'echo_ajax_manage_category' );
+
+/* ============================================================
+ * 固定链接
+ * ============================================================ */
+
+/**
+ * 「固定链接」分组说明
+ *
+ * @return void
+ */
+function echo_section_permalink_desc() {
+	$current = get_option( 'permalink_structure' );
+	$has_index = ( is_string( $current ) && 0 === stripos( $current, '/index.php' ) );
+
+	echo '<p class="description" style="margin:0 0 10px;">';
+	esc_html_e( '文章地址由 WordPress 的固定链接结构决定。带 /index.php/ 前缀说明服务器尚未启用 URL 重写，请先按下方配置服务器。', 'echo' );
+	echo '</p>';
+
+	if ( $has_index ) {
+		echo '<div class="notice notice-warning inline" style="margin:0 0 10px;"><p>';
+		esc_html_e( '检测到当前结构包含 /index.php，需配置服务器重写规则后才能彻底去掉。', 'echo' );
+		echo '</p></div>';
+	}
+}
+
+/**
+ * 清洗固定链接结构
+ *
+ * @param string $raw 原始结构。
+ * @return string
+ */
+function echo_sanitize_permalink_structure( $raw ) {
+	$structure = trim( (string) $raw );
+
+	// 去掉 index.php 前缀
+	$structure = preg_replace( '#^/?index\.php/?#i', '/', $structure );
+	$structure = '/' . ltrim( $structure, '/' );
+
+	// 允许的结构标签
+	$tags = array( '%post_id%', '%postname%', '%year%', '%monthnum%', '%day%', '%category%', '%author%' );
+	$rest = str_replace( $tags, '', $structure );
+
+	// 去掉标签后只允许字母数字与 / - _
+	if ( preg_match( '#[^a-zA-Z0-9/_\-]#', $rest ) ) {
+		return '';
+	}
+
+	if ( '/' !== substr( $structure, -1 ) ) {
+		$structure .= '/';
+	}
+
+	// 至少包含一个可唯一标识文章的标签
+	if ( false === strpos( $structure, '%post_id%' ) && false === strpos( $structure, '%postname%' ) ) {
+		return '';
+	}
+
+	return $structure;
+}
+
+/**
+ * 链接结构字段
+ *
+ * @param array $args 字段参数。
+ * @return void
+ */
+function echo_field_permalink_structure( $args ) {
+	$current = (string) get_option( 'permalink_structure' );
+	$home    = untrailingslashit( home_url() );
+
+	$presets = array(
+		'/archives/%post_id%'                  => array( __( '文章 ID（推荐中文站）', 'echo' ), '/archives/123' ),
+		'/%postname%'                          => array( __( '文章名', 'echo' ), '/a-random-welcome-api' ),
+		'/%year%/%monthnum%/%day%/%post_id%'   => array( __( '日期 + ID', 'echo' ), '/2026/10/16/123' ),
+		'/%post_id%'                           => array( __( '纯 ID', 'echo' ), '/123' ),
+	);
+
+	// 自定义结构：不在预设里时作为当前值
+	$is_custom = ( '' !== $current && ! isset( $presets[ $current ] ) );
+	?>
+	<p style="margin:0 0 12px;">
+		<?php esc_html_e( '当前结构：', 'echo' ); ?>
+		<code style="padding:2px 6px;background:#f0f0f1;border-radius:2px;"><?php echo esc_html( $current ? $current : __( '（朴素）', 'echo' ) ); ?></code>
+	</p>
+
+	<fieldset class="echo-permalink-choices">
+		<?php foreach ( $presets as $struct => $info ) : ?>
+			<label>
+				<input type="radio" name="echo_settings[permalink_structure]" value="<?php echo esc_attr( $struct ); ?>"
+					<?php checked( $current, $struct ); ?> />
+				<strong><?php echo esc_html( $info[0] ); ?></strong>
+				<code><?php echo esc_html( $home . $info[1] ); ?></code>
+			</label>
+		<?php endforeach; ?>
+
+		<?php
+		$custom_value = $is_custom ? $current : '/archives/%post_id%';
+		?>
+		<label>
+			<input type="radio" class="echo-permalink-custom-radio" name="echo_settings[permalink_structure]"
+				value="<?php echo esc_attr( $custom_value ); ?>" <?php checked( $is_custom, true ); ?> />
+			<strong><?php esc_html_e( '自定义', 'echo' ); ?></strong>
+			<input type="text" class="echo-permalink-custom regular-text" style="width:260px;"
+				placeholder="/archives/%post_id%"
+				value="<?php echo esc_attr( $is_custom ? $current : '' ); ?>" />
+		</label>
+	</fieldset>
+
+	<p class="description">
+		<?php esc_html_e( '可用标签：%post_id% %postname% %year% %monthnum% %day% %category% %author%。修改后旧链接会失效，建议配置 301 重定向。', 'echo' ); ?>
+	</p>
+	<?php
+}
+
+/**
+ * 服务器重写配置字段
+ *
+ * @param array $args 字段参数。
+ * @return void
+ */
+function echo_field_rewrite_help( $args ) {
+	$software = isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : '';
+	$is_nginx = ( false !== stripos( $software, 'nginx' ) );
+
+	if ( $is_nginx ) {
+		$title = __( 'Nginx（在 server 块中添加）', 'echo' );
+		$code  = "location / {\n    try_files \$uri \$uri/ /index.php?\$args;\n}";
+	} else {
+		$title = __( 'Apache（网站根目录 .htaccess）', 'echo' );
+		$code  = "# BEGIN WordPress\n<IfModule mod_rewrite.c>\nRewriteEngine On\nRewriteBase /\nRewriteRule ^index\\.php\$ - [L]\nRewriteCond %{REQUEST_FILENAME} !-f\nRewriteCond %{REQUEST_FILENAME} !-d\nRewriteRule . /index.php [L]\n</IfModule>\n# END WordPress";
+	}
+	?>
+	<p class="description" style="margin:0 0 6px;">
+		<?php echo esc_html( $title ); ?>
+		<?php if ( '' !== $software ) : ?>
+			· <?php echo esc_html( sprintf( __( '检测到：%s', 'echo' ), $software ) ); ?>
+		<?php endif; ?>
+	</p>
+	<textarea readonly rows="9" class="large-text echo-rewrite-code" style="font-family:monospace;font-size:12px;"><?php echo esc_textarea( $code ); ?></textarea>
+	<p class="description">
+		<?php esc_html_e( '配置好服务器后，回到本页选择不带 index.php 的结构并保存即可。', 'echo' ); ?>
+	</p>
+	<?php
+}
+
+/**
+ * 自定义结构选中时，把输入值同步到单选按钮
+ *
+ * @return void
+ */
+function echo_permalink_admin_script() {
+	?>
+	<script>
+	(function () {
+		var custom = document.querySelector('.echo-permalink-custom');
+		var radio = document.querySelector('.echo-permalink-custom-radio');
+		if (!custom || !radio) { return; }
+		var fallback = radio.value;
+		custom.addEventListener('focus', function () { radio.checked = true; });
+		custom.addEventListener('input', function () {
+			radio.value = custom.value || fallback;
+			radio.checked = true;
+		});
+	})();
+	</script>
+	<?php
+}
 
 /**
  * 界面风格字段（可视化选择）
@@ -788,6 +1290,47 @@ function echo_style_body_class( $classes ) {
 add_filter( 'body_class', 'echo_style_body_class' );
 
 /**
+ * 固定链接变更后刷新重写规则
+ *
+ * sanitize 回调里先打标记，等重定向回后台页时再 flush，避免时机过早。
+ *
+ * @return void
+ */
+function echo_maybe_flush_rewrite() {
+	if ( ! get_transient( 'echo_flush_rewrite' ) ) {
+		return;
+	}
+
+	delete_transient( 'echo_flush_rewrite' );
+	flush_rewrite_rules();
+}
+add_action( 'admin_init', 'echo_maybe_flush_rewrite', 999 );
+
+/**
+ * 新文章：中文 slug 自动改用文章 ID
+ *
+ * 仅处理含非 ASCII 字符的 slug，用户手动指定的英文 slug 保持不变。
+ *
+ * @param string $slug        原 slug。
+ * @param int    $post_ID     文章 ID。
+ * @param string $post_status 状态。
+ * @param string $post_type   类型。
+ * @return string
+ */
+function echo_ascii_post_slug( $slug, $post_ID, $post_status, $post_type ) {
+	if ( 'post' !== $post_type || ! echo_get_setting( 'ascii_slug', false ) ) {
+		return $slug;
+	}
+
+	if ( '' !== $slug && preg_match( '/[^\x20-\x7E]/', $slug ) ) {
+		return (string) absint( $post_ID );
+	}
+
+	return $slug;
+}
+add_filter( 'wp_unique_post_slug', 'echo_ascii_post_slug', 10, 4 );
+
+/**
  * 首页排除指定分类
  *
  * @param WP_Query $query 主查询对象。
@@ -855,7 +1398,7 @@ function echo_ajax_save_setting() {
 	$val = isset( $_POST['value'] ) ? wp_unslash( $_POST['value'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 	// 仅允许白名单内的键，防止任意写入
-	$allowed = array( 'hide_admin_bar', 'footer_credit', 'hide_tagline', 'show_category_badge', 'primary_color', 'sidebar_position', 'content_width' );
+	$allowed = array( 'hide_admin_bar', 'footer_credit', 'hide_tagline', 'show_category_badge', 'ascii_slug', 'admin_post_columns', 'primary_color', 'sidebar_position', 'content_width' );
 
 	if ( ! in_array( $key, $allowed, true ) ) {
 		wp_send_json_error( array( 'message' => __( '非法的设置项', 'echo' ) ), 400 );
@@ -869,6 +1412,8 @@ function echo_ajax_save_setting() {
 		case 'footer_credit':
 		case 'hide_tagline':
 		case 'show_category_badge':
+		case 'ascii_slug':
+		case 'admin_post_columns':
 			$settings[ $key ] = ( '1' === (string) $val || 'true' === (string) $val || true === $val );
 			break;
 
