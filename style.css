@@ -1,0 +1,1014 @@
+/*
+Theme Name: Echo
+Theme URI: https://github.com/liutexi
+Author: LogicTneXus
+Author URI: https://github.com/liutexi
+Description: Echo 是一款简洁、专注阅读体验的博客/论坛风格 WordPress 主题，响应式设计，适合个人博客与内容社区。
+Version: 0.0.1
+Requires at least: 5.0
+Tested up to: 6.4
+Requires PHP: 7.4
+License: GNU General Public License v2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: echo
+Tags: blog, two-columns, right-sidebar, responsive-layout, custom-menu
+*/
+
+/* ==========================================================================
+   1. 变量与重置
+   ========================================================================== */
+:root {
+    --echo-bg: #ffffff;
+    --echo-bg-alt: #f6f7f9;
+    --echo-surface: #ffffff;
+    --echo-text: #1f2328;
+    --echo-text-secondary: #57606a;
+    --echo-text-muted: #8b949e;
+    --echo-border: #e5e7eb;
+    --echo-primary: #2563eb;
+    --echo-primary-hover: #1d4ed8;
+    --echo-accent: #0ea5e9;
+    --echo-radius: 10px;
+    --echo-radius-sm: 6px;
+    --echo-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --echo-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.08);
+    --echo-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --echo-mono: "SF Mono", "JetBrains Mono", Consolas, "Courier New", monospace;
+    --echo-content-width: 1180px;
+    --echo-transition: 0.2s ease;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    font-family: var(--echo-font);
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--echo-text);
+    background-color: var(--echo-bg-alt);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    border: 0;
+}
+
+a {
+    color: var(--echo-primary);
+    text-decoration: none;
+    transition: color var(--echo-transition);
+}
+
+a:hover {
+    color: var(--echo-primary-hover);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin: 0 0 0.6em;
+    line-height: 1.3;
+    font-weight: 700;
+    color: var(--echo-text);
+}
+
+p {
+    margin: 0 0 1.2em;
+}
+
+ul, ol {
+    padding-left: 1.5em;
+}
+
+/* ==========================================================================
+   2. 布局容器
+   ========================================================================== */
+.echo-container {
+    width: 100%;
+    max-width: var(--echo-content-width);
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.echo-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 32px;
+    align-items: start;
+    padding: 32px 0;
+}
+
+.echo-layout--full {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+/* ==========================================================================
+   3. 顶部导航
+   ========================================================================== */
+.echo-header {
+    background: var(--echo-surface);
+    border-bottom: 1px solid var(--echo-border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--echo-shadow);
+}
+
+.echo-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+}
+
+.echo-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--echo-text);
+    letter-spacing: -0.02em;
+}
+
+.echo-brand:hover {
+    color: var(--echo-primary);
+}
+
+.echo-brand__dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--echo-primary);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+
+.echo-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.echo-nav ul {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 4px;
+}
+
+.echo-nav li a {
+    display: inline-block;
+    padding: 8px 14px;
+    border-radius: var(--echo-radius-sm);
+    color: var(--echo-text-secondary);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.echo-nav li a:hover,
+.echo-nav li.current-menu-item a,
+.echo-nav li.current_page_item a {
+    color: var(--echo-primary);
+    background: rgba(37, 99, 235, 0.06);
+}
+
+.echo-search-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius-sm);
+    background: transparent;
+    color: var(--echo-text-secondary);
+    cursor: pointer;
+    margin-left: 8px;
+    transition: all var(--echo-transition);
+}
+
+.echo-search-toggle:hover {
+    color: var(--echo-primary);
+    border-color: var(--echo-primary);
+}
+
+.echo-nav-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: transparent;
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius-sm);
+    padding: 10px;
+    cursor: pointer;
+}
+
+.echo-nav-toggle span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: var(--echo-text);
+    border-radius: 2px;
+    transition: all var(--echo-transition);
+}
+
+/* 搜索浮层 */
+.echo-search-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 15vh;
+}
+
+.echo-search-overlay.is-open {
+    display: flex;
+}
+
+.echo-search-overlay__box {
+    width: 100%;
+    max-width: 560px;
+    background: var(--echo-surface);
+    border-radius: var(--echo-radius);
+    padding: 24px;
+    box-shadow: var(--echo-shadow-lg);
+}
+
+.echo-search-overlay__form {
+    display: flex;
+    gap: 8px;
+}
+
+.echo-search-overlay__form input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius-sm);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color var(--echo-transition);
+}
+
+.echo-search-overlay__form input:focus {
+    border-color: var(--echo-primary);
+}
+
+/* ==========================================================================
+   4. 按钮
+   ========================================================================== */
+.echo-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border: none;
+    border-radius: var(--echo-radius-sm);
+    background: var(--echo-primary);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--echo-transition);
+}
+
+.echo-btn:hover {
+    background: var(--echo-primary-hover);
+    color: #fff;
+}
+
+.echo-btn--outline {
+    background: transparent;
+    border: 1px solid var(--echo-border);
+    color: var(--echo-text-secondary);
+}
+
+.echo-btn--outline:hover {
+    border-color: var(--echo-primary);
+    color: var(--echo-primary);
+    background: transparent;
+}
+
+/* ==========================================================================
+   5. 文章卡片与列表
+   ========================================================================== */
+.echo-post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.echo-card {
+    background: var(--echo-surface);
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius);
+    padding: 28px;
+    box-shadow: var(--echo-shadow);
+    transition: transform var(--echo-transition), box-shadow var(--echo-transition);
+}
+
+.echo-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--echo-shadow-lg);
+}
+
+.echo-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+    color: var(--echo-text-muted);
+}
+
+.echo-card__meta a {
+    color: var(--echo-text-muted);
+}
+
+.echo-card__meta a:hover {
+    color: var(--echo-primary);
+}
+
+.echo-category-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--echo-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.echo-card__title {
+    font-size: 1.5rem;
+    margin-bottom: 0.5em;
+}
+
+.echo-card__title a {
+    color: var(--echo-text);
+}
+
+.echo-card__title a:hover {
+    color: var(--echo-primary);
+}
+
+.echo-card__excerpt {
+    color: var(--echo-text-secondary);
+    margin-bottom: 1em;
+}
+
+.echo-card__readmore {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+/* 文章缩略图 */
+.echo-thumbnail {
+    margin: -28px -28px 20px;
+    border-radius: var(--echo-radius) var(--echo-radius) 0 0;
+    overflow: hidden;
+}
+
+.echo-thumbnail img {
+    display: block;
+    width: 100%;
+    transition: transform 0.4s ease;
+}
+
+.echo-card:hover .echo-thumbnail img {
+    transform: scale(1.03);
+}
+
+/* 无缩略图时的占位 */
+.echo-thumbnail--placeholder {
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #2563eb, #0ea5e9);
+    color: #fff;
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+/* ==========================================================================
+   6. 分页
+   ========================================================================== */
+.echo-pagination {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 32px;
+}
+
+.echo-pagination .page-numbers {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 10px;
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius-sm);
+    color: var(--echo-text-secondary);
+    background: var(--echo-surface);
+    font-size: 0.9rem;
+    transition: all var(--echo-transition);
+}
+
+.echo-pagination .page-numbers.current {
+    background: var(--echo-primary);
+    border-color: var(--echo-primary);
+    color: #fff;
+}
+
+.echo-pagination .page-numbers:hover {
+    border-color: var(--echo-primary);
+    color: var(--echo-primary);
+}
+
+.echo-pagination .page-numbers.current:hover {
+    color: #fff;
+}
+
+/* ==========================================================================
+   7. 单篇文章
+   ========================================================================== */
+.echo-single {
+    background: var(--echo-surface);
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius);
+    padding: 40px;
+    box-shadow: var(--echo-shadow);
+}
+
+.echo-single__header {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--echo-border);
+}
+
+.echo-single__title {
+    font-size: 2.2rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.4em;
+}
+
+.echo-single__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    color: var(--echo-text-muted);
+    font-size: 0.9rem;
+}
+
+.echo-single__meta a {
+    color: var(--echo-text-muted);
+}
+
+.echo-single__meta a:hover {
+    color: var(--echo-primary);
+}
+
+/* 正文排版 */
+.echo-entry-content {
+    font-size: 1.05rem;
+    line-height: 1.85;
+    color: var(--echo-text);
+}
+
+.echo-entry-content h2 {
+    font-size: 1.6rem;
+    margin-top: 2em;
+}
+
+.echo-entry-content h3 {
+    font-size: 1.3rem;
+    margin-top: 1.8em;
+}
+
+.echo-entry-content a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.echo-entry-content blockquote {
+    margin: 1.5em 0;
+    padding: 16px 24px;
+    border-left: 4px solid var(--echo-primary);
+    background: var(--echo-bg-alt);
+    border-radius: 0 var(--echo-radius-sm) var(--echo-radius-sm) 0;
+    color: var(--echo-text-secondary);
+}
+
+.echo-entry-content code {
+    font-family: var(--echo-mono);
+    font-size: 0.9em;
+    background: var(--echo-bg-alt);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.echo-entry-content pre {
+    background: #0d1117;
+    color: #e6edf3;
+    padding: 20px;
+    border-radius: var(--echo-radius-sm);
+    overflow-x: auto;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.echo-entry-content pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+}
+
+.echo-entry-content img {
+    border-radius: var(--echo-radius-sm);
+}
+
+.echo-entry-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5em 0;
+}
+
+.echo-entry-content th,
+.echo-entry-content td {
+    border: 1px solid var(--echo-border);
+    padding: 10px 14px;
+    text-align: left;
+}
+
+.echo-entry-content th {
+    background: var(--echo-bg-alt);
+    font-weight: 600;
+}
+
+/* 文章标签 */
+.echo-tags {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--echo-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.echo-tags a {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: var(--echo-bg-alt);
+    color: var(--echo-text-secondary);
+    font-size: 0.85rem;
+    border: 1px solid var(--echo-border);
+    transition: all var(--echo-transition);
+}
+
+.echo-tags a:hover {
+    color: var(--echo-primary);
+    border-color: var(--echo-primary);
+}
+
+/* 上一篇/下一篇 */
+.echo-post-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 32px;
+}
+
+.echo-post-nav a {
+    display: block;
+    padding: 16px 20px;
+    background: var(--echo-surface);
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius);
+    box-shadow: var(--echo-shadow);
+    color: var(--echo-text-secondary);
+    font-size: 0.9rem;
+    transition: all var(--echo-transition);
+}
+
+.echo-post-nav a:hover {
+    border-color: var(--echo-primary);
+    color: var(--echo-primary);
+}
+
+.echo-post-nav__label {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--echo-text-muted);
+    margin-bottom: 4px;
+}
+
+/* ==========================================================================
+   8. 侧边栏
+   ========================================================================== */
+.echo-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: sticky;
+    top: 84px;
+}
+
+.echo-widget {
+    background: var(--echo-surface);
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius);
+    padding: 24px;
+    box-shadow: var(--echo-shadow);
+}
+
+.echo-widget__title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--echo-border);
+}
+
+.echo-widget ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.echo-widget ul li {
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--echo-border);
+}
+
+.echo-widget ul li:last-child {
+    border-bottom: none;
+}
+
+.echo-widget ul li a {
+    color: var(--echo-text-secondary);
+    font-size: 0.95rem;
+}
+
+.echo-widget ul li a:hover {
+    color: var(--echo-primary);
+}
+
+/* ==========================================================================
+   9. 评论
+   ========================================================================== */
+.echo-comments {
+    margin-top: 32px;
+    background: var(--echo-surface);
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius);
+    padding: 32px;
+    box-shadow: var(--echo-shadow);
+}
+
+.echo-comments__title {
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+}
+
+.comment-list {
+    list-style: none;
+    margin: 0 0 24px;
+    padding: 0;
+}
+
+.comment-list .comment {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--echo-border);
+}
+
+.comment-meta {
+    font-size: 0.85rem;
+    color: var(--echo-text-muted);
+    margin-bottom: 8px;
+}
+
+.comment-author .fn {
+    font-weight: 700;
+    color: var(--echo-text);
+    font-style: normal;
+}
+
+.comment-reply-link {
+    font-size: 0.8rem;
+}
+
+.comment-form label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.comment-form input[type="text"],
+.comment-form input[type="email"],
+.comment-form input[type="url"],
+.comment-form textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius-sm);
+    font-family: inherit;
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+    outline: none;
+    transition: border-color var(--echo-transition);
+}
+
+.comment-form input:focus,
+.comment-form textarea:focus {
+    border-color: var(--echo-primary);
+}
+
+.comment-form .submit {
+    padding: 10px 22px;
+    border: none;
+    border-radius: var(--echo-radius-sm);
+    background: var(--echo-primary);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--echo-transition);
+}
+
+.comment-form .submit:hover {
+    background: var(--echo-primary-hover);
+}
+
+/* ==========================================================================
+   10. 页脚
+   ========================================================================== */
+.echo-footer {
+    background: var(--echo-surface);
+    border-top: 1px solid var(--echo-border);
+    margin-top: 40px;
+    padding: 32px 0;
+}
+
+.echo-footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--echo-text-muted);
+    font-size: 0.9rem;
+}
+
+.echo-footer__inner a {
+    color: var(--echo-text-secondary);
+}
+
+.echo-footer__inner a:hover {
+    color: var(--echo-primary);
+}
+
+/* ==========================================================================
+   11. 404 页面
+   ========================================================================== */
+.echo-404 {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.echo-404__code {
+    font-size: 6rem;
+    font-weight: 800;
+    color: var(--echo-primary);
+    line-height: 1;
+    margin-bottom: 16px;
+}
+
+.echo-404__text {
+    color: var(--echo-text-secondary);
+    font-size: 1.2rem;
+    margin-bottom: 32px;
+}
+
+/* ==========================================================================
+   12. 页面标题横幅
+   ========================================================================== */
+.echo-page-header {
+    background: var(--echo-surface);
+    border-bottom: 1px solid var(--echo-border);
+    padding: 40px 0;
+    margin-bottom: 32px;
+}
+
+.echo-page-header__title {
+    font-size: 2rem;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.echo-page-header__desc {
+    color: var(--echo-text-secondary);
+    margin: 8px 0 0;
+}
+
+/* ==========================================================================
+   13. 响应式
+   ========================================================================== */
+@media (max-width: 1024px) {
+    .echo-layout {
+        grid-template-columns: minmax(0, 1fr) 280px;
+        gap: 24px;
+    }
+}
+
+@media (max-width: 860px) {
+    .echo-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .echo-sidebar {
+        position: static;
+        order: 2;
+    }
+
+    .echo-main {
+        order: 1;
+    }
+
+    .echo-nav {
+        display: none;
+        position: absolute;
+        top: 64px;
+        left: 0;
+        right: 0;
+        background: var(--echo-surface);
+        border-bottom: 1px solid var(--echo-border);
+        padding: 12px 20px;
+        flex-direction: column;
+        align-items: stretch;
+        box-shadow: var(--echo-shadow-lg);
+    }
+
+    .echo-nav.is-open {
+        display: flex;
+    }
+
+    .echo-nav ul {
+        flex-direction: column;
+    }
+
+    .echo-nav li a {
+        display: block;
+        padding: 12px 14px;
+    }
+
+    .echo-nav-toggle {
+        display: flex;
+    }
+
+    .echo-search-toggle {
+        margin-left: 0;
+    }
+
+    .echo-single {
+        padding: 24px;
+    }
+
+    .echo-single__title {
+        font-size: 1.7rem;
+    }
+
+    .echo-post-nav {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .echo-card {
+        padding: 20px;
+    }
+
+    .echo-thumbnail {
+        margin: -20px -20px 16px;
+    }
+
+    .echo-card__title {
+        font-size: 1.3rem;
+    }
+
+    .echo-single__title {
+        font-size: 1.5rem;
+    }
+}
+
+/* ==========================================================================
+   14. 云湖 OAuth2 登录插件适配（wp-yunhu-oauth）
+   ========================================================================== */
+/*
+ * 云湖插件在前端通过短代码 [yunhu_login] 或 wp-login 页输出
+ * `.yunhu-oauth-button` 按钮，默认是插件自带的蓝色。这里将其
+ * 重映射到 Echo 主题的设计语言，使按钮融入站点整体风格。
+ */
+
+/* 登录按钮：统一为主题主色、圆角与阴影 */
+.yunhu-oauth-button.button,
+a.yunhu-oauth-button {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 20px;
+    border: 1px solid var(--echo-primary);
+    border-radius: var(--echo-radius-sm);
+    background: var(--echo-primary);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.5;
+    text-decoration: none;
+    box-shadow: var(--echo-shadow);
+    transition: background var(--echo-transition), border-color var(--echo-transition), box-shadow var(--echo-transition);
+}
+
+.yunhu-oauth-button.button:hover,
+.yunhu-oauth-button.button:focus,
+a.yunhu-oauth-button:hover,
+a.yunhu-oauth-button:focus {
+    border-color: var(--echo-primary-hover);
+    background: var(--echo-primary-hover);
+    color: #fff;
+    box-shadow: var(--echo-shadow-lg);
+}
+
+.yunhu-oauth-button.button:active,
+a.yunhu-oauth-button:active {
+    background: var(--echo-primary-hover);
+    border-color: var(--echo-primary-hover);
+}
+
+.yunhu-oauth-button.button:focus-visible,
+a.yunhu-oauth-button:focus-visible {
+    outline: 2px solid var(--echo-primary);
+    outline-offset: 2px;
+}
+
+/* 分隔线："或" 字样，颜色贴合主题 */
+.yunhu-oauth-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 18px 0 14px;
+    color: var(--echo-text-muted);
+    font-size: 12px;
+    line-height: 1;
+}
+
+.yunhu-oauth-divider::before,
+.yunhu-oauth-divider::after {
+    content: "";
+    flex: 1 1 auto;
+    height: 1px;
+    background: var(--echo-border);
+}
+
+.yunhu-oauth-actions {
+    margin: 0 0 10px;
+}
+
+/* 登录页错误提示：沿用主题红色警示风格 */
+.yunhu-oauth-error {
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    border-radius: var(--echo-radius-sm);
+    background: #fef2f2;
+    border-left: 4px solid #dc2626;
+    color: #b91c1c;
+    font-size: 0.9rem;
+}
+
+/* 头像（云湖插件通过 get_avatar 输出标准 .avatar，圆角裁切与主题一致） */
+.echo-comments .avatar,
+.echo-single__author .avatar {
+    border-radius: 50%;
+    object-fit: cover;
+}

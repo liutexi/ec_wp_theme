@@ -1,0 +1,209 @@
+<?php
+/**
+ * Echo 主题函数文件
+ *
+ * @package Echo
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+// 主题常量
+define( 'ECHO_VERSION', '0.0.1' );
+
+// 引入主题自定义器
+require get_template_directory() . '/inc/customizer.php';
+
+/**
+ * 主题初始化设置
+ */
+function echo_setup() {
+	// 加载翻译
+	load_theme_textdomain( 'echo', get_template_directory() . '/languages' );
+
+	// 让 WordPress 管理 <title> 标签
+	add_theme_support( 'title-tag' );
+
+	// 特色图片（文章缩略图）
+	add_theme_support( 'post-thumbnails' );
+	set_post_thumbnail_size( 1200, 630, true );
+
+	// 自定义 logo
+	add_theme_support(
+		'custom-logo',
+		array(
+			'height'      => 60,
+			'width'       => 200,
+			'flex-height' => true,
+			'flex-width'  => true,
+		)
+	);
+
+	// 自动 feed 链接
+	add_theme_support( 'automatic-feed-links' );
+
+	// HTML5 标记
+	add_theme_support(
+		'html5',
+		array( 'search-form', 'comment-form', 'comment-list', 'gallery', 'caption', 'style', 'script' )
+	);
+
+	// 自定义背景与头部（可选）
+	add_theme_support( 'custom-background' );
+
+	// 注册导航菜单
+	register_nav_menus(
+		array(
+			'primary' => __( '主菜单', 'echo' ),
+			'footer'  => __( '页脚菜单', 'echo' ),
+		)
+	);
+
+	// 内容宽度
+	$GLOBALS['content_width'] = 1180;
+}
+add_action( 'after_setup_theme', 'echo_setup' );
+
+/**
+ * 注册小工具区域（侧边栏）
+ */
+function echo_widgets_init() {
+	register_sidebar(
+		array(
+			'name'          => __( '侧边栏', 'echo' ),
+			'id'            => 'sidebar-1',
+			'description'   => __( '显示在文章/页面右侧的小工具区域。', 'echo' ),
+			'before_widget' => '<section id="%1$s" class="echo-widget %2$s">',
+			'after_widget'  => '</section>',
+			'before_title'  => '<h3 class="echo-widget__title">',
+			'after_title'   => '</h3>',
+		)
+	);
+}
+add_action( 'widgets_init', 'echo_widgets_init' );
+
+/**
+ * 加载主题样式与脚本
+ */
+function echo_scripts() {
+	// 主样式
+	wp_enqueue_style( 'echo-style', get_stylesheet_uri(), array(), ECHO_VERSION );
+
+	// 交互脚本
+	wp_enqueue_script( 'echo-main', get_template_directory_uri() . '/assets/js/main.js', array(), ECHO_VERSION, true );
+
+	// 评论回复脚本
+	if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
+		wp_enqueue_script( 'comment-reply' );
+	}
+}
+add_action( 'wp_enqueue_scripts', 'echo_scripts' );
+
+/**
+ * 文章摘要：控制长度并保留换行
+ *
+ * @param int $length 摘要字数。
+ * @return int
+ */
+function echo_excerpt_length( $length ) {
+	return 28;
+}
+add_filter( 'excerpt_length', 'echo_excerpt_length' );
+
+/**
+ * 修改摘要结尾符号
+ *
+ * @param string $more 默认的 [...]
+ * @return string
+ */
+function echo_excerpt_more( $more ) {
+	return '…';
+}
+add_filter( 'excerpt_more', 'echo_excerpt_more' );
+
+/**
+ * 给正文图片添加 loading="lazy"
+ */
+function echo_add_lazy_loading( $attr ) {
+	if ( ! is_admin() ) {
+		$attr['loading'] = 'lazy';
+	}
+	return $attr;
+}
+add_filter( 'wp_get_attachment_image_attributes', 'echo_add_lazy_loading' );
+
+/**
+ * 自定义头部 class，方便样式控制
+ *
+ * @param array $classes 已有的 class。
+ * @return array
+ */
+function echo_body_classes( $classes ) {
+	if ( ! is_singular() ) {
+		$classes[] = 'echo-archive';
+	}
+	if ( is_home() || is_front_page() ) {
+		$classes[] = 'echo-home';
+	}
+	return $classes;
+}
+add_filter( 'body_class', 'echo_body_classes' );
+
+/**
+ * 获取文章分类标签（用于卡片展示）
+ *
+ * @return string
+ */
+function echo_get_categories() {
+	$categories = get_the_category();
+	if ( empty( $categories ) ) {
+		return '';
+	}
+
+	$output = '';
+	foreach ( $categories as $category ) {
+		$output .= '<a class="echo-category-badge" href="' . esc_url( get_category_link( $category->term_id ) ) . '">'
+			. esc_html( $category->name ) . '</a>';
+	}
+	return $output;
+}
+
+/**
+ * 打印站点 Logo 或站点名
+ */
+function echo_site_logo() {
+	if ( has_custom_logo() ) {
+		the_custom_logo();
+	} else {
+		echo '<span class="echo-brand__dot"></span>';
+		echo '<a class="echo-brand" href="' . esc_url( home_url( '/' ) ) . '" rel="home">' . get_bloginfo( 'name' ) . '</a>';
+	}
+}
+
+/**
+ * 分页导航
+ */
+function echo_pagination() {
+	the_posts_pagination(
+		array(
+			'mid_size'  => 2,
+			'prev_text' => __( '上一页', 'echo' ),
+			'next_text' => __( '下一页', 'echo' ),
+		)
+	);
+}
+
+/**
+ * 菜单回退函数：当未设置菜单时显示页面列表
+ */
+function echo_menu_fallback() {
+	echo '<ul id="echo-primary-menu">';
+	wp_list_pages(
+		array(
+			'title_li' => '',
+			'depth'    => 1,
+		)
+	);
+	echo '</ul>';
+}
