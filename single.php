@@ -24,7 +24,7 @@ get_header();
 
 							<div class="echo-single__meta">
 								<span class="echo-single__author">
-									<?php esc_html_e( '作者：', 'echo' ); ?>
+									<?php echo get_avatar( get_the_author_meta( 'ID' ), 28 ); ?>
 									<a href="<?php echo esc_url( get_author_posts_url( get_the_author_meta( 'ID' ) ) ); ?>">
 										<?php the_author(); ?>
 									</a>
