@@ -7,6 +7,9 @@
 	document.addEventListener('DOMContentLoaded', function () {
 		initMobileNav();
 		initSearchOverlay();
+		initReadingProgress();
+		initBackToTop();
+		initPasswordToggle();
 	});
 
 	/**
@@ -84,6 +87,77 @@
 			if (e.key === 'Escape' && overlay.classList.contains('is-open')) {
 				closeSearch();
 			}
+		});
+	}
+
+	/**
+	 * 文章阅读进度条（仅当容器存在时启用）
+	 */
+	function initReadingProgress() {
+		var bar = document.querySelector('.echo-reading-progress__bar');
+		if (!bar) {
+			return;
+		}
+
+		function update() {
+			var doc = document.documentElement;
+			var scrollable = doc.scrollHeight - window.innerHeight;
+			var pct = scrollable > 0 ? (window.pageYOffset / scrollable) * 100 : 0;
+			bar.style.width = Math.min(100, Math.max(0, pct)) + '%';
+		}
+
+		update();
+		window.addEventListener('scroll', update, { passive: true });
+		window.addEventListener('resize', update);
+	}
+
+	/**
+	 * 返回顶部按钮（仅当容器存在时启用）
+	 */
+	function initBackToTop() {
+		var btn = document.querySelector('.echo-back-to-top');
+		if (!btn) {
+			return;
+		}
+
+		function update() {
+			btn.classList.toggle('is-visible', window.pageYOffset > 400);
+		}
+
+		update();
+		window.addEventListener('scroll', update, { passive: true });
+
+		btn.addEventListener('click', function () {
+			var smooth = getComputedStyle(document.documentElement).scrollBehavior === 'smooth';
+			try {
+				window.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' });
+			} catch (e) {
+				window.scrollTo(0, 0);
+			}
+		});
+	}
+
+	/**
+	 * 密码显隐切换（登录 / 注册表单）
+	 */
+	function initPasswordToggle() {
+		var buttons = document.querySelectorAll('.echo-auth__eye');
+		if (!buttons.length) {
+			return;
+		}
+
+		Array.prototype.forEach.call(buttons, function (btn) {
+			btn.addEventListener('click', function () {
+				var wrap = btn.closest('.echo-auth__pwd-wrap');
+				var input = wrap ? wrap.querySelector('input') : null;
+				if (!input) {
+					return;
+				}
+				var show = input.getAttribute('type') === 'password';
+				input.setAttribute('type', show ? 'text' : 'password');
+				btn.classList.toggle('is-visible', show);
+				btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+			});
 		});
 	}
 })();
