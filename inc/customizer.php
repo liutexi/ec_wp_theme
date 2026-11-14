@@ -374,14 +374,8 @@ function echo_settings_page_html() {
 	}
 	?>
 	<div class="wrap echo-settings-wrap">
-		<div class="echo-settings-hero">
-			<div class="echo-settings-hero__icon">🎨</div>
-			<div class="echo-settings-hero__text">
-				<h1><?php esc_html_e( 'Echo 主题设置', 'echo' ); ?></h1>
-				<p><?php esc_html_e( '自定义站点外观与显示选项，修改后即时生效', 'echo' ); ?></p>
-			</div>
-			<span class="echo-settings-hero__version">v<?php echo esc_html( ECHO_VERSION ); ?></span>
-		</div>
+		<h1 class="echo-settings-title"><?php esc_html_e( 'Echo 主题设置', 'echo' ); ?></h1>
+		<p class="echo-settings-intro"><?php esc_html_e( '自定义站点外观与显示选项。', 'echo' ); ?></p>
 
 		<form method="post" action="options.php">
 			<?php
