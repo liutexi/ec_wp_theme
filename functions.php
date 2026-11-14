@@ -12,6 +12,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 // 主题常量
 define( 'ECHO_VERSION', '0.0.1' );
 
+// 主题仓库地址：前台 / 后台页脚与 Theme URI 统一引用，避免写错
+define( 'ECHO_REPO_URL', 'https://github.com/liutexi/ec_wp_theme' );
+
 // 引入主题自定义器
 require get_template_directory() . '/inc/customizer.php';
 
@@ -296,7 +299,7 @@ function echo_comment( $comment, $args, $depth ) {
  */
 function echo_admin_footer_text( $text ) {
 	$wp_url   = 'https://wordpress.org/';
-	$repo_url = apply_filters( 'echo_footer_repo_url', 'https://github.com/ec_wp_theme' );
+	$repo_url = apply_filters( 'echo_footer_repo_url', ECHO_REPO_URL );
 
 	return '感谢使用 <a href="' . esc_url( $wp_url ) . '" target="_blank" rel="noopener noreferrer">WordPress</a>'
 		. ' 和 <a href="' . esc_url( $repo_url ) . '" target="_blank" rel="noopener noreferrer">Echo 主题</a> 协作。';
