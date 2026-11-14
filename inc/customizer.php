@@ -284,9 +284,10 @@ function echo_sanitize_settings( $input ) {
 
 	$output['footer_text'] = isset( $input['footer_text'] ) ? wp_kses_post( $input['footer_text'] ) : '';
 
-	$output['footer_credit'] = ! empty( $input['footer_credit'] );
-	$output['hide_tagline']  = ! empty( $input['hide_tagline'] );
-	$output['hide_admin_bar'] = ! empty( $input['hide_admin_bar'] );
+	// 复选框：勾选时值为 "1"，未勾选时字段不提交，需分别处理
+	$output['footer_credit']  = isset( $input['footer_credit'] ) && '1' === (string) $input['footer_credit'];
+	$output['hide_tagline']   = isset( $input['hide_tagline'] ) && '1' === (string) $input['hide_tagline'];
+	$output['hide_admin_bar'] = isset( $input['hide_admin_bar'] ) && '1' === (string) $input['hide_admin_bar'];
 
 	return $output;
 }
@@ -466,7 +467,7 @@ function echo_field_checkbox( $args ) {
 	$key   = $args['label_for'];
 	$value = echo_get_setting( $key, false );
 	printf(
-		'<input type="checkbox" id="%1$s" name="echo_settings[%1$s]" value="1" %2$s />',
+		'<input type="checkbox" id="%1$s" name="echo_settings[%1$s]" value="1" %2$s data-instant="1" data-key="%1$s" />',
 		esc_attr( $key ),
 		checked( $value, true, false )
 	);
@@ -497,7 +498,17 @@ function echo_settings_enqueue( $hook ) {
 		true
 	);
 
-	// 设置页内联样式（Logo 预览框）
+	// 传递 AJAX 数据给前端脚本
+	wp_localize_script(
+		'echo-settings-js',
+		'echoSettingsData',
+		array(
+			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+			'nonce'   => wp_create_nonce( 'echo_settings_nonce' ),
+		)
+	);
+
+	// 设置页内联样式（Logo 预览框 + 右下角 toast）
 	$admin_css = '
 		.echo-logo-preview-wrap {
 			margin-bottom: 10px;
@@ -519,6 +530,32 @@ function echo_settings_enqueue( $hook ) {
 		}
 		.echo-logo-placeholder {
 			color: #8c8f94;
+		}
+		.echo-toast {
+			position: fixed;
+			right: 24px;
+			bottom: 24px;
+			z-index: 999999;
+			padding: 12px 20px;
+			border-radius: 8px;
+			font-size: 14px;
+			line-height: 1.4;
+			color: #fff;
+			box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+			opacity: 0;
+			transform: translateY(16px);
+			pointer-events: none;
+			transition: opacity 0.25s ease, transform 0.25s ease;
+		}
+		.echo-toast--show {
+			opacity: 1;
+			transform: translateY(0);
+		}
+		.echo-toast--success {
+			background: #16a34a;
+		}
+		.echo-toast--error {
+			background: #dc2626;
 		}
 	';
 	wp_add_inline_style( 'wp-color-picker', $admin_css );
@@ -573,6 +610,66 @@ function echo_hide_admin_bar( $show ) {
 	return $show;
 }
 add_filter( 'show_admin_bar', 'echo_hide_admin_bar' );
+
+/**
+ * AJAX：即时保存单个设置项（用于开关等即时生效字段）
+ *
+ * @return void
+ */
+function echo_ajax_save_setting() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( array( 'message' => __( '无权限', 'echo' ) ), 403 );
+	}
+
+	check_ajax_referer( 'echo_settings_nonce', 'nonce' );
+
+	$key = isset( $_POST['key'] ) ? sanitize_key( wp_unslash( $_POST['key'] ) ) : '';
+	$val = isset( $_POST['value'] ) ? wp_unslash( $_POST['value'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+	// 仅允许白名单内的键，防止任意写入
+	$allowed = array( 'hide_admin_bar', 'footer_credit', 'hide_tagline', 'primary_color', 'sidebar_position', 'content_width' );
+
+	if ( ! in_array( $key, $allowed, true ) ) {
+		wp_send_json_error( array( 'message' => __( '非法的设置项', 'echo' ) ), 400 );
+	}
+
+	$settings = echo_get_settings();
+
+	// 按类型清洗
+	switch ( $key ) {
+		case 'hide_admin_bar':
+		case 'footer_credit':
+		case 'hide_tagline':
+			$settings[ $key ] = ( '1' === (string) $val || 'true' === (string) $val || true === $val );
+			break;
+
+		case 'primary_color':
+			$clean = sanitize_hex_color( $val );
+			if ( '' !== $clean ) {
+				$settings[ $key ] = $clean;
+			}
+			break;
+
+		case 'sidebar_position':
+			$settings[ $key ] = ( 'left' === $val ) ? 'left' : 'right';
+			break;
+
+		case 'content_width':
+			$settings[ $key ] = max( 800, min( 1600, absint( $val ) ) );
+			break;
+	}
+
+	update_option( ECHO_OPTION, $settings );
+
+	wp_send_json_success(
+		array(
+			'message' => __( '已保存', 'echo' ),
+			'key'     => $key,
+			'value'   => $settings[ $key ],
+		)
+	);
+}
+add_action( 'wp_ajax_echo_save_setting', 'echo_ajax_save_setting' );
 
 /**
  * 调整十六进制颜色亮度（负值加深，正值提亮）
