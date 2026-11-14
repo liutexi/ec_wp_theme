@@ -889,3 +889,25 @@ body.echo-style-miuix .echo-user-alert--success,
     background: #eaf7ef;
     color: #1a7f43;
 }
+
+body.echo-style-miuix .echo-user-avatar-fieldset,
+.echo-user--miuix .echo-user-avatar-fieldset {
+    border-color: var(--miuix-divider, #e0e0e0);
+}
+
+body.echo-style-miuix .echo-user-avatar-row__img,
+.echo-user--miuix .echo-user-avatar-row__img {
+    border: 0;
+}
+
+body.echo-style-miuix .echo-user-field input[type="file"],
+.echo-user--miuix .echo-user-field input[type="file"] {
+    border: 0;
+    border-radius: 16px;
+    background: var(--miuix-secondary-container, #f0f0f0);
+}
+
+body.echo-style-miuix .echo-user-field input[type="file"]::file-selector-button,
+.echo-user--miuix .echo-user-field input[type="file"]::file-selector-button {
+    border-radius: 999px;
+}
