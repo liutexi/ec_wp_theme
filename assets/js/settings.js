@@ -15,6 +15,7 @@
 		initSwitchState();
 		initCategoryManager();
 		initPostManager();
+		initBackupManager();
 		initToast();
 	});
 
@@ -269,6 +270,155 @@
 			}
 
 			request({ op: 'bulk_category', ids: ids, cat: cat });
+		});
+	}
+
+	/**
+	 * 配置备份 / 导出 / 导入
+	 */
+	function initBackupManager() {
+		var $root = $('#echo-backup-manager');
+		if (!$root.length) { return; }
+
+		var $data = $('#echo-ajax-data');
+		var url = $data.data('ajax-url');
+		var nonce = $data.data('nonce');
+		var $rows = $('#echo-backup-rows');
+
+		function request(payload, opts) {
+			opts = opts || {};
+			var ajaxOpts = {
+				url: url,
+				type: 'POST',
+				dataType: 'json',
+				data: payload,
+				success: function (res) {
+					if (res && res.success) {
+						if (res.data.rows) { $rows.html(res.data.rows); }
+						if (res.data.next !== undefined) {
+							$root.find('.echo-backup-next').text(
+								res.data.next ? ('下次自动备份：' + res.data.next) : '定时备份未启用。WP-Cron 依赖站点访问触发，低频站点可能延迟。'
+							);
+						}
+						if (opts.onSuccess) { opts.onSuccess(res.data); }
+						if (res.data.message) { showToast(res.data.message, 'success'); }
+					} else {
+						showToast((res && res.data && res.data.message) || '操作失败', 'error');
+					}
+				},
+				error: function (xhr) {
+					var msg = '操作失败，请重试';
+					try {
+						var r = JSON.parse(xhr.responseText);
+						if (r && r.data && r.data.message) { msg = r.data.message; }
+					} catch (e) {}
+					showToast(msg, 'error');
+				}
+			};
+
+			payload.action = 'echo_backup_action';
+			payload.nonce = nonce;
+
+			if (opts.formData) {
+				var fd = new FormData();
+				Object.keys(payload).forEach(function (k) { fd.append(k, payload[k]); });
+				fd.append('import_file', opts.formData);
+				ajaxOpts.data = fd;
+				ajaxOpts.processData = false;
+				ajaxOpts.contentType = false;
+			}
+
+			$.ajax(ajaxOpts);
+		}
+
+		function downloadJson(filename, content) {
+			var blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+			var link = document.createElement('a');
+			link.href = URL.createObjectURL(blob);
+			link.download = filename;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			setTimeout(function () { URL.revokeObjectURL(link.href); }, 1000);
+		}
+
+		// 开关状态文字
+		$root.on('change', '.echo-backup-enabled', function () {
+			$root.find('.echo-backup-enabled').siblings('.echo-switch-state').text(
+				$(this).is(':checked') ? '已开启' : '已关闭'
+			);
+		});
+
+		// 保存定时设置
+		$root.on('click', '.echo-backup-save-options', function () {
+			request({
+				op: 'save_options',
+				enabled: $root.find('.echo-backup-enabled').is(':checked') ? '1' : '0',
+				frequency: $root.find('.echo-backup-frequency').val(),
+				keep: $root.find('.echo-backup-keep').val()
+			});
+		});
+
+		// 立即备份
+		$root.on('click', '.echo-backup-now', function () {
+			request({ op: 'backup_now' });
+		});
+
+		// 导出
+		$root.on('click', '.echo-backup-export', function () {
+			request({ op: 'export' }, {
+				onSuccess: function (d) { downloadJson(d.filename, d.content); }
+			});
+		});
+
+		// 导入
+		$root.on('submit', '.echo-backup-import-form', function (e) {
+			e.preventDefault();
+			var input = $root.find('.echo-backup-import-file')[0];
+			if (!input || !input.files || !input.files[0]) {
+				showToast('请选择配置文件', 'error');
+				return;
+			}
+			var file = input.files[0];
+			if (file.size > 1048576) {
+				showToast('配置文件过大（上限 1MB）', 'error');
+				return;
+			}
+			if (!window.confirm('导入会覆盖当前配置（导入前会自动备份一份）。确定继续？')) {
+				return;
+			}
+			request({ op: 'import' }, {
+				formData: file,
+				onSuccess: function () {
+					$root.find('.echo-backup-import-form')[0].reset();
+				}
+			});
+		});
+
+		// 下载备份
+		$root.on('click', '.echo-backup-download', function () {
+			var file = $(this).closest('.echo-backup-row').data('file');
+			request({ op: 'download', file: file }, {
+				onSuccess: function (d) { downloadJson(d.filename, d.content); }
+			});
+		});
+
+		// 恢复备份
+		$root.on('click', '.echo-backup-restore', function () {
+			var file = $(this).closest('.echo-backup-row').data('file');
+			if (!window.confirm('确定用这份备份覆盖当前配置？（恢复前会自动备份当前配置）')) {
+				return;
+			}
+			request({ op: 'restore', file: file });
+		});
+
+		// 删除备份
+		$root.on('click', '.echo-backup-delete', function () {
+			var file = $(this).closest('.echo-backup-row').data('file');
+			if (!window.confirm('确定删除备份 ' + file + '？')) {
+				return;
+			}
+			request({ op: 'delete', file: file });
 		});
 	}
 
