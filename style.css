@@ -142,6 +142,26 @@ ul, ol {
     letter-spacing: -0.02em;
 }
 
+.echo-brand__link {
+    display: inline-flex;
+    align-items: center;
+    color: var(--echo-text);
+    transition: color var(--echo-transition);
+}
+
+.echo-brand__link:hover {
+    color: var(--echo-primary);
+}
+
+/* 自定义 logo 图片 */
+.echo-brand__logo {
+    display: block;
+    height: 40px;
+    width: auto;
+    max-height: 40px;
+    object-fit: contain;
+}
+
 .echo-brand:hover {
     color: var(--echo-primary);
 }

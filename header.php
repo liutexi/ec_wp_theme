@@ -22,10 +22,13 @@
 		<div class="echo-brand">
 			<?php
 			if ( has_custom_logo() ) {
-				the_custom_logo();
+				// 输出自定义 logo 图片，并包一层首页链接
+				$echo_custom_logo_id = get_theme_mod( 'custom_logo' );
+				$echo_logo_image     = wp_get_attachment_image( $echo_custom_logo_id, 'full', false, array( 'class' => 'echo-brand__logo' ) );
+				echo '<a class="echo-brand__link" href="' . esc_url( home_url( '/' ) ) . '" rel="home">' . $echo_logo_image . '</a>';
 			} else {
 				echo '<span class="echo-brand__dot"></span>';
-				echo '<a class="echo-brand" href="' . esc_url( home_url( '/' ) ) . '" rel="home">' . get_bloginfo( 'name' ) . '</a>';
+				echo '<a class="echo-brand__link" href="' . esc_url( home_url( '/' ) ) . '" rel="home">' . get_bloginfo( 'name' ) . '</a>';
 			}
 			?>
 		</div>

@@ -29,6 +29,8 @@ function echo_default_settings() {
 		'footer_text'      => '',
 		'footer_credit'    => true,
 		'hide_tagline'     => false,
+		'custom_logo'      => 0,
+		'hide_admin_bar'   => false,
 	);
 }
 
@@ -92,6 +94,48 @@ function echo_settings_init() {
 		)
 	);
 
+	// 站点标识（Logo、站点标题、副标题）
+	add_settings_section(
+		'echo_section_identity',
+		__( '站点标识', 'echo' ),
+		'__return_false',
+		'echo-settings'
+	);
+
+	add_settings_field(
+		'echo_custom_logo',
+		__( 'Logo', 'echo' ),
+		'echo_field_logo',
+		'echo-settings',
+		'echo_section_identity',
+		array(
+			'label_for' => 'echo_custom_logo',
+			'desc'      => __( '上传后显示在网站顶部导航栏，建议使用透明背景的 PNG。', 'echo' ),
+		)
+	);
+
+	add_settings_field(
+		'echo_site_title',
+		__( '站点标题', 'echo' ),
+		'echo_field_site_title',
+		'echo-settings',
+		'echo_section_identity',
+		array(
+			'label_for' => 'echo_site_title',
+		)
+	);
+
+	add_settings_field(
+		'echo_site_tagline',
+		__( '站点副标题', 'echo' ),
+		'echo_field_site_tagline',
+		'echo-settings',
+		'echo_section_identity',
+		array(
+			'label_for' => 'echo_site_tagline',
+		)
+	);
+
 	// 颜色
 	add_settings_section(
 		'echo_section_colors',
@@ -140,6 +184,18 @@ function echo_settings_init() {
 		array(
 			'label_for' => 'echo_content_width',
 			'desc'      => __( '整个页面内容的最大宽度（像素），默认 1180。', 'echo' ),
+		)
+	);
+
+	add_settings_field(
+		'echo_hide_admin_bar',
+		__( '隐藏前台管理员工具栏', 'echo' ),
+		'echo_field_checkbox',
+		'echo-settings',
+		'echo_section_layout',
+		array(
+			'label_for' => 'echo_hide_admin_bar',
+			'desc'      => __( '登录后访问前台时，隐藏页面顶部那条黑色管理员工具栏。', 'echo' ),
 		)
 	);
 
@@ -199,6 +255,23 @@ function echo_sanitize_settings( $input ) {
 	$defaults = echo_default_settings();
 	$output   = array();
 
+	// Logo：存附件 ID，并同步到 WordPress 的 custom_logo 选项
+	$output['custom_logo'] = isset( $input['custom_logo'] ) ? absint( $input['custom_logo'] ) : 0;
+	set_theme_mod( 'custom_logo', $output['custom_logo'] );
+
+	// 站点标题 / 副标题：同步到 WordPress 标准选项
+	if ( isset( $input['site_title'] ) ) {
+		$site_title = sanitize_text_field( $input['site_title'] );
+		if ( '' !== $site_title ) {
+			update_option( 'blogname', $site_title );
+		}
+	}
+
+	if ( isset( $input['site_tagline'] ) ) {
+		$site_tagline = sanitize_text_field( $input['site_tagline'] );
+		update_option( 'blogdescription', $site_tagline );
+	}
+
 	$output['primary_color'] = isset( $input['primary_color'] ) ? sanitize_hex_color( $input['primary_color'] ) : $defaults['primary_color'];
 	if ( '' === $output['primary_color'] ) {
 		$output['primary_color'] = $defaults['primary_color'];
@@ -213,6 +286,7 @@ function echo_sanitize_settings( $input ) {
 
 	$output['footer_credit'] = ! empty( $input['footer_credit'] );
 	$output['hide_tagline']  = ! empty( $input['hide_tagline'] );
+	$output['hide_admin_bar'] = ! empty( $input['hide_admin_bar'] );
 
 	return $output;
 }
@@ -244,6 +318,66 @@ function echo_settings_page_html() {
 /* ============================================================
  * 字段渲染
  * ============================================================ */
+
+/**
+ * Logo 上传字段（使用 WordPress 媒体库）
+ *
+ * @param array $args 字段参数。
+ * @return void
+ */
+function echo_field_logo( $args ) {
+	$logo_id = absint( echo_get_setting( 'custom_logo', get_theme_mod( 'custom_logo', 0 ) ) );
+	$preview = $logo_id ? wp_get_attachment_image( $logo_id, 'medium', false, array( 'class' => 'echo-logo-preview' ) ) : '';
+	?>
+	<div class="echo-logo-field">
+		<div class="echo-logo-preview-wrap">
+			<?php
+			if ( '' !== $preview ) {
+				echo $preview; // phpcs:ignore WordPress.Security.EscapeOutput
+			} else {
+				echo '<span class="echo-logo-placeholder">' . esc_html__( '尚未上传 Logo', 'echo' ) . '</span>';
+			}
+			?>
+		</div>
+		<input type="hidden" id="echo_custom_logo" name="echo_settings[custom_logo]" value="<?php echo esc_attr( $logo_id ); ?>" />
+		<p>
+			<button type="button" class="button echo-logo-upload"><?php esc_html_e( '选择 / 上传 Logo', 'echo' ); ?></button>
+			<button type="button" class="button button-link-delete echo-logo-remove" <?php echo $logo_id ? '' : 'style="display:none;"'; ?>>
+				<?php esc_html_e( '移除', 'echo' ); ?>
+			</button>
+		</p>
+		<?php if ( ! empty( $args['desc'] ) ) : ?>
+			<p class="description"><?php echo esc_html( $args['desc'] ); ?></p>
+		<?php endif; ?>
+	</div>
+	<?php
+}
+
+/**
+ * 站点标题字段
+ *
+ * @param array $args 字段参数。
+ * @return void
+ */
+function echo_field_site_title( $args ) {
+	printf(
+		'<input type="text" id="echo_site_title" name="echo_settings[site_title]" value="%s" class="regular-text" />',
+		esc_attr( get_bloginfo( 'name' ) )
+	);
+}
+
+/**
+ * 站点副标题字段
+ *
+ * @param array $args 字段参数。
+ * @return void
+ */
+function echo_field_site_tagline( $args ) {
+	printf(
+		'<input type="text" id="echo_site_tagline" name="echo_settings[site_tagline]" value="%s" class="regular-text" />',
+		esc_attr( get_bloginfo( 'description' ) )
+	);
+}
 
 /**
  * 主题色字段
@@ -353,14 +487,41 @@ function echo_settings_enqueue( $hook ) {
 		return;
 	}
 
+	wp_enqueue_media(); // 媒体上传器
 	wp_enqueue_style( 'wp-color-picker' );
 	wp_enqueue_script(
 		'echo-settings-js',
 		get_template_directory_uri() . '/assets/js/settings.js',
-		array( 'wp-color-picker' ),
+		array( 'wp-color-picker', 'jquery' ),
 		ECHO_VERSION,
 		true
 	);
+
+	// 设置页内联样式（Logo 预览框）
+	$admin_css = '
+		.echo-logo-preview-wrap {
+			margin-bottom: 10px;
+			padding: 12px;
+			border: 1px dashed #c3c4c7;
+			border-radius: 4px;
+			background: #fff;
+			min-height: 60px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+		}
+		.echo-logo-preview {
+			max-height: 60px;
+			max-width: 200px;
+			width: auto;
+			height: auto;
+			display: block;
+		}
+		.echo-logo-placeholder {
+			color: #8c8f94;
+		}
+	';
+	wp_add_inline_style( 'wp-color-picker', $admin_css );
 }
 add_action( 'admin_enqueue_scripts', 'echo_settings_enqueue' );
 
@@ -391,6 +552,27 @@ function echo_settings_css() {
 	wp_add_inline_style( 'echo-settings-inline', $css );
 }
 add_action( 'wp_enqueue_scripts', 'echo_settings_css', 20 );
+
+/**
+ * 隐藏前台管理员工具栏（Admin Bar）
+ *
+ * 仅在启用设置时隐藏前台的黑条；后台不受影响。
+ *
+ * @param bool $show 是否显示。
+ * @return bool
+ */
+function echo_hide_admin_bar( $show ) {
+	if ( is_admin() ) {
+		return $show;
+	}
+
+	if ( echo_get_setting( 'hide_admin_bar', false ) ) {
+		return false;
+	}
+
+	return $show;
+}
+add_filter( 'show_admin_bar', 'echo_hide_admin_bar' );
 
 /**
  * 调整十六进制颜色亮度（负值加深，正值提亮）
