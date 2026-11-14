@@ -809,3 +809,12 @@ body.echo-style-miuix .echo-auth-nav-link,
 .echo-auth-nav-link {
     border-radius: 999px;
 }
+
+/* ==========================================================================
+   移动端头部对齐（Miuix 头部 60px）
+   ========================================================================== */
+@media (max-width: 860px) {
+    body.echo-style-miuix .echo-nav {
+        top: 60px;
+    }
+}
