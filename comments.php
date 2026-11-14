@@ -29,7 +29,8 @@ if ( post_password_required() ) {
 				array(
 					'style'       => 'ol',
 					'short_ping'  => true,
-					'avatar_size' => 44,
+					'avatar_size' => 48,
+					'callback'    => 'echo_comment',
 				)
 			);
 			?>
@@ -47,5 +48,16 @@ if ( post_password_required() ) {
 		?>
 	<?php endif; ?>
 
-	<?php comment_form(); ?>
+	<?php
+	comment_form(
+		array(
+			'title_reply'          => __( '发表评论', 'echo' ),
+			'title_reply_before'   => '<h3 id="reply-title" class="comment-reply-title">',
+			'title_reply_after'    => '</h3>',
+			'comment_notes_before' => '',
+			'label_submit'         => __( '提交评论', 'echo' ),
+			'class_submit'         => 'submit',
+		)
+	);
+	?>
 </div>
