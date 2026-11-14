@@ -1,108 +1,60 @@
 /**
  * Echo 主题设置页样式
- * 将 WordPress 默认的 form-table 重构为卡片式布局 + iOS 风格开关
+ * 遵循 WordPress 后台视觉习惯：白底、细边框、克制的圆角与配色。
+ * 仅在 .echo-settings-wrap 作用域内生效。
  */
 
 /* ==========================================================================
-   1. 页面基础
+   1. 页面标题
    ========================================================================== */
 .echo-settings-wrap {
-    max-width: 860px;
+    max-width: 900px;
     margin: 20px 20px 40px 0;
 }
 
-/* 顶部横幅 */
-.echo-settings-hero {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 24px 28px;
-    margin-bottom: 24px;
-    border-radius: 22px;
-    background: linear-gradient(135deg, #3482ff 0%, #5d9bff 55%, #7bb0ff 100%);
-    color: #fff;
-    box-shadow: 0 8px 28px rgba(52, 130, 255, 0.22);
-}
-
-.echo-settings-hero__icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    flex-shrink: 0;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.18);
-    font-size: 24px;
-    line-height: 1;
-}
-
-.echo-settings-hero__text h1 {
+.echo-settings-title {
     margin: 0 0 4px;
     padding: 0;
-    font-size: 20px;
-    font-weight: 700;
-    color: #fff;
+    font-size: 23px;
+    font-weight: 400;
     line-height: 1.3;
+    color: #1d2327;
 }
 
-.echo-settings-hero__text p {
-    margin: 0;
+.echo-settings-intro {
+    margin: 0 0 20px;
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.85);
-}
-
-.echo-settings-hero__version {
-    margin-left: auto;
-    padding: 4px 12px;
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.2);
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
+    color: #646970;
 }
 
 /* ==========================================================================
-   2. 卡片式分组
+   2. 分组（WP 原生表格，轻度收敛）
    ========================================================================== */
 .echo-settings-wrap form > h2 {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0;
-    padding: 16px 24px;
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-bottom: none;
-    border-radius: 12px 12px 0 0;
-    font-size: 15px;
-    font-weight: 700;
-    color: #1f2328;
-    line-height: 1.4;
+    margin: 24px 0 0;
+    padding: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2327;
+    border: none;
+    background: none;
 }
 
 .echo-settings-wrap form > h2::before {
-    content: "";
-    display: block;
-    width: 4px;
-    height: 16px;
-    border-radius: 2px;
-    background: #3482ff;
-    flex-shrink: 0;
+    content: none;
 }
 
 .echo-settings-wrap form > .form-table {
-    margin: 0 0 20px;
+    margin-top: 8px;
     background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 0 0 12px 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    border: 1px solid #c3c4c7;
+    border-radius: 2px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
     overflow: hidden;
 }
 
-/* 字段行 */
 .echo-settings-wrap .form-table > tbody > tr {
-    border-top: 1px solid #f0f1f3;
+    border-top: 1px solid #f0f0f1;
 }
 
 .echo-settings-wrap .form-table > tbody > tr:first-child {
@@ -110,68 +62,75 @@
 }
 
 .echo-settings-wrap .form-table > tbody > tr > th {
-    width: 200px;
-    padding: 20px 12px 20px 24px;
+    width: 190px;
+    padding: 16px 10px 16px 20px;
     font-size: 13px;
     font-weight: 600;
-    color: #1f2328;
+    color: #1d2327;
     vertical-align: top;
 }
 
 .echo-settings-wrap .form-table > tbody > tr > td {
-    padding: 18px 24px 18px 12px;
+    padding: 14px 20px 14px 10px;
     font-size: 13px;
-    color: #57606a;
+    color: #50575e;
     vertical-align: top;
 }
 
-/* 描述文字 */
 .echo-settings-wrap .form-table .description {
-    margin: 8px 0 0;
+    margin: 6px 0 0;
     font-size: 12px;
-    line-height: 1.6;
-    color: #8b949e;
+    line-height: 1.5;
+    color: #646970;
     font-style: normal;
 }
 
 /* ==========================================================================
-   3. iOS 风格开关（复选框）
+   3. 开关（克制版，保留点击即保存）
    ========================================================================== */
+.echo-switch-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+}
+
 .echo-settings-wrap .form-table input[type="checkbox"] {
     position: relative;
-    width: 44px;
-    height: 24px;
+    width: 36px;
+    height: 20px;
     margin: 0;
-    border: none;
-    border-radius: 12px;
-    background: #d0d5dd;
+    border: 1px solid #8c8f94;
+    border-radius: 10px;
+    background: #fff;
     box-shadow: none;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
-    transition: background 0.22s ease;
+    transition: background 0.15s ease, border-color 0.15s ease;
     vertical-align: middle;
 }
 
 .echo-settings-wrap .form-table input[type="checkbox"]::before {
     content: "";
     position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 18px;
-    height: 18px;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #8c8f94;
+    transition: transform 0.15s ease, background 0.15s ease;
 }
 
 .echo-settings-wrap .form-table input[type="checkbox"]:checked {
-    background: #3482ff;
+    background: #2271b1;
+    border-color: #2271b1;
 }
 
 .echo-settings-wrap .form-table input[type="checkbox"]:checked::before {
-    transform: translateX(20px);
+    background: #fff;
+    transform: translateX(16px);
 }
 
 .echo-settings-wrap .form-table input[type="checkbox"]:checked::after {
@@ -180,49 +139,40 @@
 
 .echo-settings-wrap .form-table input[type="checkbox"]:focus {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(52, 130, 255, 0.2);
-}
-
-/* 复选框右侧的「已启用/已关闭」状态文字 */
-.echo-switch-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2271b1;
 }
 
 .echo-switch-state {
+    min-width: 44px;
     font-size: 12px;
-    color: #8b949e;
-    min-width: 36px;
+    color: #646970;
 }
 
 .echo-switch-label input:checked ~ .echo-switch-state {
-    color: #3482ff;
-    font-weight: 600;
+    color: #2271b1;
 }
 
 /* ==========================================================================
-   4. 输入控件统一样式
+   4. 输入控件（WP 原生风格）
    ========================================================================== */
 .echo-settings-wrap .form-table input[type="text"],
 .echo-settings-wrap .form-table input[type="number"],
 .echo-settings-wrap .form-table textarea {
-    padding: 8px 12px;
-    border: 1px solid #d0d5dd;
-    border-radius: 8px;
+    padding: 6px 10px;
+    border: 1px solid #8c8f94;
+    border-radius: 3px;
     font-size: 13px;
     line-height: 1.5;
-    box-shadow: none;
-    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+    background: #fff;
 }
 
 .echo-settings-wrap .form-table input[type="text"]:focus,
 .echo-settings-wrap .form-table input[type="number"]:focus,
 .echo-settings-wrap .form-table textarea:focus {
-    border-color: #3482ff;
-    box-shadow: 0 0 0 3px rgba(52, 130, 255, 0.12);
-    outline: none;
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: 2px solid transparent;
 }
 
 .echo-settings-wrap .form-table .regular-text {
@@ -236,130 +186,185 @@
 }
 
 /* ==========================================================================
-   5. 侧边栏位置：可视化选项卡片
+   5. 界面风格 / 侧边栏：简洁的单选项
    ========================================================================== */
+.echo-style-choices,
 .echo-layout-choices {
     display: flex;
-    gap: 14px;
+    gap: 12px;
     flex-wrap: wrap;
 }
 
+.echo-style-choice,
 .echo-layout-choice {
     position: relative;
     display: block;
     cursor: pointer;
+    margin: 0;
 }
 
+.echo-style-choice input[type="radio"],
 .echo-layout-choice input[type="radio"] {
     position: absolute;
     opacity: 0;
     pointer-events: none;
 }
 
+.echo-style-choice__box,
 .echo-layout-choice__box {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 150px;
-    padding: 12px;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
+    display: block;
+    width: 148px;
+    padding: 10px;
+    border: 1px solid #c3c4c7;
+    border-radius: 3px;
     background: #fff;
-    transition: all 0.18s ease;
+    text-align: center;
+    transition: border-color 0.15s ease;
 }
 
+.echo-style-choice:hover .echo-style-choice__box,
 .echo-layout-choice:hover .echo-layout-choice__box {
-    border-color: #c7d2fe;
+    border-color: #8c8f94;
 }
 
+.echo-style-choice input:checked + .echo-style-choice__box,
 .echo-layout-choice input:checked + .echo-layout-choice__box {
-    border-color: #3482ff;
-    background: rgba(52, 130, 255, 0.04);
-    box-shadow: 0 0 0 3px rgba(52, 130, 255, 0.1);
+    border-color: #2271b1;
+    box-shadow: inset 0 0 0 1px #2271b1;
 }
 
-/* 布局示意图 */
+.echo-style-choice__label,
+.echo-layout-choice__label {
+    display: block;
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.echo-style-choice input:checked + .echo-style-choice__box .echo-style-choice__label,
+.echo-layout-choice input:checked + .echo-layout-choice__box .echo-layout-choice__label {
+    color: #2271b1;
+}
+
+.echo-style-choice__sub {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    color: #646970;
+}
+
+/* 缩略示意图 */
+.echo-style-mock,
 .echo-layout-preview {
     display: flex;
     gap: 4px;
-    height: 56px;
+    width: 100%;
+    height: 44px;
+    padding: 5px;
+    border-radius: 2px;
+    background: #f0f0f1;
+}
+
+.echo-style-mock {
+    flex-direction: column;
+}
+
+.echo-style-mock__bar {
+    height: 8px;
+    border-radius: 2px;
+    background: #dcdcde;
+}
+
+.echo-style-mock__card {
+    flex: 1;
+    border-radius: 2px;
+    background: #fff;
+    border: 1px solid #dcdcde;
+}
+
+.echo-style-choice__box--miuix .echo-style-mock__bar {
+    border-radius: 4px;
+    background: #e0e0e0;
+}
+
+.echo-style-choice__box--miuix .echo-style-mock__card {
+    border: none;
+    border-radius: 6px;
+}
+
+.echo-style-choice__box--miuix .echo-style-mock__card:last-child {
+    background: #eaf2ff;
+}
+
+.echo-layout-preview {
+    flex-direction: row;
+    align-items: stretch;
 }
 
 .echo-layout-preview__main {
     flex: 1;
-    border-radius: 4px;
-    background: #e5e7eb;
+    border-radius: 2px;
+    background: #dcdcde;
 }
 
 .echo-layout-preview__side {
-    width: 26px;
-    border-radius: 4px;
-    background: #cbd5e1;
+    width: 24px;
+    border-radius: 2px;
+    background: #c3c4c7;
 }
 
 .echo-layout-choice input:checked + .echo-layout-choice__box .echo-layout-preview__side {
-    background: #3482ff;
-}
-
-.echo-layout-choice__label {
-    font-size: 12px;
-    font-weight: 600;
-    color: #57606a;
-    text-align: center;
-}
-
-.echo-layout-choice input:checked + .echo-layout-choice__box .echo-layout-choice__label {
-    color: #3482ff;
+    background: #2271b1;
 }
 
 /* ==========================================================================
-   6. 主题色：预设色块
+   6. 主题色预设
    ========================================================================== */
 .echo-color-presets {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 6px;
+    margin-bottom: 10px;
 }
 
 .echo-color-preset {
-    width: 28px;
-    height: 28px;
-    border: 2px solid #fff;
-    border-radius: 50%;
-    box-shadow: 0 0 0 1px #e5e7eb;
-    cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    width: 22px;
+    height: 22px;
     padding: 0;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 2px;
+    box-shadow: none;
+    cursor: pointer;
+    transition: box-shadow 0.12s ease;
 }
 
 .echo-color-preset:hover {
-    transform: scale(1.12);
-    box-shadow: 0 0 0 2px rgba(52, 130, 255, 0.4);
+    box-shadow: 0 0 0 2px rgba(34, 113, 177, 0.35);
 }
 
 .echo-color-preset.is-active {
-    box-shadow: 0 0 0 2px #3482ff;
-    transform: scale(1.1);
+    box-shadow: 0 0 0 2px #2271b1;
 }
 
 /* ==========================================================================
-   7. 内容宽度：滑块
+   7. 内容宽度滑块
    ========================================================================== */
 .echo-width-control {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     flex-wrap: wrap;
 }
 
 .echo-width-control input[type="range"] {
     flex: 1;
-    min-width: 200px;
-    max-width: 320px;
-    height: 6px;
-    border-radius: 3px;
-    background: #e5e7eb;
+    min-width: 180px;
+    max-width: 300px;
+    height: 4px;
+    margin: 0;
+    border-radius: 2px;
+    background: #c3c4c7;
     appearance: none;
     -webkit-appearance: none;
     outline: none;
@@ -369,130 +374,130 @@
 .echo-width-control input[type="range"]::-webkit-slider-thumb {
     appearance: none;
     -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
+    border: 1px solid #8c8f94;
     border-radius: 50%;
-    background: #3482ff;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    background: #fff;
+    box-shadow: none;
     cursor: pointer;
-    transition: transform 0.15s ease;
-}
-
-.echo-width-control input[type="range"]::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
 }
 
 .echo-width-control input[type="range"]::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    border: none;
+    width: 16px;
+    height: 16px;
+    border: 1px solid #8c8f94;
     border-radius: 50%;
-    background: #3482ff;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    background: #fff;
+    box-shadow: none;
     cursor: pointer;
 }
 
 .echo-width-value {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    min-width: 70px;
-    padding: 6px 12px;
-    border-radius: 8px;
-    background: #f6f7f9;
-    border: 1px solid #e5e7eb;
-    font-size: 13px;
-    font-weight: 600;
-    color: #1f2328;
+    display: inline-block;
+    min-width: 62px;
+    padding: 4px 8px;
+    border: 1px solid #c3c4c7;
+    border-radius: 3px;
+    background: #f6f7f7;
+    font-size: 12px;
+    color: #1d2327;
     font-variant-numeric: tabular-nums;
+    text-align: center;
 }
 
 /* ==========================================================================
-   8. 分类选择列表
+   8. 分类列表
    ========================================================================== */
 .echo-category-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 6px;
-    max-height: 280px;
+    max-height: 240px;
     overflow-y: auto;
-    padding: 4px;
+    padding: 2px;
     margin: 0;
 }
 
 .echo-category-list label {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    gap: 7px;
+    padding: 6px 10px;
+    border: 1px solid #c3c4c7;
+    border-radius: 3px;
     background: #fff;
-    font-size: 13px;
-    color: #57606a;
+    font-size: 12px;
+    color: #50575e;
     cursor: pointer;
-    transition: all 0.15s ease;
 }
 
 .echo-category-list label:hover {
-    border-color: #c7d2fe;
-    background: #fafbff;
+    border-color: #8c8f94;
 }
 
 .echo-category-list label input[type="checkbox"] {
     width: 16px;
     height: 16px;
     margin: 0;
-    border: 1px solid #d0d5dd;
-    border-radius: 4px;
+    border: 1px solid #8c8f94;
+    border-radius: 2px;
     background: #fff;
     flex-shrink: 0;
 }
 
 .echo-category-list label input[type="checkbox"]:checked {
-    background: #3482ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='white'%3E%3Cpath d='M6.2 11.6L2.4 7.8l1.1-1.1 2.7 2.7 6-6 1.1 1.1z'/%3E%3C/svg%3E") center/12px no-repeat;
-    border-color: #3482ff;
+    background: #2271b1;
+    border-color: #2271b1;
 }
 
 .echo-category-list label input[type="checkbox"]:checked::before {
-    content: none;
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 5px;
+    width: 4px;
+    height: 8px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    background: transparent;
 }
 
 .echo-category-list label input[type="checkbox"]:checked ~ span,
 .echo-category-list label:has(input:checked) {
-    color: #3482ff;
-    border-color: #3482ff;
-    background: rgba(52, 130, 255, 0.04);
+    color: #2271b1;
+    border-color: #2271b1;
+    background: #f0f6fc;
 }
 
 /* ==========================================================================
-   9. 保存按钮区
+   9. 保存按钮
    ========================================================================== */
 .echo-settings-wrap .submit {
-    position: sticky;
-    bottom: 0;
-    margin: 0;
-    padding: 16px 0;
-    background: linear-gradient(to bottom, rgba(246, 247, 249, 0) 0%, #f6f7f9 40%);
+    margin: 20px 0 0;
+    padding: 0;
+    background: none;
+    position: static;
 }
 
 .echo-settings-wrap .submit .button-primary {
-    padding: 6px 28px;
+    padding: 5px 18px;
     height: auto;
-    border: none;
-    border-radius: 8px;
-    background: #3482ff;
-    font-size: 14px;
-    font-weight: 600;
+    border-radius: 3px;
+    background: #2271b1;
+    border-color: #2271b1;
+    font-size: 13px;
+    font-weight: 400;
     line-height: 1.6;
-    box-shadow: 0 2px 8px rgba(52, 130, 255, 0.25);
-    transition: all 0.18s ease;
+    box-shadow: none;
+    text-shadow: none;
 }
 
 .echo-settings-wrap .submit .button-primary:hover {
-    background: #277af7;
-    box-shadow: 0 4px 14px rgba(52, 130, 255, 0.32);
-    transform: translateY(-1px);
+    background: #135e96;
+    border-color: #135e96;
+    box-shadow: none;
 }
 
 /* ==========================================================================
@@ -502,51 +507,47 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 140px;
-    min-height: 64px;
-    margin-bottom: 12px;
-    padding: 14px 18px;
-    border: 2px dashed #d0d5dd;
-    border-radius: 10px;
-    background: #fafbfc;
-    transition: border-color 0.18s ease;
-}
-
-.echo-logo-preview-wrap:hover {
-    border-color: #c7d2fe;
+    min-width: 120px;
+    min-height: 56px;
+    margin-bottom: 10px;
+    padding: 10px 14px;
+    border: 1px dashed #c3c4c7;
+    border-radius: 3px;
+    background: #f6f7f7;
 }
 
 .echo-logo-preview {
     display: block;
-    max-width: 180px;
-    max-height: 56px;
+    max-width: 160px;
+    max-height: 48px;
     width: auto;
     height: auto;
 }
 
 .echo-logo-placeholder {
-    color: #8b949e;
+    color: #646970;
     font-size: 12px;
 }
 
 /* ==========================================================================
-   11. 右下角通知
+   11. 通知
    ========================================================================== */
 .echo-toast {
     position: fixed;
-    right: 24px;
-    bottom: 24px;
+    right: 20px;
+    bottom: 20px;
     z-index: 999999;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 14px;
-    line-height: 1.4;
-    color: #fff;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    padding: 10px 16px;
+    border-left: 4px solid #00a32a;
+    border-radius: 2px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    font-size: 13px;
+    color: #1d2327;
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(8px);
     pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .echo-toast--show {
@@ -554,135 +555,26 @@
     transform: translateY(0);
 }
 
-.echo-toast--success {
-    background: #16a34a;
-}
-
 .echo-toast--error {
-    background: #dc2626;
+    border-left-color: #d63638;
 }
 
 /* ==========================================================================
-   13. 界面风格选择
-   ========================================================================== */
-.echo-style-choices {
-    display: flex;
-    gap: 14px;
-    flex-wrap: wrap;
-}
-
-.echo-style-choice {
-    position: relative;
-    display: block;
-    cursor: pointer;
-}
-
-.echo-style-choice input[type="radio"] {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-}
-
-.echo-style-choice__box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    width: 150px;
-    padding: 14px 12px 12px;
-    border: 2px solid #e5e7eb;
-    border-radius: 14px;
-    background: #fff;
-    transition: all 0.18s ease;
-}
-
-.echo-style-choice:hover .echo-style-choice__box {
-    border-color: #c7d2fe;
-}
-
-.echo-style-choice input:checked + .echo-style-choice__box {
-    border-color: #3482ff;
-    background: rgba(52, 130, 255, 0.04);
-    box-shadow: 0 0 0 3px rgba(52, 130, 255, 0.12);
-}
-
-/* 风格缩略示意图 */
-.echo-style-mock {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    width: 100%;
-    height: 54px;
-    padding: 6px;
-    border-radius: 8px;
-    background: #f6f7f9;
-}
-
-.echo-style-mock__bar {
-    height: 10px;
-    border-radius: 4px;
-    background: #dfe3e8;
-}
-
-.echo-style-mock__card {
-    flex: 1;
-    border-radius: 4px;
-    background: #fff;
-    border: 1px solid #e8ebef;
-}
-
-/* Miuix 缩略图：大圆角 + 灰底白卡 + 蓝色点缀 */
-.echo-style-choice__box--miuix .echo-style-mock {
-    background: #f7f7f7;
-    gap: 5px;
-}
-
-.echo-style-choice__box--miuix .echo-style-mock__bar {
-    border-radius: 999px;
-    background: #e8e8e8;
-}
-
-.echo-style-choice__box--miuix .echo-style-mock__card {
-    border: none;
-    border-radius: 8px;
-    background: #fff;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.echo-style-choice__box--miuix .echo-style-mock__card:last-child {
-    background: #eaf2ff;
-}
-
-.echo-style-choice__label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #57606a;
-}
-
-.echo-style-choice input:checked + .echo-style-choice__box .echo-style-choice__label {
-    color: #3482ff;
-}
-
-.echo-style-choice__sub {
-    font-size: 11px;
-    color: #8b949e;
-}
-
-/* ==========================================================================
-   14. 响应式
+   12. 响应式
    ========================================================================== */
 @media (max-width: 782px) {
     .echo-settings-wrap .form-table > tbody > tr > th,
     .echo-settings-wrap .form-table > tbody > tr > td {
         display: block;
         width: 100%;
-        padding: 12px 20px;
+        padding: 10px 16px;
     }
 
     .echo-settings-wrap .form-table > tbody > tr > th {
-        padding-bottom: 4px;
+        padding-bottom: 2px;
     }
 
+    .echo-style-choice__box,
     .echo-layout-choice__box {
         width: 130px;
     }
