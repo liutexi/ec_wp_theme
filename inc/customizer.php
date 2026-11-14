@@ -455,6 +455,7 @@ function echo_settings_page_html() {
 
 		<?php echo_render_category_manager(); ?>
 		<?php echo_render_post_manager(); ?>
+		<?php echo_render_backup_manager(); ?>
 
 		<!-- 即时保存用的 AJAX 数据（兜底，避免 localize 失效） -->
 		<div id="echo-ajax-data" style="display:none;"
