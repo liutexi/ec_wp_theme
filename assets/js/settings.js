@@ -13,6 +13,8 @@
 		initLogoUploader();
 		initInstantSave();
 		initSwitchState();
+		initCategoryManager();
+		initPostManager();
 		initToast();
 	});
 
@@ -79,6 +81,194 @@
 		$('.echo-switch-label input[type="checkbox"]').on('change', function () {
 			var $state = $(this).siblings('.echo-switch-state');
 			$state.text($(this).is(':checked') ? '已开启' : '已关闭');
+		});
+	}
+
+	/**
+	 * 分类管理：新建 / 编辑 / 删除 / 设为默认（全部 AJAX）
+	 */
+	function initCategoryManager() {
+		var $root = $('#echo-cat-manager');
+		if (!$root.length) { return; }
+
+		var $rows = $('#echo-cat-rows');
+		var $data = $('#echo-ajax-data');
+		var url = $data.data('ajax-url');
+		var nonce = $data.data('nonce');
+
+		function request(payload) {
+			payload.action = 'echo_manage_category';
+			payload.nonce = nonce;
+
+			$.ajax({
+				url: url,
+				type: 'POST',
+				dataType: 'json',
+				data: payload,
+				success: function (res) {
+					if (res && res.success) {
+						$rows.html(res.data.rows);
+						$root.find('.echo-cat-add-parent').html(res.data.options);
+						if (payload.op === 'create') {
+							$root.find('.echo-cat-add-form')[0].reset();
+						}
+						showToast(res.data.message, 'success');
+					} else {
+						showToast((res && res.data && res.data.message) || '操作失败', 'error');
+					}
+				},
+				error: function (xhr) {
+					var msg = '操作失败，请重试';
+					try {
+						var r = JSON.parse(xhr.responseText);
+						if (r && r.data && r.data.message) { msg = r.data.message; }
+					} catch (e) {}
+					showToast(msg, 'error');
+				}
+			});
+		}
+
+		// 新增
+		$root.on('submit', '.echo-cat-add-form', function (e) {
+			e.preventDefault();
+			request({
+				op: 'create',
+				name: $root.find('.echo-cat-add-name').val(),
+				slug: $root.find('.echo-cat-add-slug').val(),
+				parent: $root.find('.echo-cat-add-parent').val(),
+				description: $root.find('.echo-cat-add-desc').val()
+			});
+		});
+
+		// 展开编辑行
+		$root.on('click', '.echo-cat-edit', function () {
+			var id = $(this).closest('.echo-cat-row').data('id');
+			$rows.find('.echo-cat-edit-row').hide();
+			$rows.find('.echo-cat-edit-row[data-id="' + id + '"]').show();
+		});
+
+		// 取消编辑
+		$root.on('click', '.echo-cat-cancel', function () {
+			$(this).closest('.echo-cat-edit-row').hide();
+		});
+
+		// 保存修改
+		$root.on('click', '.echo-cat-save', function () {
+			var $edit = $(this).closest('.echo-cat-edit-row');
+			request({
+				op: 'update',
+				id: $edit.data('id'),
+				name: $edit.find('.echo-cat-f-name').val(),
+				slug: $edit.find('.echo-cat-f-slug').val(),
+				parent: $edit.find('.echo-cat-f-parent').val(),
+				description: $edit.find('.echo-cat-f-desc').val()
+			});
+		});
+
+		// 删除
+		$root.on('click', '.echo-cat-del', function () {
+			var $row = $(this).closest('.echo-cat-row');
+			var name = $.trim($row.find('.echo-cat-name').text());
+			if (!window.confirm('确定删除分类「' + name + '」？\n该分类下的文章不会被删除，将移动到默认分类。')) {
+				return;
+			}
+			request({ op: 'delete', id: $row.data('id') });
+		});
+
+		// 设为默认
+		$root.on('click', '.echo-cat-set-default', function () {
+			request({ op: 'set_default', id: $(this).closest('.echo-cat-row').data('id') });
+		});
+	}
+
+	/**
+	 * 文章管理：新建 / 删除 / 批量改分类（全部 AJAX）
+	 */
+	function initPostManager() {
+		var $root = $('#echo-post-manager');
+		if (!$root.length) { return; }
+
+		var $rows = $('#echo-post-rows');
+		var $data = $('#echo-ajax-data');
+		var url = $data.data('ajax-url');
+		var nonce = $data.data('nonce');
+
+		function request(payload) {
+			payload.action = 'echo_manage_post';
+			payload.nonce = nonce;
+
+			$.ajax({
+				url: url,
+				type: 'POST',
+				dataType: 'json',
+				data: payload,
+				success: function (res) {
+					if (res && res.success) {
+						$rows.html(res.data.rows);
+						$root.find('.echo-post-check-all').prop('checked', false);
+						if (payload.op === 'create') {
+							$root.find('.echo-post-add-form')[0].reset();
+						}
+						showToast(res.data.message, 'success');
+					} else {
+						showToast((res && res.data && res.data.message) || '操作失败', 'error');
+					}
+				},
+				error: function (xhr) {
+					var msg = '操作失败，请重试';
+					try {
+						var r = JSON.parse(xhr.responseText);
+						if (r && r.data && r.data.message) { msg = r.data.message; }
+					} catch (e) {}
+					showToast(msg, 'error');
+				}
+			});
+		}
+
+		// 全选
+		$root.on('change', '.echo-post-check-all', function () {
+			$root.find('.echo-post-check').prop('checked', $(this).is(':checked'));
+		});
+
+		// 新建
+		$root.on('submit', '.echo-post-add-form', function (e) {
+			e.preventDefault();
+			request({
+				op: 'create',
+				title: $root.find('.echo-post-add-title').val(),
+				content: $root.find('.echo-post-add-content').val(),
+				status: $root.find('.echo-post-add-status').val(),
+				cat: $root.find('.echo-post-add-cat').val()
+			});
+		});
+
+		// 删除
+		$root.on('click', '.echo-post-del', function () {
+			var $row = $(this).closest('.echo-post-row');
+			var title = $.trim($row.find('.echo-post-title').text());
+			if (!window.confirm('确定删除文章「' + title + '」？\n此操作不可撤销。')) {
+				return;
+			}
+			request({ op: 'delete', id: $row.data('id') });
+		});
+
+		// 批量改分类
+		$root.on('click', '.echo-post-bulk-apply', function () {
+			var ids = $root.find('.echo-post-check:checked').map(function () {
+				return $(this).val();
+			}).get();
+			var cat = $root.find('.echo-post-bulk-cat').val();
+
+			if (!ids.length) {
+				showToast('请先勾选文章', 'error');
+				return;
+			}
+			if (!cat || cat === '0') {
+				showToast('请选择目标分类', 'error');
+				return;
+			}
+
+			request({ op: 'bulk_category', ids: ids, cat: cat });
 		});
 	}
 
