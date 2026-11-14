@@ -293,6 +293,31 @@ body.echo-style-miuix .echo-entry-content code {
 body.echo-style-miuix .echo-entry-content pre {
     border-radius: var(--echo-radius-sm);
     background: #1c1c1e;
+    color: #e6edf3;
+    padding: 18px 20px;
+    overflow-x: auto;
+}
+
+/* 代码块内的 code 必须重置掉行内代码样式；高亮插件的 span 保留自身颜色 */
+body.echo-style-miuix .echo-entry-content pre code {
+    display: inline;
+    background: transparent !important;
+    color: inherit !important;
+    border: none !important;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    font-size: inherit;
+    line-height: inherit;
+    box-shadow: none;
+}
+
+body.echo-style-miuix .echo-entry-content pre code span {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
 }
 
 body.echo-style-miuix .echo-entry-content img {
