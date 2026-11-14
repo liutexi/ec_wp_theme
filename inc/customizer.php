@@ -22,7 +22,8 @@ define( 'ECHO_OPTION', 'echo_settings' );
  * @return array
  */
 function echo_default_settings() {
-	return array(
+	return array_merge(
+		array(
 		'primary_color'    => '#2563eb',
 		'sidebar_position' => 'right',
 		'content_width'    => 1180,
@@ -36,6 +37,9 @@ function echo_default_settings() {
 		'ui_style'         => 'classic',
 		'ascii_slug'      => false,
 		'admin_post_columns' => true,
+		),
+		echo_extra_defaults(),
+		echo_auth_defaults()
 	);
 }
 
@@ -172,6 +176,109 @@ function echo_settings_init() {
 			'desc'      => __( '在后台「文章」列表显示封面、ID、字数、链接列。关闭则恢复 WordPress 原生列。', 'echo' ),
 		)
 	);
+
+	// 「我的」界面
+	add_settings_section(
+		'echo_section_my',
+		__( '我的界面', 'echo' ),
+		'__return_false',
+		'echo-settings'
+	);
+
+	$echo_my_fields = array(
+		array( 'my_enabled', __( '启用个人中心', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '关闭后页面只显示提示，导航栏也不再显示「我的」入口。', 'echo' ) ) ),
+		array( 'my_slug', __( '页面别名', 'echo' ), 'echo_field_my_slug', array() ),
+		array( 'my_modules', __( '显示模块与排序', 'echo' ), 'echo_field_my_modules', array() ),
+		array( 'my_avatar_size', __( '头像尺寸', 'echo' ), 'echo_field_number', array( 'min' => 32, 'max' => 256, 'step' => 8, 'suffix' => 'px', 'desc' => __( '资料卡头像边长，32–256px。', 'echo' ) ) ),
+		array( 'my_recent_posts', __( '最近文章数量', 'echo' ), 'echo_field_number', array( 'min' => 0, 'max' => 20, 'step' => 1, 'desc' => __( '填 0 隐藏列表。', 'echo' ) ) ),
+		array( 'my_recent_comments', __( '最近评论数量', 'echo' ), 'echo_field_number', array( 'min' => 0, 'max' => 20, 'step' => 1, 'desc' => __( '填 0 隐藏列表。', 'echo' ) ) ),
+		array( 'my_builtin_links', __( '内置快捷入口', 'echo' ), 'echo_field_my_builtin_links', array( 'desc' => __( '按当前用户权限自动过滤，无权限的入口不会显示。', 'echo' ) ) ),
+		array( 'my_quicklinks', __( '自定义快捷链接', 'echo' ), 'echo_field_textarea', array( 'rows' => 4, 'class' => 'echo-code-textarea', 'desc' => __( '每行一条，格式「名称 | URL」。以 / 开头视为站内路径，# 开头为注释。例如：云湖登录 | /yh-login', 'echo' ) ) ),
+		array( 'my_guest_mode', __( '未登录时', 'echo' ), 'echo_field_select', array( 'options' => array( 'login_form' => __( '显示登录表单', 'echo' ), 'message' => __( '显示提示文案与按钮', 'echo' ), 'redirect' => __( '直接跳转登录页', 'echo' ) ) ) ),
+		array( 'my_guest_message', __( '未登录提示文案', 'echo' ), 'echo_field_textarea', array( 'rows' => 2, 'desc' => __( '留空则不显示。三种模式都会显示这段文案。', 'echo' ) ) ),
+		array( 'my_guest_shortcode', __( '第三方登录短代码', 'echo' ), 'echo_field_text', array( 'desc' => __( '可选。例如云湖登录插件填 [yunhu_login]，会渲染在登录区块下方；由管理员填写，请确认短代码来源可信。', 'echo' ) ) ),
+		array( 'my_show_sidebar', __( '显示侧边栏', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '默认关闭，个人中心整页宽度展示模块。', 'echo' ) ) ),
+		array( 'my_card_style', __( '卡片风格', 'echo' ), 'echo_field_select', array( 'options' => array( 'auto' => __( '跟随全局风格', 'echo' ), 'classic' => __( '强制经典', 'echo' ), 'miuix' => __( '强制 Miuix', 'echo' ) ), 'desc' => __( '可让个人中心独立于全站风格单独设定。', 'echo' ) ) ),
+		array( 'my_custom_css', __( '自定义 CSS', 'echo' ), 'echo_field_textarea', array( 'rows' => 6, 'class' => 'echo-code-textarea', 'desc' => __( '仅在此处填写 CSS，会追加到前台样式末尾，可用于覆盖任意细节。不要写 <style> 标签。', 'echo' ) ) ),
+	);
+
+	foreach ( $echo_my_fields as $field ) {
+		$args = isset( $field[3] ) ? $field[3] : array();
+		$args['label_for'] = $field[0];
+		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_my', $args );
+	}
+
+	// 前端微调
+	add_settings_section(
+		'echo_section_tweaks',
+		__( '前端微调', 'echo' ),
+		'__return_false',
+		'echo-settings'
+	);
+
+	$echo_tw_fields = array(
+		array( 'tw_font_size', __( '正文字号', 'echo' ), 'echo_field_number', array( 'min' => 13, 'max' => 22, 'step' => 1, 'suffix' => 'px' ) ),
+		array( 'tw_line_height', __( '正文行高', 'echo' ), 'echo_field_number', array( 'min' => 1.4, 'max' => 2.4, 'step' => 0.05 ) ),
+		array( 'tw_entry_width', __( '正文最大宽度', 'echo' ), 'echo_field_number', array( 'min' => 0, 'max' => 1100, 'step' => 20, 'suffix' => 'px', 'desc' => __( '填 0 表示不限制（默认，保持原有布局）。', 'echo' ) ) ),
+		array( 'tw_card_hover', __( '卡片悬停反馈', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'tw_heading_decor', __( '标题竖条装饰', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'tw_lead_paragraph', __( '首段放大', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'tw_author_avatar', __( '文章元信息头像', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'tw_reading_progress', __( '文章阅读进度条', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '仅在单篇文章页顶部显示。', 'echo' ) ) ),
+		array( 'tw_back_to_top', __( '返回顶部按钮', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'tw_smooth_scroll', __( '平滑滚动', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'tw_nav_my', __( '导航栏「我的」入口', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'tw_nav_my_label', __( '入口文字', 'echo' ), 'echo_field_text', array( 'desc' => __( '默认「我的」。', 'echo' ) ) ),
+	);
+
+	foreach ( $echo_tw_fields as $field ) {
+		$args = isset( $field[3] ) ? $field[3] : array();
+		$args['label_for'] = $field[0];
+		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_tweaks', $args );
+	}
+
+	// 登录 / 注册
+	add_settings_section(
+		'echo_section_auth',
+		__( '登录 / 注册', 'echo' ),
+		'__return_false',
+		'echo-settings'
+	);
+
+	$echo_auth_fields = array(
+		array( 'auth_enabled', __( '启用登录 / 注册页', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '关闭后页面只显示提示，导航栏也不再显示登录 / 注册入口。', 'echo' ) ) ),
+		array( 'auth_login_slug', __( '登录页别名', 'echo' ), 'echo_field_auth_slug', array( 'mode' => 'login' ) ),
+		array( 'auth_register_slug', __( '注册页别名', 'echo' ), 'echo_field_auth_slug', array( 'mode' => 'register' ) ),
+		array( 'auth_show_nav', __( '导航栏入口', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '未登录时在导航栏显示「登录 / 注册」。', 'echo' ) ) ),
+		array( 'auth_nav_login_label', __( '登录入口文字', 'echo' ), 'echo_field_text', array( 'desc' => __( '默认「登录」。', 'echo' ) ) ),
+		array( 'auth_nav_register_label', __( '注册入口文字', 'echo' ), 'echo_field_text', array( 'desc' => __( '默认「注册」。', 'echo' ) ) ),
+		array( 'auth_show_tabs', __( '显示登录 / 注册切换', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '在页面顶部显示两个标签页，方便互相切换。', 'echo' ) ) ),
+		array( 'auth_allow_register', __( '允许前台注册', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '需同时开启 WordPress「设置 → 常规 → 任何人都可以注册」。', 'echo' ) ) ),
+		array( 'auth_register_password', __( '注册时自设密码', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '开启：用户自己填写密码；关闭：由 WordPress 生成随机密码并邮件发送。', 'echo' ) ) ),
+		array( 'auth_password_min', __( '密码最小长度', 'echo' ), 'echo_field_number', array( 'min' => 6, 'max' => 32, 'step' => 1, 'suffix' => '位' ) ),
+		array( 'auth_auto_login', __( '注册后自动登录', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '仅在「注册时自设密码」开启时生效；生成密码模式会提示查收邮件。', 'echo' ) ) ),
+		array( 'auth_redirect_logged_in', __( '已登录访问时跳转', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '已登录用户打开登录 / 注册页时，直接跳到「登录后跳转」目标。', 'echo' ) ) ),
+		array( 'auth_after_login', __( '登录后跳转', 'echo' ), 'echo_field_select', array( 'options' => array( 'my' => __( '个人中心', 'echo' ), 'home' => __( '首页', 'echo' ), 'custom' => __( '自定义地址', 'echo' ) ) ) ),
+		array( 'auth_after_login_url', __( '自定义跳转地址', 'echo' ), 'echo_field_text', array( 'desc' => __( '仅在「登录后跳转」选择「自定义地址」时生效。', 'echo' ) ) ),
+		array( 'auth_show_remember', __( '显示「记住我」', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'auth_show_lostpassword', __( '显示「忘记密码」', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'auth_terms_enabled', __( '注册需同意条款', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'auth_terms_text', __( '条款文字', 'echo' ), 'echo_field_textarea', array( 'rows' => 2, 'desc' => __( '支持基础 HTML，例如链接。留空则显示默认文案。', 'echo' ) ) ),
+		array( 'auth_login_title', __( '登录页标题', 'echo' ), 'echo_field_text', array( 'desc' => __( '同时作为登录按钮文字。默认「登录」。', 'echo' ) ) ),
+		array( 'auth_register_title', __( '注册页标题', 'echo' ), 'echo_field_text', array( 'desc' => __( '同时作为注册按钮文字。默认「注册」。', 'echo' ) ) ),
+		array( 'auth_welcome', __( '欢迎文案', 'echo' ), 'echo_field_textarea', array( 'rows' => 2, 'desc' => __( '显示在标题下方，留空则不显示。', 'echo' ) ) ),
+		array( 'auth_shortcode', __( '第三方登录短代码', 'echo' ), 'echo_field_text', array( 'desc' => __( '可选。例如云湖登录插件填 [yunhu_login]，会渲染在表单下方。', 'echo' ) ) ),
+		array( 'auth_layout', __( '卡片风格', 'echo' ), 'echo_field_select', array( 'options' => array( 'auto' => __( '跟随全局风格', 'echo' ), 'classic' => __( '强制经典', 'echo' ), 'miuix' => __( '强制 Miuix', 'echo' ) ) ) ),
+		array( 'auth_show_sidebar', __( '显示侧边栏', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '默认关闭，登录 / 注册页整页居中展示。', 'echo' ) ) ),
+		array( 'auth_throttle', __( '提交频率限制', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '同一 IP 15 分钟内登录失败 12 次、注册 6 次后暂停提交，防止暴力尝试。', 'echo' ) ) ),
+		array( 'auth_custom_css', __( '自定义 CSS', 'echo' ), 'echo_field_textarea', array( 'rows' => 5, 'class' => 'echo-code-textarea', 'desc' => __( '仅填写 CSS，会追加到前台样式末尾。不要写 <style> 标签。', 'echo' ) ) ),
+	);
+
+	foreach ( $echo_auth_fields as $field ) {
+		$args = isset( $field[3] ) ? $field[3] : array();
+		$args['label_for'] = $field[0];
+		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_auth', $args );
+	}
 
 	// 站点标识（Logo、站点标题、副标题）
 	add_settings_section(
@@ -427,6 +534,12 @@ function echo_sanitize_settings( $input ) {
 		}
 		$output['exclude_categories'] = array_values( array_unique( $output['exclude_categories'] ) );
 	}
+
+	// 「我的」界面与前端微调
+	echo_sanitize_extra_settings( $input, $output );
+
+	// 登录 / 注册
+	echo_sanitize_auth_settings( $input, $output );
 
 	return $output;
 }
@@ -1126,13 +1239,16 @@ function echo_field_footer_text( $args ) {
  * @return void
  */
 function echo_field_checkbox( $args ) {
-	$key   = $args['label_for'];
-	$value = echo_get_setting( $key, false );
+	$key     = $args['label_for'];
+	$value   = echo_get_setting( $key, false );
+	// 默认即时保存；传 'instant' => false 则随「保存设置」按钮一起提交
+	$instant = ! isset( $args['instant'] ) || ! empty( $args['instant'] );
 	?>
 	<label class="echo-switch-label">
 		<input type="checkbox" class="echo-switch-input" id="<?php echo esc_attr( $key ); ?>"
 			name="echo_settings[<?php echo esc_attr( $key ); ?>]" value="1"
-			<?php checked( $value, true ); ?> data-instant="1" data-key="<?php echo esc_attr( $key ); ?>" />
+			<?php checked( $value, true ); ?>
+			<?php if ( $instant ) : ?>data-instant="1" data-key="<?php echo esc_attr( $key ); ?>"<?php endif; ?> />
 		<span class="echo-switch" aria-hidden="true"><span class="echo-switch__knob"></span></span>
 		<span class="echo-switch-state"><?php echo $value ? esc_html__( '已开启', 'echo' ) : esc_html__( '已关闭', 'echo' ); ?></span>
 	</label>
@@ -1251,6 +1367,12 @@ function echo_settings_css() {
 		$css .= '.echo-content{order:2;}';
 	}
 
+	// 正文字号 / 行高 / 宽度、微调开关与自定义 CSS
+	$css .= echo_extra_css();
+
+	// 登录 / 注册页的自定义 CSS
+	$css .= echo_auth_css();
+
 	wp_register_style( 'echo-settings-inline', false, array( 'echo-style' ), ECHO_VERSION );
 	wp_enqueue_style( 'echo-settings-inline' );
 	wp_add_inline_style( 'echo-settings-inline', $css );
@@ -1286,7 +1408,7 @@ function echo_style_body_class( $classes ) {
 	if ( 'miuix' === echo_get_setting( 'ui_style', 'classic' ) ) {
 		$classes[] = 'echo-style-miuix';
 	}
-	return $classes;
+	return echo_extra_body_class( $classes );
 }
 add_filter( 'body_class', 'echo_style_body_class' );
 
