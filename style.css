@@ -4,7 +4,7 @@ Theme URI: https://github.com/liutexi/ec_wp_theme
 Author: LogicTneXus
 Author URI: https://github.com/liutexi
 Description: Echo 是一款简洁、专注阅读体验的博客/论坛风格 WordPress 主题，响应式设计，适合个人博客与内容社区。
-Version: 0.0.1
+Version: 0.0.2
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
@@ -1285,10 +1285,17 @@ body.echo-no-sidebar .echo-sidebar {
         grid-template-columns: minmax(0, 1fr) 280px;
         gap: 24px;
     }
+
+    /* 单篇隐藏侧栏时不得再占 280px 空列（同特异性，靠后覆盖） */
+    body.echo-no-sidebar .echo-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 @media (max-width: 860px) {
-    .echo-layout {
+    /* 需与 1024px 里的 .echo-layout:not(.echo-layout--full) 同特异性，否则会被压过 */
+    .echo-layout,
+    .echo-layout:not(.echo-layout--full) {
         grid-template-columns: minmax(0, 1fr);
     }
 
@@ -2470,4 +2477,67 @@ body.echo-style-miuix .echo-single--auth {
         text-align: left;
         white-space: normal;
     }
+}
+
+/* 头像上传 */
+.echo-user-avatar-fieldset {
+    padding-top: 16px;
+}
+
+.echo-user-avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.echo-user-avatar-row__img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--echo-border);
+}
+
+.echo-user-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0 12px;
+    color: var(--echo-text-secondary);
+    font-size: 0.88rem;
+    cursor: pointer;
+}
+
+.echo-user-check input {
+    accent-color: var(--echo-primary);
+}
+
+.echo-user-field input[type="file"] {
+    padding: 9px 12px;
+    border: 1px dashed var(--echo-border);
+    border-radius: var(--echo-radius-sm);
+    background: var(--echo-bg-alt);
+    color: var(--echo-text-secondary);
+    font-family: inherit;
+    font-size: 0.88rem;
+    cursor: pointer;
+}
+
+.echo-user-field input[type="file"]::file-selector-button {
+    padding: 6px 12px;
+    margin-right: 12px;
+    border: none;
+    border-radius: var(--echo-radius-sm);
+    background: var(--echo-primary);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--echo-transition);
+}
+
+.echo-user-field input[type="file"]::file-selector-button:hover {
+    background: var(--echo-primary-hover);
 }
