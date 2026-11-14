@@ -1,44 +1,13 @@
 <?php
 /**
- * Template Name: 注册
+ * Template Name: 注册（兼容旧页面）
  * Template Post Type: page
  *
- * 新建页面、别名设为设置中的注册别名（默认 register），
- * 在「页面属性 → 模板」中选择「注册」即可。
+ * 仅为兼容已使用「注册」模板建好的页面而保留，
+ * 实际渲染与「登录 / 注册」完全一致（单页三态），默认落在注册视图。
+ * 新站点请优先选择「登录 / 注册」模板。
  *
  * @package Echo
  */
 
-// 表单提交需在输出前处理（成功会 302 跳转）。
-echo_auth_handle_request( 'register' );
-
-get_header();
-?>
-
-<main id="primary" class="echo-main">
-	<div class="echo-container">
-		<div class="echo-layout<?php echo echo_auth_config( 'auth_show_sidebar', false ) ? '' : ' echo-layout--full'; ?>">
-			<div class="echo-content">
-				<?php
-				while ( have_posts() ) :
-					the_post();
-					?>
-					<article id="post-<?php the_ID(); ?>" <?php post_class( 'echo-single echo-single--auth' ); ?>>
-						<?php echo_auth_render( 'register' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-					</article>
-					<?php
-				endwhile;
-				?>
-			</div>
-
-			<?php
-			if ( echo_auth_config( 'auth_show_sidebar', false ) ) {
-				get_sidebar();
-			}
-			?>
-		</div>
-	</div>
-</main>
-
-<?php
-get_footer();
+echo_auth_render_page( 'register' );
