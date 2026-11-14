@@ -132,10 +132,26 @@ ul, ol {
     height: 64px;
 }
 
+/* 右侧操作区：强制单行，避免窄屏时换行压到头部底边 */
+.echo-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.echo-header__actions .echo-search-toggle,
+.echo-header__actions .echo-my-nav-link,
+.echo-header__actions .echo-auth-nav-link {
+    margin-left: 0;
+    margin-right: 0;
+}
+
 .echo-brand {
     display: flex;
     align-items: center;
     gap: 10px;
+    min-width: 0;
     font-size: 1.4rem;
     font-weight: 800;
     color: var(--echo-text);
@@ -1334,6 +1350,14 @@ body.echo-no-sidebar .echo-sidebar {
 }
 
 @media (max-width: 480px) {
+    .echo-header__actions {
+        gap: 6px;
+    }
+
+    .echo-brand__logo {
+        max-width: 120px;
+    }
+
     .echo-card {
         padding: 20px;
     }
