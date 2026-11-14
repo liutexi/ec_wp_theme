@@ -39,7 +39,8 @@ function echo_default_settings() {
 		'admin_post_columns' => true,
 		),
 		echo_extra_defaults(),
-		echo_auth_defaults()
+		echo_auth_defaults(),
+		echo_user_defaults()
 	);
 }
 
@@ -278,6 +279,36 @@ function echo_settings_init() {
 		$args = isset( $field[3] ) ? $field[3] : array();
 		$args['label_for'] = $field[0];
 		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_auth', $args );
+	}
+
+	// 用户主页（UID）
+	add_settings_section(
+		'echo_section_user',
+		__( '用户主页', 'echo' ),
+		'__return_false',
+		'echo-settings'
+	);
+
+	$echo_user_fields = array(
+		array( 'user_enabled', __( '启用用户主页', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '启用后可通过 /uid/{用户ID} 访问公开主页；关闭后返回 404。', 'echo' ) ) ),
+		array( 'user_base', __( '链接前缀', 'echo' ), 'echo_field_text', array( 'desc' => sprintf( /* translators: %s: 示例地址 */ __( '默认 uid，示例：%s。修改后若出现 404，请到「设置 → 固定链接」点一次保存。', 'echo' ), home_url( '/' . echo_user_base() . '/1/' ) ) ) ),
+		array( 'user_allow_edit', __( '允许自助编辑', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '用户在自己的主页可以修改昵称、简介与个人网站。', 'echo' ) ) ),
+		array( 'user_allow_password', __( '允许修改密码', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '需要验证当前密码；密码长度沿用登录 / 注册里的最小长度设置。', 'echo' ) ) ),
+		array( 'user_avatar_size', __( '头像尺寸', 'echo' ), 'echo_field_number', array( 'min' => 32, 'max' => 256, 'step' => 8, 'suffix' => 'px' ) ),
+		array( 'user_show_stats', __( '显示数据统计', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '文章数、评论数与用户编号。', 'echo' ) ) ),
+		array( 'user_show_posts', __( '显示最近文章', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'user_show_comments', __( '显示最近评论', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'user_recent_posts', __( '最近文章数量', 'echo' ), 'echo_field_number', array( 'min' => 0, 'max' => 20, 'step' => 1, 'desc' => __( '填 0 不显示。', 'echo' ) ) ),
+		array( 'user_recent_comments', __( '最近评论数量', 'echo' ), 'echo_field_number', array( 'min' => 0, 'max' => 20, 'step' => 1, 'desc' => __( '填 0 不显示。', 'echo' ) ) ),
+		array( 'user_show_sidebar', __( '显示侧边栏', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '默认关闭，整页展示资料。', 'echo' ) ) ),
+		array( 'user_card_style', __( '卡片风格', 'echo' ), 'echo_field_select', array( 'options' => array( 'auto' => __( '跟随全局风格', 'echo' ), 'classic' => __( '强制经典', 'echo' ), 'miuix' => __( '强制 Miuix', 'echo' ) ) ) ),
+		array( 'user_custom_css', __( '自定义 CSS', 'echo' ), 'echo_field_textarea', array( 'rows' => 5, 'class' => 'echo-code-textarea', 'desc' => __( '仅填写 CSS，会追加到前台样式末尾。不要写 <style> 标签。', 'echo' ) ) ),
+	);
+
+	foreach ( $echo_user_fields as $field ) {
+		$args = isset( $field[3] ) ? $field[3] : array();
+		$args['label_for'] = $field[0];
+		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_user', $args );
 	}
 
 	// 站点标识（Logo、站点标题、副标题）
@@ -540,6 +571,9 @@ function echo_sanitize_settings( $input ) {
 
 	// 登录 / 注册
 	echo_sanitize_auth_settings( $input, $output );
+
+	// 用户主页
+	echo_sanitize_user_settings( $input, $output );
 
 	return $output;
 }
@@ -1372,6 +1406,9 @@ function echo_settings_css() {
 
 	// 登录 / 注册页的自定义 CSS
 	$css .= echo_auth_css();
+
+	// 用户主页的自定义 CSS
+	$css .= echo_user_css();
 
 	wp_register_style( 'echo-settings-inline', false, array( 'echo-style' ), ECHO_VERSION );
 	wp_enqueue_style( 'echo-settings-inline' );
