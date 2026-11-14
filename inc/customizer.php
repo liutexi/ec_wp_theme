@@ -31,6 +31,9 @@ function echo_default_settings() {
 		'hide_tagline'     => false,
 		'custom_logo'      => 0,
 		'hide_admin_bar'   => false,
+		'exclude_categories' => array(),
+		'show_category_badge' => true,
+		'ui_style'         => 'classic',
 	);
 }
 
@@ -91,6 +94,26 @@ function echo_settings_init() {
 		ECHO_OPTION,
 		array(
 			'sanitize_callback' => 'echo_sanitize_settings',
+		)
+	);
+
+	// 界面风格
+	add_settings_section(
+		'echo_section_style',
+		__( '界面风格', 'echo' ),
+		'__return_false',
+		'echo-settings'
+	);
+
+	add_settings_field(
+		'echo_ui_style',
+		__( '外观风格', 'echo' ),
+		'echo_field_ui_style',
+		'echo-settings',
+		'echo_section_style',
+		array(
+			'label_for' => 'ui_style',
+			'desc'      => __( 'Miuix 风格复刻小米 HyperOS 设计语言：大圆角、浅灰 Surface 分层、柔和不刺眼的阴影。', 'echo' ),
 		)
 	);
 
@@ -207,6 +230,38 @@ function echo_settings_init() {
 		'echo-settings'
 	);
 
+	// 文章分类
+	add_settings_section(
+		'echo_section_categories',
+		__( '文章分类', 'echo' ),
+		'__return_false',
+		'echo-settings'
+	);
+
+	add_settings_field(
+		'echo_exclude_categories',
+		__( '首页排除的分类', 'echo' ),
+		'echo_field_exclude_categories',
+		'echo-settings',
+		'echo_section_categories',
+		array(
+			'label_for' => 'exclude_categories',
+			'desc'      => __( '勾选的分类将不会显示在首页文章列表中。不勾选任何项即显示全部分类。', 'echo' ),
+		)
+	);
+
+	add_settings_field(
+		'echo_show_category_badge',
+		__( '显示分类徽章', 'echo' ),
+		'echo_field_checkbox',
+		'echo-settings',
+		'echo_section_categories',
+		array(
+			'label_for' => 'show_category_badge',
+			'desc'      => __( '在文章列表和文章页顶部显示分类徽章。', 'echo' ),
+		)
+	);
+
 	add_settings_field(
 		'echo_footer_text',
 		__( '页脚版权文字', 'echo' ),
@@ -279,6 +334,9 @@ function echo_sanitize_settings( $input ) {
 
 	$output['sidebar_position'] = ( isset( $input['sidebar_position'] ) && 'left' === $input['sidebar_position'] ) ? 'left' : 'right';
 
+	// 界面风格：仅允许 classic / miuix
+	$output['ui_style'] = ( isset( $input['ui_style'] ) && 'miuix' === $input['ui_style'] ) ? 'miuix' : 'classic';
+
 	$width                   = isset( $input['content_width'] ) ? absint( $input['content_width'] ) : $defaults['content_width'];
 	$output['content_width'] = max( 800, min( 1600, $width ) );
 
@@ -288,6 +346,19 @@ function echo_sanitize_settings( $input ) {
 	$output['footer_credit']  = isset( $input['footer_credit'] ) && '1' === (string) $input['footer_credit'];
 	$output['hide_tagline']   = isset( $input['hide_tagline'] ) && '1' === (string) $input['hide_tagline'];
 	$output['hide_admin_bar'] = isset( $input['hide_admin_bar'] ) && '1' === (string) $input['hide_admin_bar'];
+	$output['show_category_badge'] = isset( $input['show_category_badge'] ) && '1' === (string) $input['show_category_badge'];
+
+	// 排除分类：数组，每项为分类 ID（正整数）
+	$output['exclude_categories'] = array();
+	if ( isset( $input['exclude_categories'] ) && is_array( $input['exclude_categories'] ) ) {
+		foreach ( $input['exclude_categories'] as $cat_id ) {
+			$cat_id = absint( $cat_id );
+			if ( $cat_id > 0 ) {
+				$output['exclude_categories'][] = $cat_id;
+			}
+		}
+		$output['exclude_categories'] = array_values( array_unique( $output['exclude_categories'] ) );
+	}
 
 	return $output;
 }
@@ -302,8 +373,15 @@ function echo_settings_page_html() {
 		return;
 	}
 	?>
-	<div class="wrap">
-		<h1><?php esc_html_e( 'Echo 主题设置', 'echo' ); ?></h1>
+	<div class="wrap echo-settings-wrap">
+		<div class="echo-settings-hero">
+			<div class="echo-settings-hero__icon">🎨</div>
+			<div class="echo-settings-hero__text">
+				<h1><?php esc_html_e( 'Echo 主题设置', 'echo' ); ?></h1>
+				<p><?php esc_html_e( '自定义站点外观与显示选项，修改后即时生效', 'echo' ); ?></p>
+			</div>
+			<span class="echo-settings-hero__version">v<?php echo esc_html( ECHO_VERSION ); ?></span>
+		</div>
 
 		<form method="post" action="options.php">
 			<?php
@@ -324,6 +402,48 @@ function echo_settings_page_html() {
 /* ============================================================
  * 字段渲染
  * ============================================================ */
+
+/**
+ * 界面风格字段（可视化选择）
+ *
+ * @param array $args 字段参数。
+ * @return void
+ */
+function echo_field_ui_style( $args ) {
+	$value = echo_get_setting( 'ui_style', 'classic' );
+	?>
+	<div class="echo-style-choices">
+		<label class="echo-style-choice">
+			<input type="radio" name="echo_settings[ui_style]" value="classic" <?php checked( $value, 'classic' ); ?> />
+			<span class="echo-style-choice__box echo-style-choice__box--classic">
+				<span class="echo-style-mock">
+					<span class="echo-style-mock__bar"></span>
+					<span class="echo-style-mock__card"></span>
+					<span class="echo-style-mock__card"></span>
+				</span>
+				<span class="echo-style-choice__label"><?php esc_html_e( '经典', 'echo' ); ?></span>
+				<span class="echo-style-choice__sub"><?php esc_html_e( '细边框 · 紧凑', 'echo' ); ?></span>
+			</span>
+		</label>
+
+		<label class="echo-style-choice">
+			<input type="radio" name="echo_settings[ui_style]" value="miuix" <?php checked( $value, 'miuix' ); ?> />
+			<span class="echo-style-choice__box echo-style-choice__box--miuix">
+				<span class="echo-style-mock">
+					<span class="echo-style-mock__bar"></span>
+					<span class="echo-style-mock__card"></span>
+					<span class="echo-style-mock__card"></span>
+				</span>
+				<span class="echo-style-choice__label"><?php esc_html_e( 'Miuix', 'echo' ); ?></span>
+				<span class="echo-style-choice__sub"><?php esc_html_e( 'HyperOS · 大圆角', 'echo' ); ?></span>
+			</span>
+		</label>
+	</div>
+	<?php
+	if ( ! empty( $args['desc'] ) ) {
+		printf( '<p class="description">%s</p>', esc_html( $args['desc'] ) );
+	}
+}
 
 /**
  * Logo 上传字段（使用 WordPress 媒体库）
@@ -393,6 +513,30 @@ function echo_field_site_tagline( $args ) {
  */
 function echo_field_color( $args ) {
 	$value = echo_get_setting( 'primary_color', '#2563eb' );
+
+	// 预设配色
+	$presets = array(
+		'#2563eb' => __( '经典蓝', 'echo' ),
+		'#7c3aed' => __( '紫罗兰', 'echo' ),
+		'#db2777' => __( '玫瑰红', 'echo' ),
+		'#ea580c' => __( '活力橙', 'echo' ),
+		'#16a34a' => __( '森林绿', 'echo' ),
+		'#0891b2' => __( '青蓝', 'echo' ),
+		'#475569' => __( '石墨灰', 'echo' ),
+		'#111827' => __( '墨黑', 'echo' ),
+	);
+	?>
+	<div class="echo-color-presets">
+		<?php foreach ( $presets as $hex => $name ) : ?>
+			<button type="button"
+				class="echo-color-preset <?php echo ( strtolower( $value ) === strtolower( $hex ) ) ? 'is-active' : ''; ?>"
+				data-color="<?php echo esc_attr( $hex ); ?>"
+				style="background:<?php echo esc_attr( $hex ); ?>"
+				title="<?php echo esc_attr( $name ); ?>"
+				aria-label="<?php echo esc_attr( $name ); ?>"></button>
+		<?php endforeach; ?>
+	</div>
+	<?php
 	printf(
 		'<input type="text" id="echo_primary_color" name="echo_settings[primary_color]" value="%s" class="echo-color-field" data-default-color="#2563eb" />',
 		esc_attr( $value )
@@ -412,16 +556,29 @@ function echo_field_color( $args ) {
 function echo_field_sidebar_position( $args ) {
 	$value = echo_get_setting( 'sidebar_position', 'right' );
 	?>
-	<fieldset>
-		<label>
+	<div class="echo-layout-choices">
+		<label class="echo-layout-choice">
 			<input type="radio" name="echo_settings[sidebar_position]" value="right" <?php checked( $value, 'right' ); ?> />
-			<?php esc_html_e( '右侧（默认）', 'echo' ); ?>
-		</label><br />
-		<label>
-			<input type="radio" name="echo_settings[sidebar_position]" value="left" <?php checked( $value, 'left' ); ?> />
-			<?php esc_html_e( '左侧', 'echo' ); ?>
+			<span class="echo-layout-choice__box">
+				<span class="echo-layout-preview">
+					<span class="echo-layout-preview__main"></span>
+					<span class="echo-layout-preview__side"></span>
+				</span>
+				<span class="echo-layout-choice__label"><?php esc_html_e( '侧边栏在右', 'echo' ); ?></span>
+			</span>
 		</label>
-	</fieldset>
+
+		<label class="echo-layout-choice">
+			<input type="radio" name="echo_settings[sidebar_position]" value="left" <?php checked( $value, 'left' ); ?> />
+			<span class="echo-layout-choice__box">
+				<span class="echo-layout-preview">
+					<span class="echo-layout-preview__side"></span>
+					<span class="echo-layout-preview__main"></span>
+				</span>
+				<span class="echo-layout-choice__label"><?php esc_html_e( '侧边栏在左', 'echo' ); ?></span>
+			</span>
+		</label>
+	</div>
 	<?php
 }
 
@@ -432,13 +589,16 @@ function echo_field_sidebar_position( $args ) {
  * @return void
  */
 function echo_field_content_width( $args ) {
-	$value = echo_get_setting( 'content_width', 1180 );
-	printf(
-		'<input type="number" id="echo_content_width" name="echo_settings[content_width]" value="%s" min="800" max="1600" step="20" class="small-text" /> ',
-		esc_attr( $value )
-	);
-	esc_html_e( 'px', 'echo' );
-
+	$value = absint( echo_get_setting( 'content_width', 1180 ) );
+	?>
+	<div class="echo-width-control">
+		<input type="range" id="echo_content_width_range" min="800" max="1600" step="20" value="<?php echo esc_attr( $value ); ?>" />
+		<span class="echo-width-value">
+			<span id="echo_content_width_display"><?php echo esc_html( $value ); ?></span> px
+		</span>
+		<input type="hidden" id="echo_content_width" name="echo_settings[content_width]" value="<?php echo esc_attr( $value ); ?>" />
+	</div>
+	<?php
 	if ( ! empty( $args['desc'] ) ) {
 		printf( '<p class="description">%s</p>', esc_html( $args['desc'] ) );
 	}
@@ -471,11 +631,50 @@ function echo_field_footer_text( $args ) {
 function echo_field_checkbox( $args ) {
 	$key   = $args['label_for'];
 	$value = echo_get_setting( $key, false );
-	printf(
-		'<input type="checkbox" id="%1$s" name="echo_settings[%1$s]" value="1" %2$s data-instant="1" data-key="%1$s" />',
-		esc_attr( $key ),
-		checked( $value, true, false )
+	?>
+	<label class="echo-switch-label">
+		<input type="checkbox" id="<?php echo esc_attr( $key ); ?>" name="echo_settings[<?php echo esc_attr( $key ); ?>]" value="1"
+			<?php checked( $value, true ); ?> data-instant="1" data-key="<?php echo esc_attr( $key ); ?>" />
+		<span class="echo-switch-state"><?php echo $value ? esc_html__( '已开启', 'echo' ) : esc_html__( '已关闭', 'echo' ); ?></span>
+	</label>
+	<?php
+	if ( ! empty( $args['desc'] ) ) {
+		printf( '<p class="description">%s</p>', esc_html( $args['desc'] ) );
+	}
+}
+
+/**
+ * 排除分类多选框字段
+ *
+ * @param array $args 字段参数。
+ * @return void
+ */
+function echo_field_exclude_categories( $args ) {
+	$excluded = echo_get_setting( 'exclude_categories', array() );
+	$excluded = is_array( $excluded ) ? $excluded : array();
+
+	$categories = get_categories(
+		array(
+			'hide_empty' => false,
+			'orderby'    => 'name',
+		)
 	);
+
+	if ( empty( $categories ) ) {
+		echo '<p class="description">' . esc_html__( '当前站点还没有任何分类，请先在「文章 → 分类」中创建。', 'echo' ) . '</p>';
+		return;
+	}
+
+	echo '<fieldset class="echo-category-list">';
+	foreach ( $categories as $cat ) {
+		printf(
+			'<label><input type="checkbox" name="echo_settings[exclude_categories][]" value="%1$s" %2$s /><span>%3$s</span></label>',
+			esc_attr( $cat->term_id ),
+			checked( in_array( (int) $cat->term_id, array_map( 'intval', $excluded ), true ), true, false ),
+			esc_html( $cat->name )
+		);
+	}
+	echo '</fieldset>';
 
 	if ( ! empty( $args['desc'] ) ) {
 		printf( '<p class="description">%s</p>', esc_html( $args['desc'] ) );
@@ -514,57 +713,13 @@ function echo_settings_enqueue( $hook ) {
 		)
 	);
 
-	// 设置页内联样式（Logo 预览框 + 右下角 toast）
-	$admin_css = '
-		.echo-logo-preview-wrap {
-			margin-bottom: 10px;
-			padding: 12px;
-			border: 1px dashed #c3c4c7;
-			border-radius: 4px;
-			background: #fff;
-			min-height: 60px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-		}
-		.echo-logo-preview {
-			max-height: 60px;
-			max-width: 200px;
-			width: auto;
-			height: auto;
-			display: block;
-		}
-		.echo-logo-placeholder {
-			color: #8c8f94;
-		}
-		.echo-toast {
-			position: fixed;
-			right: 24px;
-			bottom: 24px;
-			z-index: 999999;
-			padding: 12px 20px;
-			border-radius: 8px;
-			font-size: 14px;
-			line-height: 1.4;
-			color: #fff;
-			box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-			opacity: 0;
-			transform: translateY(16px);
-			pointer-events: none;
-			transition: opacity 0.25s ease, transform 0.25s ease;
-		}
-		.echo-toast--show {
-			opacity: 1;
-			transform: translateY(0);
-		}
-		.echo-toast--success {
-			background: #16a34a;
-		}
-		.echo-toast--error {
-			background: #dc2626;
-		}
-	';
-	wp_add_inline_style( 'wp-color-picker', $admin_css );
+	// 设置页专用样式
+	wp_enqueue_style(
+		'echo-admin-settings',
+		get_template_directory_uri() . '/assets/css/admin-settings.css',
+		array( 'wp-color-picker' ),
+		ECHO_VERSION
+	);
 }
 add_action( 'admin_enqueue_scripts', 'echo_settings_enqueue' );
 
@@ -576,6 +731,13 @@ add_action( 'admin_enqueue_scripts', 'echo_settings_enqueue' );
 function echo_settings_css() {
 	$primary_color = echo_get_setting( 'primary_color', '#2563eb' );
 	$content_width = absint( echo_get_setting( 'content_width', 1180 ) );
+	$ui_style      = echo_get_setting( 'ui_style', 'classic' );
+
+	// Miuix 风格下，若未自定义主题色，采用 HyperOS 蓝
+	if ( 'miuix' === $ui_style && '#2563eb' === strtolower( (string) $primary_color ) ) {
+		$primary_color = '#3482ff';
+	}
+
 	$primary_hover = echo_darken_hex( $primary_color, -18 );
 
 	$css = ':root{';
@@ -595,6 +757,66 @@ function echo_settings_css() {
 	wp_add_inline_style( 'echo-settings-inline', $css );
 }
 add_action( 'wp_enqueue_scripts', 'echo_settings_css', 20 );
+
+/**
+ * 加载 Miuix 风格样式（仅在选用 miuix 时加载）
+ *
+ * @return void
+ */
+function echo_enqueue_style_layer() {
+	if ( 'miuix' !== echo_get_setting( 'ui_style', 'classic' ) ) {
+		return;
+	}
+
+	wp_enqueue_style(
+		'echo-miuix',
+		get_template_directory_uri() . '/assets/css/miuix.css',
+		array( 'echo-style' ),
+		ECHO_VERSION
+	);
+}
+add_action( 'wp_enqueue_scripts', 'echo_enqueue_style_layer', 25 );
+
+/**
+ * 为 body 添加风格 class
+ *
+ * @param array $classes 已有 class。
+ * @return array
+ */
+function echo_style_body_class( $classes ) {
+	if ( 'miuix' === echo_get_setting( 'ui_style', 'classic' ) ) {
+		$classes[] = 'echo-style-miuix';
+	}
+	return $classes;
+}
+add_filter( 'body_class', 'echo_style_body_class' );
+
+/**
+ * 首页排除指定分类
+ *
+ * @param WP_Query $query 主查询对象。
+ * @return void
+ */
+function echo_exclude_categories_from_home( $query ) {
+	if ( is_admin() || ! $query->is_main_query() ) {
+		return;
+	}
+
+	// 仅首页（博客文章列表）生效
+	if ( ! $query->is_home() ) {
+		return;
+	}
+
+	$excluded = echo_get_setting( 'exclude_categories', array() );
+	$excluded = is_array( $excluded ) ? array_filter( array_map( 'absint', $excluded ) ) : array();
+
+	if ( empty( $excluded ) ) {
+		return;
+	}
+
+	$query->set( 'category__not_in', $excluded );
+}
+add_action( 'pre_get_posts', 'echo_exclude_categories_from_home' );
 
 /**
  * 隐藏前台管理员工具栏（Admin Bar）
@@ -637,7 +859,7 @@ function echo_ajax_save_setting() {
 	$val = isset( $_POST['value'] ) ? wp_unslash( $_POST['value'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 	// 仅允许白名单内的键，防止任意写入
-	$allowed = array( 'hide_admin_bar', 'footer_credit', 'hide_tagline', 'primary_color', 'sidebar_position', 'content_width' );
+	$allowed = array( 'hide_admin_bar', 'footer_credit', 'hide_tagline', 'show_category_badge', 'primary_color', 'sidebar_position', 'content_width' );
 
 	if ( ! in_array( $key, $allowed, true ) ) {
 		wp_send_json_error( array( 'message' => __( '非法的设置项', 'echo' ) ), 400 );
@@ -650,6 +872,7 @@ function echo_ajax_save_setting() {
 		case 'hide_admin_bar':
 		case 'footer_credit':
 		case 'hide_tagline':
+		case 'show_category_badge':
 			$settings[ $key ] = ( '1' === (string) $val || 'true' === (string) $val || true === $val );
 			break;
 
