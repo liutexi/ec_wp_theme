@@ -913,3 +913,94 @@
         width: 130px;
     }
 }
+
+/* ==========================================================================
+   「我的」界面 / 前端微调 字段
+   ========================================================================== */
+.echo-my-modules {
+    border: 1px solid #c3c4c7;
+    border-radius: 2px;
+    background: #fff;
+    max-width: 760px;
+}
+
+.echo-my-modules__row {
+    display: grid;
+    grid-template-columns: 44px 110px minmax(0, 1fr) 110px;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.echo-my-modules__row:last-child {
+    border-bottom: 0;
+}
+
+.echo-my-modules__row:nth-child(odd) {
+    background: #f9f9f9;
+}
+
+.echo-my-modules__name {
+    font-weight: 600;
+    color: #1d2327;
+    font-size: 13px;
+}
+
+.echo-my-modules__desc {
+    color: #646970;
+    font-size: 12px;
+}
+
+.echo-my-modules__order {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    justify-content: flex-end;
+    font-size: 12px;
+    color: #646970;
+}
+
+.echo-my-modules__order input {
+    width: 60px;
+}
+
+.echo-checkbox-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0 16px 6px 0;
+    font-size: 13px;
+}
+
+.echo-checkbox-row input[type="checkbox"] {
+    margin: 0 2px 0 0;
+}
+
+.echo-code-textarea {
+    font-family: Consolas, "SF Mono", monospace;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.echo-number-suffix {
+    color: #646970;
+    font-size: 12px;
+    margin-left: 4px;
+}
+
+.echo-my-slug-warn {
+    color: #b32d2e;
+}
+
+@media (max-width: 782px) {
+    .echo-my-modules__row {
+        grid-template-columns: 44px minmax(0, 1fr);
+    }
+
+    .echo-my-modules__desc,
+    .echo-my-modules__order {
+        grid-column: 2;
+        justify-content: flex-start;
+    }
+}
