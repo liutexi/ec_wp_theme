@@ -194,7 +194,7 @@ function echo_settings_init() {
 		'echo-settings',
 		'echo_section_layout',
 		array(
-			'label_for' => 'echo_hide_admin_bar',
+			'label_for' => 'hide_admin_bar',
 			'desc'      => __( '登录后访问前台时，隐藏页面顶部那条黑色管理员工具栏。', 'echo' ),
 		)
 	);
@@ -226,7 +226,7 @@ function echo_settings_init() {
 		'echo-settings',
 		'echo_section_footer',
 		array(
-			'label_for' => 'echo_footer_credit',
+			'label_for' => 'footer_credit',
 			'desc'      => __( '在页脚显示「使用 Echo 主题」的署名链接。', 'echo' ),
 		)
 	);
@@ -238,7 +238,7 @@ function echo_settings_init() {
 		'echo-settings',
 		'echo_section_footer',
 		array(
-			'label_for' => 'echo_hide_tagline',
+			'label_for' => 'hide_tagline',
 			'desc'      => __( '在页脚隐藏站点描述文字。', 'echo' ),
 		)
 	);
@@ -312,6 +312,11 @@ function echo_settings_page_html() {
 			submit_button( __( '保存设置', 'echo' ) );
 			?>
 		</form>
+
+		<!-- 即时保存用的 AJAX 数据（兜底，避免 localize 失效） -->
+		<div id="echo-ajax-data" style="display:none;"
+			data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>"
+			data-nonce="<?php echo esc_attr( wp_create_nonce( 'echo_settings_nonce' ) ); ?>"></div>
 	</div>
 	<?php
 }
@@ -484,7 +489,8 @@ function echo_field_checkbox( $args ) {
  * @return void
  */
 function echo_settings_enqueue( $hook ) {
-	if ( 'toplevel_page_echo-settings' !== $hook ) {
+	// 仅在本主题设置页加载（兼容不同 hook 名）
+	if ( false === strpos( $hook, 'echo-settings' ) ) {
 		return;
 	}
 
@@ -621,7 +627,11 @@ function echo_ajax_save_setting() {
 		wp_send_json_error( array( 'message' => __( '无权限', 'echo' ) ), 403 );
 	}
 
-	check_ajax_referer( 'echo_settings_nonce', 'nonce' );
+	// 手动校验 nonce，失败时返回 JSON 而非 die(-1)，避免前端解析出错
+	$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+	if ( ! wp_verify_nonce( $nonce, 'echo_settings_nonce' ) ) {
+		wp_send_json_error( array( 'message' => __( '安全校验失败，请刷新页面后重试', 'echo' ) ), 403 );
+	}
 
 	$key = isset( $_POST['key'] ) ? sanitize_key( wp_unslash( $_POST['key'] ) ) : '';
 	$val = isset( $_POST['value'] ) ? wp_unslash( $_POST['value'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
