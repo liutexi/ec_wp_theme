@@ -15,6 +15,9 @@ define( 'ECHO_VERSION', '0.0.1' );
 // 引入主题自定义器
 require get_template_directory() . '/inc/customizer.php';
 
+// 引入后台文章功能增强
+require get_template_directory() . '/inc/admin-posts.php';
+
 /**
  * 主题初始化设置
  */
