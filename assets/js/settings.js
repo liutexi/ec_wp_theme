@@ -57,27 +57,48 @@
 			var key = $this.data('key');
 			var value = $this.is(':checked') ? '1' : '0';
 
+			// 优先从 DOM 兜底数据读取，其次用 localize 注入的全局变量
+			var $data = $('#echo-ajax-data');
+			var ajaxUrl = ($data.length && $data.data('ajax-url')) ||
+				(window.echoSettingsData && window.echoSettingsData.ajaxUrl) ||
+				(window.ajaxurl) || '';
+			var nonce = ($data.length && $data.data('nonce')) ||
+				(window.echoSettingsData && window.echoSettingsData.nonce) || '';
+
+			if (!ajaxUrl) {
+				showToast('无法获取请求地址，请刷新页面', 'error');
+				$this.prop('checked', !$this.is(':checked'));
+				return;
+			}
+
 			$.ajax({
-				url: (window.echoSettingsData && echoSettingsData.ajaxUrl) || ajaxurl,
+				url: ajaxUrl,
 				type: 'POST',
 				dataType: 'json',
 				data: {
 					action: 'echo_save_setting',
-					nonce: window.echoSettingsData ? echoSettingsData.nonce : '',
+					nonce: nonce,
 					key: key,
 					value: value
 				},
 				success: function (res) {
 					if (res && res.success) {
-						showToast('设置已保存', 'success');
+						showToast(res.data && res.data.message ? res.data.message : '设置已保存', 'success');
 					} else {
-						showToast((res && res.data && res.data.message) || '保存失败', 'error');
-						// 回滚复选框状态
+						var msg = (res && res.data && res.data.message) ? res.data.message : '保存失败';
+						showToast(msg, 'error');
 						$this.prop('checked', !$this.is(':checked'));
 					}
 				},
-				error: function () {
-					showToast('保存失败，请重试', 'error');
+				error: function (xhr, status, err) {
+					var msg = '保存失败，请重试';
+					try {
+						var r = JSON.parse(xhr.responseText);
+						if (r && r.data && r.data.message) {
+							msg = r.data.message;
+						}
+					} catch (e) {}
+					showToast(msg, 'error');
 					$this.prop('checked', !$this.is(':checked'));
 				}
 			});
