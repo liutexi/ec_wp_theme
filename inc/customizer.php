@@ -294,6 +294,8 @@ function echo_settings_init() {
 		array( 'user_base', __( '链接前缀', 'echo' ), 'echo_field_text', array( 'desc' => sprintf( /* translators: %s: 示例地址 */ __( '默认 uid，示例：%s。修改后若出现 404，请到「设置 → 固定链接」点一次保存。', 'echo' ), home_url( '/' . echo_user_base() . '/1/' ) ) ) ),
 		array( 'user_allow_edit', __( '允许自助编辑', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '用户在自己的主页可以修改昵称、简介与个人网站。', 'echo' ) ) ),
 		array( 'user_allow_password', __( '允许修改密码', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '需要验证当前密码；密码长度沿用登录 / 注册里的最小长度设置。', 'echo' ) ) ),
+		array( 'user_allow_avatar', __( '允许上传自定义头像', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '用户可在自己主页上传头像，全站（主页、我的、评论区）优先显示；关闭则只使用 Gravatar。', 'echo' ) ) ),
+		array( 'user_avatar_max_kb', __( '头像最大体积', 'echo' ), 'echo_field_number', array( 'min' => 256, 'max' => 8192, 'step' => 256, 'suffix' => 'KB' ) ),
 		array( 'user_avatar_size', __( '头像尺寸', 'echo' ), 'echo_field_number', array( 'min' => 32, 'max' => 256, 'step' => 8, 'suffix' => 'px' ) ),
 		array( 'user_show_stats', __( '显示数据统计', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '文章数、评论数与用户编号。', 'echo' ) ) ),
 		array( 'user_show_posts', __( '显示最近文章', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
