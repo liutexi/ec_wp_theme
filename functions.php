@@ -15,6 +15,12 @@ define( 'ECHO_VERSION', '0.0.1' );
 // 主题仓库地址：前台 / 后台页脚与 Theme URI 统一引用，避免写错
 define( 'ECHO_REPO_URL', 'https://github.com/liutexi/ec_wp_theme' );
 
+// 引入「我的」界面与前端微调（需在 customizer 之前加载，默认值要合并进设置）
+require get_template_directory() . '/inc/my-page.php';
+
+// 引入登录 / 注册界面（同上，默认值需在 customizer 之前合并）
+require get_template_directory() . '/inc/auth.php';
+
 // 引入主题自定义器
 require get_template_directory() . '/inc/customizer.php';
 
