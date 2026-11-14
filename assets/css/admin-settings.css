@@ -669,6 +669,143 @@
 }
 
 /* ==========================================================================
+   8.3 备份与导入
+   ========================================================================== */
+.echo-backup-manager {
+    margin: 28px 0 0;
+    padding-top: 20px;
+    border-top: 1px solid #dcdcde;
+}
+
+.echo-backup-manager > h2 {
+    margin: 0 0 4px;
+    padding: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.echo-backup-manager > .description {
+    margin: 0 0 12px;
+}
+
+.echo-backup-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.echo-backup-card {
+    padding: 14px 16px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 2px;
+}
+
+.echo-backup-card h3,
+.echo-backup-schedule h3,
+.echo-backup-list-title {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.echo-backup-card .description {
+    margin: 0 0 10px;
+}
+
+.echo-backup-import-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.echo-backup-import-form input[type="file"] {
+    max-width: 100%;
+    font-size: 12px;
+}
+
+.echo-backup-schedule {
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    background: #f6f7f7;
+    border: 1px solid #c3c4c7;
+    border-radius: 2px;
+}
+
+.echo-backup-schedule-grid {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.echo-backup-schedule-grid > label > span {
+    display: block;
+    margin-bottom: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.echo-backup-schedule-grid .echo-switch-label {
+    margin-bottom: 0;
+}
+
+.echo-backup-next {
+    margin: 0;
+}
+
+.echo-backup-list-title {
+    margin-top: 4px;
+}
+
+.echo-backup-list {
+    border: 1px solid #c3c4c7;
+    border-radius: 2px;
+}
+
+.echo-backup-list th,
+.echo-backup-list td {
+    padding: 8px 12px;
+}
+
+.echo-backup-list td {
+    vertical-align: middle;
+    font-size: 12px;
+}
+
+.echo-backup-list code {
+    font-size: 11px;
+    color: #50575e;
+    word-break: break-all;
+}
+
+.echo-backup-kind {
+    display: inline-block;
+    padding: 1px 7px;
+    border: 1px solid #c3c4c7;
+    border-radius: 2px;
+    background: #fff;
+    font-size: 11px;
+    color: #50575e;
+}
+
+.echo-backup-row:nth-child(odd) {
+    background: #f9f9f9;
+}
+
+@media (max-width: 782px) {
+    .echo-backup-cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==========================================================================
    9. 保存按钮
    ========================================================================== */
 .echo-settings-wrap .submit {
