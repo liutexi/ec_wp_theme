@@ -22,6 +22,15 @@ get_header();
 
 							<h1 class="echo-single__title"><?php the_title(); ?></h1>
 
+							<?php
+							$echo_subtitle = get_post_meta( get_the_ID(), '_echo_subtitle', true );
+							if ( '' !== $echo_subtitle ) :
+								?>
+								<p class="echo-single__subtitle"><?php echo esc_html( $echo_subtitle ); ?></p>
+								<?php
+							endif;
+							?>
+
 							<div class="echo-single__meta">
 								<span class="echo-single__author">
 									<?php echo get_avatar( get_the_author_meta( 'ID' ), 28 ); ?>
