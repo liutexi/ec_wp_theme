@@ -156,6 +156,11 @@ add_filter( 'body_class', 'echo_body_classes' );
  * @return string
  */
 function echo_get_categories() {
+	// 尊重「显示分类徽章」开关
+	if ( function_exists( 'echo_get_setting' ) && ! echo_get_setting( 'show_category_badge', true ) ) {
+		return '';
+	}
+
 	$categories = get_the_category();
 	if ( empty( $categories ) ) {
 		return '';
@@ -206,4 +211,67 @@ function echo_menu_fallback() {
 		)
 	);
 	echo '</ul>';
+}
+
+/**
+ * 自定义评论回调：输出卡片式评论结构
+ *
+ * @param WP_Comment $comment 评论对象。
+ * @param array      $args    参数。
+ * @param int        $depth   深度。
+ * @return void
+ */
+function echo_comment( $comment, $args, $depth ) {
+	?>
+	<li id="comment-<?php comment_ID(); ?>" <?php comment_class( empty( $args['has_children'] ) ? '' : 'parent' ); ?>>
+		<div id="div-comment-<?php comment_ID(); ?>" class="comment-body">
+			<?php echo get_avatar( $comment, 48 ); ?>
+			<div class="comment-content">
+				<div class="comment-author vcard">
+					<?php
+					printf(
+						'<span class="fn">%s</span>',
+						get_comment_author_link()
+					);
+					?>
+				</div>
+				<div class="comment-metadata">
+					<a href="<?php echo esc_url( get_comment_link( $comment, $args ) ); ?>">
+						<time datetime="<?php comment_time( 'c' ); ?>">
+							<?php
+							printf(
+								/* translators: 1: 日期，2: 时间 */
+								esc_html__( '%1$s %2$s', 'echo' ),
+								esc_html( get_comment_date() ),
+								esc_html( get_comment_time() )
+							);
+							?>
+						</time>
+					</a>
+					<?php
+					if ( '0' === $comment->comment_approved ) {
+						echo '<span class="comment-awaiting-moderation">' . esc_html__( '评论待审核', 'echo' ) . '</span>';
+					}
+					?>
+				</div>
+				<div class="comment-text">
+					<?php comment_text(); ?>
+				</div>
+				<div class="reply">
+					<?php
+					comment_reply_link(
+						array_merge(
+							$args,
+							array(
+								'add_below' => 'div-comment',
+								'depth'     => $depth,
+								'max_depth' => $args['max_depth'],
+							)
+						)
+					);
+					?>
+				</div>
+			</div>
+		</div>
+	<?php
 }
