@@ -1281,7 +1281,7 @@ body.echo-no-sidebar .echo-sidebar {
    13. 响应式
    ========================================================================== */
 @media (max-width: 1024px) {
-    .echo-layout {
+    .echo-layout:not(.echo-layout--full) {
         grid-template-columns: minmax(0, 1fr) 280px;
         gap: 24px;
     }
@@ -2133,5 +2133,341 @@ body.echo-style-miuix .echo-single--auth {
         padding: 5px 8px;
         font-size: 0.85rem;
         margin-right: 2px;
+    }
+}
+
+/* ==========================================================================
+   用户主页（/uid/{id}）
+   ========================================================================== */
+.echo-user {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 20px 0 32px;
+}
+
+.echo-user-card {
+    padding: 26px;
+    background: var(--echo-surface);
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius);
+    box-shadow: var(--echo-shadow);
+}
+
+.echo-user-profile__head {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.echo-user-profile__avatar img {
+    display: block;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.echo-user-profile__name {
+    margin: 0 0 6px;
+    font-size: 1.5rem;
+    line-height: 1.3;
+}
+
+.echo-user-profile__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    margin: 0;
+    color: var(--echo-text-muted);
+    font-size: 0.86rem;
+}
+
+.echo-user-profile__uid {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--echo-bg-alt);
+    color: var(--echo-text-secondary);
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+}
+
+.echo-user-profile__bio {
+    margin: 16px 0 0;
+    color: var(--echo-text-secondary);
+    line-height: 1.75;
+}
+
+.echo-user-profile__links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    margin: 14px 0 0;
+}
+
+.echo-user-link {
+    color: var(--echo-primary);
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.echo-user-link:hover {
+    text-decoration: underline;
+}
+
+/* 统计 */
+.echo-user-stats__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.echo-user-stats__item {
+    padding: 16px 10px;
+    background: var(--echo-bg-alt);
+    border-radius: var(--echo-radius-sm);
+    text-align: center;
+}
+
+.echo-user-stats__value {
+    display: block;
+    color: var(--echo-text);
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.echo-user-stats__label {
+    display: block;
+    margin-top: 2px;
+    color: var(--echo-text-muted);
+    font-size: 0.78rem;
+}
+
+/* 列表 */
+.echo-user-card__title {
+    margin: 0 0 12px;
+    font-size: 1.05rem;
+}
+
+.echo-user-list__items {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.echo-user-list__items li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--echo-border);
+}
+
+.echo-user-list__items li:last-child {
+    border-bottom: 0;
+}
+
+.echo-user-list__items a {
+    color: var(--echo-text);
+    text-decoration: none;
+}
+
+.echo-user-list__items a:hover {
+    color: var(--echo-primary);
+}
+
+.echo-user-list__date {
+    flex-shrink: 0;
+    color: var(--echo-text-muted);
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.echo-user-list__excerpt {
+    flex: 1;
+    overflow: hidden;
+    color: var(--echo-text-muted);
+    font-size: 0.82rem;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.echo-user-empty {
+    margin: 0;
+    color: var(--echo-text-muted);
+}
+
+/* 反馈 */
+.echo-user-alert {
+    margin: 0;
+    padding: 10px 14px;
+    border-left: 3px solid transparent;
+    border-radius: var(--echo-radius-sm);
+    font-size: 0.88rem;
+    line-height: 1.55;
+}
+
+.echo-user-alert--error {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+.echo-user-alert--success {
+    background: #ecfdf5;
+    border-color: #10b981;
+    color: #047857;
+}
+
+/* 编辑表单 */
+.echo-user-edit__summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: var(--echo-text);
+    font-size: 1.05rem;
+    font-weight: 600;
+    list-style: none;
+}
+
+.echo-user-edit__summary::-webkit-details-marker {
+    display: none;
+}
+
+.echo-user-edit__summary::before {
+    content: "+";
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--echo-bg-alt);
+    color: var(--echo-primary);
+    font-size: 0.9rem;
+    line-height: 1;
+}
+
+.echo-user-edit[open] .echo-user-edit__summary::before {
+    content: "−";
+}
+
+.echo-user-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.echo-user-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+}
+
+.echo-user-field > label {
+    color: var(--echo-text-secondary);
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.echo-user-field input[type="text"],
+.echo-user-field input[type="url"],
+.echo-user-field input[type="password"],
+.echo-user-field textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius-sm);
+    background: var(--echo-surface);
+    color: var(--echo-text);
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color var(--echo-transition), box-shadow var(--echo-transition);
+}
+
+.echo-user-field textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.echo-user-field input:focus,
+.echo-user-field textarea:focus {
+    border-color: var(--echo-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.echo-user-hint {
+    color: var(--echo-text-muted);
+    font-size: 0.78rem;
+    line-height: 1.5;
+}
+
+.echo-user-fieldset {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 4px 0 0;
+    padding: 14px 16px;
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius-sm);
+}
+
+.echo-user-fieldset legend {
+    padding: 0 6px;
+    color: var(--echo-text-secondary);
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.echo-user-form__actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.echo-user-hp {
+    position: absolute !important;
+    left: -9999px !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+}
+
+.echo-my-profile__links {
+    margin: 12px 0 0;
+}
+
+@media (max-width: 600px) {
+    .echo-user-card {
+        padding: 20px;
+    }
+
+    .echo-user-profile__head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .echo-user-stats__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .echo-user-list__items li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .echo-user-list__excerpt {
+        text-align: left;
+        white-space: normal;
     }
 }
