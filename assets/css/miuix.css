@@ -197,6 +197,20 @@ body.echo-style-miuix .echo-layout {
     padding: 28px 0;
 }
 
+/* 单篇隐藏侧边栏 */
+body.echo-style-miuix.echo-no-sidebar .echo-layout {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+body.echo-style-miuix.echo-no-sidebar .echo-sidebar {
+    display: none;
+}
+
+body.echo-style-miuix .echo-single__subtitle {
+    color: var(--miuix-summary);
+    font-size: 1.05rem;
+}
+
 /* 页面标题横幅 */
 body.echo-style-miuix .echo-page-header {
     background: transparent;
