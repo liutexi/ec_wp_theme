@@ -1264,3 +1264,97 @@
         width: auto;
     }
 }
+
+/* ==========================================================================
+   友情链接管理
+   ========================================================================== */
+.echo-links-manager {
+    margin-top: 28px;
+}
+
+.echo-links-manager h2 {
+    margin-bottom: 6px;
+}
+
+.echo-link-table {
+    margin-top: 12px;
+}
+
+.echo-link-table th {
+    font-weight: 600;
+}
+
+.echo-link-table td {
+    vertical-align: middle;
+    padding: 8px 10px;
+}
+
+.echo-link-table input.regular-text {
+    width: 100%;
+}
+
+.echo-link-col-name {
+    width: 14%;
+}
+
+.echo-link-col-url {
+    width: 22%;
+}
+
+.echo-link-col-desc {
+    width: 19%;
+}
+
+.echo-link-col-group {
+    width: 11%;
+}
+
+.echo-link-col-logo {
+    width: 18%;
+}
+
+.echo-link-col-actions {
+    width: 16%;
+}
+
+.echo-link-actions-cell {
+    white-space: nowrap;
+}
+
+.echo-link-actions-cell .button-link {
+    display: inline-block;
+    margin-right: 4px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    text-decoration: none;
+}
+
+.echo-link-actions-cell .button-link:hover {
+    background: #f0f0f1;
+}
+
+.echo-link-actions-cell .button-link:last-child {
+    margin-right: 0;
+}
+
+.echo-link-remove {
+    color: #b32d2e;
+}
+
+.echo-link-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+.echo-link-actions .description {
+    margin: 0;
+}
+
+.echo-link-empty td {
+    color: #646970;
+    font-style: italic;
+    padding: 14px 10px;
+}
