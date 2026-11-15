@@ -73,6 +73,27 @@ function echo_get_setting( $key, $default = null ) {
 }
 
 /**
+ * 设置分类（菜单与页面导航共用一份）
+ *
+ * @return array id => 名称
+ */
+function echo_settings_sections_map() {
+	return array(
+		'echo_section_identity'  => __( '站点标识', 'echo' ),
+		'echo_section_colors'    => __( '颜色', 'echo' ),
+		'echo_section_layout'    => __( '布局', 'echo' ),
+		'echo_section_style'     => __( '界面风格', 'echo' ),
+		'echo_section_footer'    => __( '页脚', 'echo' ),
+		'echo_section_my'        => __( '我的界面', 'echo' ),
+		'echo_section_tweaks'    => __( '前端微调', 'echo' ),
+		'echo_section_auth'      => __( '登录 / 注册', 'echo' ),
+		'echo_section_user'      => __( '用户主页', 'echo' ),
+		'echo_section_categories' => __( '文章分类', 'echo' ),
+		'echo_section_permalink' => __( '固定链接', 'echo' ),
+	);
+}
+
+/**
  * 注册后台菜单与设置
  *
  * @return void
@@ -87,8 +108,44 @@ function echo_settings_menu() {
 		'dashicons-admin-appearance', // 图标
 		61                           // 位置（在「外观」之后）
 	);
+
+	// 分类子菜单：鼠标悬停「Echo 设置」时弹出，点击直达对应分类
+	foreach ( echo_settings_sections_map() as $section_id => $label ) {
+		add_submenu_page(
+			'echo-settings',
+			$label . ' - ' . __( 'Echo 设置', 'echo' ),
+			$label,
+			'manage_options',
+			'echo-settings&panel=' . $section_id,
+			'echo_settings_page_html'
+		);
+	}
+
+	// 去掉 WP 自动生成的同名子项，避免菜单里出现重复的「Echo 设置」
+	remove_submenu_page( 'echo-settings', 'echo-settings' );
 }
 add_action( 'admin_menu', 'echo_settings_menu' );
+
+/**
+ * 点击分类子菜单后保持该子项高亮
+ *
+ * @return void
+ */
+function echo_settings_highlight_submenu() {
+	global $parent_file, $submenu_file;
+
+	if ( ! isset( $_GET['page'] ) || 'echo-settings' !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return;
+	}
+
+	$parent_file = 'echo-settings'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+
+	$panel = isset( $_GET['panel'] ) ? sanitize_key( wp_unslash( $_GET['panel'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( $panel ) {
+		$submenu_file = 'echo-settings&panel=' . $panel; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+	}
+}
+add_action( 'admin_head', 'echo_settings_highlight_submenu' );
 
 /**
  * 注册设置字段
@@ -596,18 +653,7 @@ function echo_settings_page_html() {
 		: array();
 
 	// 展示顺序（未列出的按注册顺序排在后面）
-	$nav_order = array(
-		'echo_section_identity',
-		'echo_section_colors',
-		'echo_section_layout',
-		'echo_section_style',
-		'echo_section_footer',
-		'echo_section_my',
-		'echo_section_tweaks',
-		'echo_section_auth',
-		'echo_section_user',
-		'echo_section_permalink',
-	);
+	$nav_order = array_keys( echo_settings_sections_map() );
 	$ordered = array();
 	foreach ( $nav_order as $section_id ) {
 		if ( isset( $sections[ $section_id ] ) ) {
@@ -620,11 +666,12 @@ function echo_settings_page_html() {
 		}
 	}
 
-	$first_id = '';
-	foreach ( array_keys( $ordered ) as $section_id ) {
-		$first_id = $section_id;
-		break;
-	}
+	$section_ids = array_keys( $ordered );
+	$first_id    = ! empty( $section_ids ) ? $section_ids[0] : '';
+
+	// 从左侧菜单子项进入时（?panel=xxx）直接激活对应分类
+	$requested = isset( $_GET['panel'] ) ? sanitize_key( wp_unslash( $_GET['panel'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$active_id = ( $requested && in_array( $requested, $section_ids, true ) ) ? $requested : $first_id;
 	?>
 	<div class="wrap echo-settings-wrap">
 		<h1 class="echo-settings-title"><?php esc_html_e( 'Echo 主题设置', 'echo' ); ?></h1>
@@ -633,12 +680,12 @@ function echo_settings_page_html() {
 		<form method="post" action="options.php">
 			<?php settings_fields( 'echo_settings_group' ); ?>
 
-			<div class="echo-settings-shell">
+			<div class="echo-settings-shell" data-current="<?php echo esc_attr( $active_id ); ?>">
 				<nav class="echo-settings-nav" aria-label="<?php esc_attr_e( '设置分类', 'echo' ); ?>">
 					<?php
 					$index = 0;
 					foreach ( $ordered as $section_id => $section ) :
-						$active = ( 0 === $index ) ? ' is-active' : '';
+						$active = ( $section_id === $active_id ) ? ' is-active' : '';
 						$label  = ! empty( $section['title'] ) ? $section['title'] : $section_id;
 						?>
 						<button type="button"
@@ -656,7 +703,7 @@ function echo_settings_page_html() {
 					<?php
 					$index = 0;
 					foreach ( $ordered as $section_id => $section ) :
-						$active = ( 0 === $index ) ? ' is-active' : '';
+						$active = ( $section_id === $active_id ) ? ' is-active' : '';
 						?>
 						<section class="echo-settings-panel<?php echo esc_attr( $active ); ?>"
 							id="echo-panel-<?php echo esc_attr( $section_id ); ?>"
