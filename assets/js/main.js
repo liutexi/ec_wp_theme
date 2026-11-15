@@ -11,6 +11,7 @@
 		initBackToTop();
 		initPasswordToggle();
 		initAvatarInput();
+		initAvatarFallback();
 	});
 
 	/**
@@ -165,6 +166,18 @@
 	 * 头像上传前端预检：体积 / 类型不合格时立即提示并清空，避免提交后才失败
 	 */
 	function initAvatarInput() {
+		var preview = document.querySelector('.echo-user-avatar-row__img');
+		if (preview) {
+			preview.addEventListener('error', function () {
+				var box = preview.parentNode;
+				var tip = box ? box.querySelector('.echo-user-hint') : null;
+				if (tip) {
+					tip.textContent = '已保存的头像文件加载失败（地址可能已失效），请重新上传。';
+					tip.style.color = '#b91c1c';
+				}
+			});
+		}
+
 		var input = document.querySelector('input[type="file"][data-max-kb]');
 		if (!input) {
 			return;
@@ -209,6 +222,63 @@
 				var mb = (file.size / 1024 / 1024).toFixed(1);
 				showError('这张图约 ' + mb + ' MB，超过 ' + maxKb + ' KB 限制，请压缩后再上传。');
 			}
+		});
+	}
+	/**
+	 * 头像兜底：图片加载失败（Gravatar 不可达 / 自定义头像失效）时
+	 * 换成本地生成的首字母头像，避免出现破图
+	 */
+	function initAvatarFallback() {
+		var imgs = document.querySelectorAll('img.avatar');
+		if (!imgs.length) {
+			return;
+		}
+
+		var primary = '';
+		try {
+			primary = (getComputedStyle(document.documentElement).getPropertyValue('--echo-primary') || '').trim();
+		} catch (e) {
+			primary = '';
+		}
+
+		Array.prototype.forEach.call(imgs, function (img) {
+			img.addEventListener('error', function () {
+				applyFallback(img, primary);
+			});
+
+			// 已在缓存里失败过的图不会触发 error
+			if (img.complete && img.naturalWidth === 0) {
+				applyFallback(img, primary);
+			}
+		});
+	}
+
+	function applyFallback(img, primary) {
+		if (img.getAttribute('data-echo-fallback') === '1') {
+			return;
+		}
+		img.setAttribute('data-echo-fallback', '1');
+		img.src = buildLetterAvatar((img.getAttribute('alt') || '?').trim(), primary);
+	}
+
+	function buildLetterAvatar(name, primary) {
+		var ch = name ? name.charAt(0) : '?';
+		if (/[a-z]/.test(ch)) {
+			ch = ch.toUpperCase();
+		}
+		var color = primary || '#2563eb';
+		var svg =
+			'<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">' +
+			'<rect width="96" height="96" fill="' + escapeXml(color) + '"/>' +
+			'<text x="48" y="49" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Microsoft YaHei,sans-serif" ' +
+			'font-size="42" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">' +
+			escapeXml(ch) + '</text></svg>';
+		return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+	}
+
+	function escapeXml(str) {
+		return String(str).replace(/[&<>"']/g, function (c) {
+			return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c];
 		});
 	}
 })();
