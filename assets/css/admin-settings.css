@@ -1305,28 +1305,100 @@
     width: 100%;
 }
 
+.echo-link-col-enabled {
+    width: 6%;
+    text-align: center;
+}
+
 .echo-link-col-name {
-    width: 14%;
+    width: 13%;
 }
 
 .echo-link-col-url {
-    width: 22%;
+    width: 21%;
 }
 
 .echo-link-col-desc {
-    width: 19%;
+    width: 17%;
 }
 
 .echo-link-col-group {
-    width: 11%;
+    width: 10%;
 }
 
 .echo-link-col-logo {
-    width: 18%;
+    width: 20%;
 }
 
 .echo-link-col-actions {
-    width: 16%;
+    width: 13%;
+}
+
+.echo-link-col-enabled input {
+    margin: 0;
+}
+
+.echo-link-logo-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.echo-link-logo-row input.regular-text {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+}
+
+.echo-link-logo-row .button {
+    flex: 0 0 auto;
+}
+
+.echo-link-drag {
+    color: #8c8f94;
+    cursor: grab;
+    margin-right: 4px;
+    user-select: none;
+}
+
+.echo-link-drag:active {
+    cursor: grabbing;
+}
+
+.echo-link-row.is-dragging {
+    opacity: 0.6;
+    background: #f0f6fc !important;
+}
+
+.echo-link-count {
+    margin-left: 8px;
+    padding: 1px 8px;
+    border-radius: 10px;
+    background: #f0f0f1;
+    color: #646970;
+    font-size: 12px;
+    font-weight: 400;
+    vertical-align: middle;
+}
+
+.echo-link-bulk {
+    margin-top: 16px;
+    padding: 10px 14px;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.echo-link-bulk summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.echo-link-bulk textarea {
+    margin: 8px 0;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
 }
 
 .echo-link-actions-cell {
