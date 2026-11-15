@@ -1004,7 +1004,10 @@ body.echo-no-sidebar .echo-sidebar {
 }
 
 .comment-list .comment-body .avatar {
-    flex-shrink: 0;
+    flex: 0 0 48px;
+    align-self: flex-start;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--echo-surface);
@@ -1423,6 +1426,8 @@ body.echo-no-sidebar .echo-sidebar {
 /* 头像（统一标准 .avatar 的圆角裁切） */
 .echo-comments .avatar,
 .echo-single__author .avatar {
+    flex-shrink: 0;
+    align-self: flex-start;
     border-radius: 50%;
     object-fit: cover;
 }
