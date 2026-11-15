@@ -24,6 +24,9 @@ require get_template_directory() . '/inc/auth.php';
 // 引入用户主页（/uid/{id}）与自助资料编辑
 require get_template_directory() . '/inc/user-page.php';
 
+// 引入友情链接（默认值需在 customizer 之前合并）
+require get_template_directory() . '/inc/links.php';
+
 // 引入主题自定义器
 require get_template_directory() . '/inc/customizer.php';
 
