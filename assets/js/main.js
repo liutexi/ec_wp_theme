@@ -12,6 +12,7 @@
 		initPasswordToggle();
 		initAvatarInput();
 		initAvatarFallback();
+		initCodeCopy();
 	});
 
 	/**
@@ -279,6 +280,104 @@
 	function escapeXml(str) {
 		return String(str).replace(/[&<>"']/g, function (c) {
 			return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c];
+		});
+	}
+	/**
+	 * 代码块右上角复制按钮
+	 */
+	function initCodeCopy() {
+		var cfg = window.echoL10n || {};
+		if (cfg.codeCopy === false) {
+			return;
+		}
+
+		var blocks = document.querySelectorAll('.echo-entry-content pre');
+		if (!blocks.length) {
+			return;
+		}
+
+		Array.prototype.forEach.call(blocks, function (pre) {
+			var parent = pre.parentNode;
+			if (!parent) {
+				return;
+			}
+			if (parent.classList && parent.classList.contains('echo-code-wrap')) {
+				return;
+			}
+
+			// 包一层容器，横向滚动代码时按钮固定在右上角
+			var wrap = document.createElement('div');
+			wrap.className = 'echo-code-wrap';
+			parent.insertBefore(wrap, pre);
+			wrap.appendChild(pre);
+
+			var btn = document.createElement('button');
+			btn.type = 'button';
+			btn.className = 'echo-code-copy';
+			btn.textContent = cfg.copy || '复制';
+			btn.setAttribute('aria-label', cfg.copy || '复制');
+			wrap.appendChild(btn);
+
+			var reset = function () {
+				btn.textContent = cfg.copy || '复制';
+				btn.classList.remove('is-copied');
+			};
+
+			btn.addEventListener('click', function () {
+				copyText(getCodeText(pre)).then(
+					function () {
+						btn.textContent = cfg.copied || '已复制';
+						btn.classList.add('is-copied');
+						window.setTimeout(reset, 1800);
+					},
+					function () {
+						btn.textContent = cfg.copyFail || '复制失败';
+						window.setTimeout(reset, 1800);
+					}
+				);
+			});
+		});
+	}
+
+	function getCodeText(pre) {
+		var code = pre.querySelector('code');
+		if (code) {
+			return (code.innerText || code.textContent || '').replace(/\s+$/, '');
+		}
+		var clone = pre.cloneNode(true);
+		var btn = clone.querySelector('.echo-code-copy');
+		if (btn && btn.parentNode) {
+			btn.parentNode.removeChild(btn);
+		}
+		return (clone.textContent || '').replace(/\s+$/, '');
+	}
+
+	function copyText(text) {
+		if (navigator.clipboard && window.isSecureContext) {
+			return navigator.clipboard.writeText(text);
+		}
+		return new Promise(function (resolve, reject) {
+			var ta = document.createElement('textarea');
+			ta.value = text;
+			ta.setAttribute('readonly', '');
+			ta.style.position = 'fixed';
+			ta.style.top = '-9999px';
+			ta.style.opacity = '0';
+			document.body.appendChild(ta);
+			ta.select();
+			try {
+				ta.setSelectionRange(0, ta.value.length);
+			} catch (e) {
+				/* 旧浏览器忽略 */
+			}
+			var ok = false;
+			try {
+				ok = document.execCommand('copy');
+			} catch (e) {
+				ok = false;
+			}
+			document.body.removeChild(ta);
+			ok ? resolve() : reject(new Error('copy failed'));
 		});
 	}
 })();
