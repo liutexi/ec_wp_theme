@@ -27,6 +27,9 @@ require get_template_directory() . '/inc/user-page.php';
 // 引入友情链接（默认值需在 customizer 之前合并）
 require get_template_directory() . '/inc/links.php';
 
+// 设置页图标
+require get_template_directory() . '/inc/settings-icons.php';
+
 // 引入主题自定义器
 require get_template_directory() . '/inc/customizer.php';
 
