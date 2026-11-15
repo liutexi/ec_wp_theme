@@ -227,6 +227,7 @@ function echo_settings_init() {
 		array( 'tw_author_avatar', __( '文章元信息头像', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
 		array( 'tw_reading_progress', __( '文章阅读进度条', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '仅在单篇文章页顶部显示。', 'echo' ) ) ),
 		array( 'tw_back_to_top', __( '返回顶部按钮', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'tw_code_copy', __( '代码块复制按钮', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '在文章代码块右上角显示「复制」，一键复制代码内容。', 'echo' ) ) ),
 		array( 'tw_smooth_scroll', __( '平滑滚动', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
 		array( 'tw_nav_my', __( '导航栏「我的」入口', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
 		array( 'tw_nav_my_label', __( '入口文字', 'echo' ), 'echo_field_text', array( 'desc' => __( '默认「我的」。', 'echo' ) ) ),
