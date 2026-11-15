@@ -10,6 +10,7 @@
 		initReadingProgress();
 		initBackToTop();
 		initPasswordToggle();
+		initAvatarInput();
 	});
 
 	/**
@@ -158,6 +159,56 @@
 				btn.classList.toggle('is-visible', show);
 				btn.setAttribute('aria-pressed', show ? 'true' : 'false');
 			});
+		});
+	}
+	/**
+	 * 头像上传前端预检：体积 / 类型不合格时立即提示并清空，避免提交后才失败
+	 */
+	function initAvatarInput() {
+		var input = document.querySelector('input[type="file"][data-max-kb]');
+		if (!input) {
+			return;
+		}
+
+		var errorEl = input.parentNode.querySelector('.echo-user-hint--avatar-error');
+		var hintEl = input.parentNode.querySelector('.echo-user-hint--avatar');
+		var maxKb = parseInt(input.getAttribute('data-max-kb'), 10) || 0;
+		var allowed = /^image\/(jpeg|png|gif|webp)$/i;
+
+		function showError(text) {
+			input.value = '';
+			if (errorEl) {
+				errorEl.textContent = text;
+				errorEl.hidden = false;
+			}
+			if (hintEl) {
+				hintEl.style.display = 'none';
+			}
+		}
+
+		input.addEventListener('change', function () {
+			if (errorEl) {
+				errorEl.hidden = true;
+				errorEl.textContent = '';
+			}
+			if (hintEl) {
+				hintEl.style.display = '';
+			}
+
+			var file = input.files && input.files[0];
+			if (!file) {
+				return;
+			}
+
+			if (file.type && !allowed.test(file.type)) {
+				showError('只支持 JPG / PNG / GIF / WebP 图片。');
+				return;
+			}
+
+			if (maxKb && file.size > maxKb * 1024) {
+				var mb = (file.size / 1024 / 1024).toFixed(1);
+				showError('这张图约 ' + mb + ' MB，超过 ' + maxKb + ' KB 限制，请压缩后再上传。');
+			}
 		});
 	}
 })();
