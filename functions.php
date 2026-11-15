@@ -115,6 +115,18 @@ function echo_scripts() {
 	$main_ver  = file_exists( $main_path ) ? ECHO_VERSION . '.' . filemtime( $main_path ) : ECHO_VERSION;
 	wp_enqueue_script( 'echo-main', get_template_directory_uri() . '/assets/js/main.js', array(), $main_ver, true );
 
+	// 脚本文案与开关
+	wp_localize_script(
+		'echo-main',
+		'echoL10n',
+		array(
+			'codeCopy' => function_exists( 'echo_my_config' ) ? (bool) echo_my_config( 'tw_code_copy', true ) : false,
+			'copy'     => __( '复制', 'echo' ),
+			'copied'   => __( '已复制', 'echo' ),
+			'copyFail' => __( '复制失败', 'echo' ),
+		)
+	);
+
 	// 评论回复脚本
 	if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
 		wp_enqueue_script( 'comment-reply' );
