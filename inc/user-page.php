@@ -283,9 +283,20 @@ function echo_user_filter_avatar( $args, $id_or_email ) {
 		return $args;
 	}
 
+	// alt 留空会让无障碍读取和首字母兜底失效
+	if ( empty( $args['alt'] ) ) {
+		$target = get_userdata( $uid );
+		if ( $target ) {
+			$args['alt'] = $target->display_name;
+		}
+	}
+
 	$data = echo_user_avatar_data( $uid );
 	if ( $data ) {
-		$args['url']          = add_query_arg( 'v', isset( $data['v'] ) ? (string) $data['v'] : '1', $data['url'] );
+		// 必须跟随当前页面协议：https 页面里嵌 http 图片会被浏览器按混合内容拦截
+		$avatar_url = set_url_scheme( $data['url'] );
+
+		$args['url']          = add_query_arg( 'v', isset( $data['v'] ) ? (string) $data['v'] : '1', $avatar_url );
 		$args['found_avatar'] = true;
 	}
 	return $args;
@@ -405,7 +416,7 @@ function echo_user_handle_avatar_upload( $uid ) {
 		$uid,
 		'echo_custom_avatar',
 		array(
-			'url'  => esc_url_raw( $moved['url'] ),
+			'url'  => set_url_scheme( esc_url_raw( $moved['url'] ) ),
 			'file' => $moved['file'],
 			'v'    => time(),
 		)
@@ -780,7 +791,7 @@ function echo_user_section_edit( $user ) {
 						<?php if ( $custom_avatar ) : ?>
 							<div class="echo-user-avatar-row">
 								<img class="echo-user-avatar-row__img"
-									src="<?php echo esc_url( add_query_arg( 'v', isset( $custom_avatar['v'] ) ? (string) $custom_avatar['v'] : '1', $custom_avatar['url'] ) ); ?>"
+									src="<?php echo esc_url( add_query_arg( 'v', isset( $custom_avatar['v'] ) ? (string) $custom_avatar['v'] : '1', set_url_scheme( $custom_avatar['url'] ) ) ); ?>"
 									alt="<?php esc_attr_e( '当前头像', 'echo' ); ?>" />
 								<span class="echo-user-hint"><?php esc_html_e( '当前使用自定义头像。', 'echo' ); ?></span>
 							</div>
