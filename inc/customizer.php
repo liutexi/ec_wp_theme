@@ -565,6 +565,19 @@ function echo_settings_init() {
 	);
 
 	add_settings_field(
+		'echo_links_show_sidebar',
+		__( '模板页显示侧边栏', 'echo' ),
+		'echo_field_checkbox',
+		'echo-settings',
+		'echo_section_links',
+		array(
+			'label_for' => 'links_show_sidebar',
+			'desc'      => __( '仅影响选择「友情链接」页面模板的页面；短代码不受影响。', 'echo' ),
+		)
+	);
+
+
+	add_settings_field(
 		'echo_exclude_categories',
 		__( '首页排除的分类', 'echo' ),
 		'echo_field_exclude_categories',
