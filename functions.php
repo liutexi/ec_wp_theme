@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // 主题常量
-define( 'ECHO_VERSION', '0.0.1_Fix' );
+define( 'ECHO_VERSION', '0.0.1' );
 
 // 主题仓库地址：前台 / 后台页脚与 Theme URI 统一引用，避免写错
 define( 'ECHO_REPO_URL', 'https://github.com/liutexi/ec_wp_theme' );
@@ -105,11 +105,15 @@ add_action( 'widgets_init', 'echo_widgets_init' );
  * 加载主题样式与脚本
  */
 function echo_scripts() {
-	// 主样式
-	wp_enqueue_style( 'echo-style', get_stylesheet_uri(), array(), ECHO_VERSION );
+	// 缓存参数带上文件修改时间，改样式后浏览器立即拉新（无需手动清缓存）
+	$style_path = get_stylesheet_directory() . '/style.css';
+	$style_ver  = file_exists( $style_path ) ? ECHO_VERSION . '.' . filemtime( $style_path ) : ECHO_VERSION;
+	wp_enqueue_style( 'echo-style', get_stylesheet_uri(), array(), $style_ver );
 
 	// 交互脚本
-	wp_enqueue_script( 'echo-main', get_template_directory_uri() . '/assets/js/main.js', array(), ECHO_VERSION, true );
+	$main_path = get_template_directory() . '/assets/js/main.js';
+	$main_ver  = file_exists( $main_path ) ? ECHO_VERSION . '.' . filemtime( $main_path ) : ECHO_VERSION;
+	wp_enqueue_script( 'echo-main', get_template_directory_uri() . '/assets/js/main.js', array(), $main_ver, true );
 
 	// 评论回复脚本
 	if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
