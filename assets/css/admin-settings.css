@@ -925,10 +925,10 @@
 }
 
 .echo-my-modules__row {
-    display: grid;
-    grid-template-columns: 44px 110px minmax(0, 1fr) 110px;
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
+    gap: 8px 12px;
     padding: 9px 12px;
     border-bottom: 1px solid #f0f0f1;
 }
@@ -942,18 +942,25 @@
 }
 
 .echo-my-modules__name {
+    flex: 0 0 auto;
+    min-width: 64px;
     font-weight: 600;
     color: #1d2327;
     font-size: 13px;
 }
 
 .echo-my-modules__desc {
+    flex: 1 1 200px;
+    min-width: 150px;
     color: #646970;
     font-size: 12px;
+    line-height: 1.5;
 }
 
 .echo-my-modules__order {
     display: flex;
+    flex: 0 0 auto;
+    margin-left: auto;
     align-items: center;
     gap: 5px;
     justify-content: flex-end;
@@ -1002,5 +1009,156 @@
     .echo-my-modules__order {
         grid-column: 2;
         justify-content: flex-start;
+    }
+}
+
+/* ==========================================================================
+   设置页：左侧分类导航 + 右侧面板
+   ========================================================================== */
+.echo-settings-shell {
+    display: grid;
+    grid-template-columns: 208px minmax(0, 1fr);
+    gap: 22px;
+    align-items: start;
+    margin-top: 16px;
+}
+
+.echo-settings-nav {
+    position: sticky;
+    top: 46px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px;
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 8px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.02);
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+}
+
+.echo-settings-nav__item {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #1d2327;
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.echo-settings-nav__item:hover {
+    background: #f0f0f1;
+    color: #2271b1;
+}
+
+.echo-settings-nav__item:focus-visible {
+    outline: 2px solid #2271b1;
+    outline-offset: -2px;
+}
+
+.echo-settings-nav__item.is-active {
+    background: #2271b1;
+    color: #fff;
+    font-weight: 600;
+}
+
+.echo-settings-nav__item.is-active:hover {
+    background: #2271b1;
+    color: #fff;
+}
+
+.echo-settings-panels {
+    min-width: 0;
+}
+
+.echo-settings-panel {
+    display: none;
+    padding: 4px 22px 18px;
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 8px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.02);
+}
+
+.echo-settings-panel.is-active {
+    display: block;
+}
+
+.echo-settings-panel__title {
+    margin: 18px 0 6px;
+    padding: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.echo-settings-panel .form-table {
+    margin: 0;
+}
+
+.echo-settings-panel .form-table th {
+    width: 190px;
+    padding: 14px 12px 14px 0;
+    font-weight: 600;
+}
+
+.echo-settings-panel .form-table td {
+    padding: 10px 0;
+}
+
+.echo-settings-panel .form-table tr:first-child > th,
+.echo-settings-panel .form-table tr:first-child > td {
+    padding-top: 6px;
+}
+
+.echo-settings-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.echo-settings-actions .button {
+    margin: 0;
+}
+
+.echo-settings-actions__hint {
+    color: #646970;
+    font-size: 12px;
+}
+
+@media screen and (max-width: 960px) {
+    .echo-settings-shell {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .echo-settings-nav {
+        position: static;
+        flex-direction: row;
+        flex-wrap: wrap;
+        max-height: none;
+        overflow: visible;
+    }
+
+    .echo-settings-nav__item {
+        width: auto;
+    }
+}
+
+@media screen and (max-width: 782px) {
+    .echo-settings-panel {
+        padding: 4px 14px 14px;
+    }
+
+    .echo-settings-panel .form-table th {
+        width: auto;
     }
 }
