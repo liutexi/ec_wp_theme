@@ -29,7 +29,7 @@ get_header();
 						?>
 					</p>
 
-					<div class="echo-post-list">
+					<div class="<?php echo esc_attr( echo_post_list_class() ); ?>">
 						<?php
 						while ( have_posts() ) :
 							the_post();
