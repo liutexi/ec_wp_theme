@@ -1141,7 +1141,9 @@
 }
 
 .echo-settings-nav__item {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 9px;
     width: 100%;
     padding: 8px 12px;
     border: 0;
@@ -1194,11 +1196,21 @@
 }
 
 .echo-settings-panel__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 18px 0 6px;
     padding: 0;
     font-size: 15px;
     font-weight: 600;
     color: #1d2327;
+}
+
+.echo-settings-panel__title > svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    color: #2271b1;
 }
 
 .echo-settings-panel .form-table {
@@ -1357,4 +1369,24 @@
     color: #646970;
     font-style: italic;
     padding: 14px 10px;
+}
+
+.echo-settings-nav__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    color: #646970;
+}
+
+.echo-settings-nav__icon svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+}
+
+.echo-settings-nav__item.is-active .echo-settings-nav__icon {
+    color: #fff;
 }
