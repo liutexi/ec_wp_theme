@@ -690,14 +690,14 @@ body.echo-no-sidebar .echo-sidebar {
     box-shadow: none;
 }
 
-/* 兼容古腾堡 / Markdown 插件的代码块容器 */
+/* 兼容古腾堡 / Markdown 插件的代码块容器：只当外壳，视觉由内部 pre 提供 */
 .echo-entry-content .wp-block-code {
-    background: #0d1117;
-    color: #e6edf3;
+    background: transparent;
+    color: inherit;
     border: none;
-    border-radius: var(--echo-radius-sm);
-    padding: 18px 20px;
-    overflow-x: auto;
+    border-radius: 0;
+    padding: 0;
+    overflow: visible;
 }
 
 .echo-entry-content .wp-block-code code {
@@ -2555,4 +2555,57 @@ body.echo-style-miuix .echo-single--auth {
 
 .echo-user-hint--avatar-error[hidden] {
     display: none;
+}
+
+/* ==========================================================================
+   代码块复制按钮
+   ========================================================================== */
+.echo-code-wrap {
+    position: relative;
+    margin: 1.6em 0;
+}
+
+.echo-code-wrap > pre {
+    margin: 0;
+}
+
+.echo-code-copy {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+    padding: 4px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #c9d1d9;
+    font-family: var(--echo-mono);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.18s ease, background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.echo-code-wrap:hover .echo-code-copy,
+.echo-code-copy:focus-visible {
+    opacity: 1;
+}
+
+.echo-code-copy:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+}
+
+.echo-code-copy.is-copied {
+    color: #3fb950;
+    border-color: rgba(63, 185, 80, 0.55);
+    background: rgba(63, 185, 80, 0.14);
+}
+
+/* 触屏设备没有 hover，常显 */
+@media (hover: none) {
+    .echo-code-copy {
+        opacity: 1;
+    }
 }
