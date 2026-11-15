@@ -2774,3 +2774,45 @@ body.echo-style-miuix .echo-single--auth {
         grid-template-columns: 1fr;
     }
 }
+
+/* 友情链接小工具 */
+.echo-links-widget {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.echo-links-widget li {
+    padding: 7px 0;
+    border-bottom: 1px dashed var(--echo-border);
+}
+
+.echo-links-widget li:last-child {
+    border-bottom: 0;
+}
+
+.echo-links-widget a {
+    color: var(--echo-text-secondary);
+    font-size: 0.92rem;
+    text-decoration: none;
+}
+
+.echo-links-widget a:hover {
+    color: var(--echo-primary);
+}
+
+/* 友情链接页面模板：外层透明，避免卡片套卡片 */
+.echo-single--links,
+body.echo-style-miuix .echo-single--links {
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+
+.echo-single--links .echo-single__header {
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--echo-border);
+}
