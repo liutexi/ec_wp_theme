@@ -911,3 +911,15 @@ body.echo-style-miuix .echo-user-field input[type="file"]::file-selector-button,
 .echo-user--miuix .echo-user-field input[type="file"]::file-selector-button {
     border-radius: 999px;
 }
+
+/* 代码块复制按钮（Miuix） */
+body.echo-style-miuix .echo-code-copy {
+    border: 0;
+    border-radius: 999px;
+    padding: 5px 12px;
+    background: rgba(255, 255, 255, 0.14);
+}
+
+body.echo-style-miuix .echo-code-copy:hover {
+    background: rgba(255, 255, 255, 0.24);
+}
