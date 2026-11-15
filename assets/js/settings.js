@@ -69,8 +69,18 @@
 			saved = '';
 		}
 
+		var preset = $('.echo-settings-shell').attr('data-current') || '';
 		var initial = '';
-		if (hash && $items.filter('[data-target="' + hash + '"]').length) {
+
+		if (preset && $items.filter('[data-target="' + preset + '"]').length) {
+			initial = preset;
+			// 从菜单子项进入时记住，保存设置跳回后仍停在原分类
+			try {
+				window.localStorage.setItem('echoSettingsPanel', preset);
+			} catch (e) {
+				/* 忽略 */
+			}
+		} else if (hash && $items.filter('[data-target="' + hash + '"]').length) {
 			initial = hash;
 		} else if (saved && $items.filter('[data-target="' + saved + '"]').length) {
 			initial = saved;
