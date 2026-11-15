@@ -46,6 +46,8 @@ function echo_extra_defaults() {
 		'tw_reading_progress' => false,
 		'tw_back_to_top'      => true,
 		'tw_code_copy'        => true,
+		'tw_masonry'          => false,
+		'tw_masonry_cols'     => 3,
 		'tw_smooth_scroll'    => true,
 		'tw_nav_my'           => true,
 		'tw_nav_my_label'     => '我的',
@@ -801,9 +803,11 @@ function echo_sanitize_extra_settings( $input, &$output ) {
 	$line_height = isset( $input['tw_line_height'] ) ? (float) $input['tw_line_height'] : $defaults['tw_line_height'];
 	$output['tw_line_height'] = round( max( 1.4, min( 2.4, $line_height ) ), 2 );
 
-	foreach ( array( 'tw_card_hover', 'tw_heading_decor', 'tw_reading_progress', 'tw_back_to_top', 'tw_code_copy', 'tw_smooth_scroll', 'tw_nav_my', 'tw_author_avatar', 'tw_lead_paragraph' ) as $bool_key ) {
+	foreach ( array( 'tw_card_hover', 'tw_heading_decor', 'tw_reading_progress', 'tw_back_to_top', 'tw_code_copy', 'tw_masonry', 'tw_smooth_scroll', 'tw_nav_my', 'tw_author_avatar', 'tw_lead_paragraph' ) as $bool_key ) {
 		$output[ $bool_key ] = isset( $input[ $bool_key ] ) && '1' === (string) $input[ $bool_key ];
 	}
+
+	$output['tw_masonry_cols'] = max( 2, min( 4, absint( isset( $input['tw_masonry_cols'] ) ? $input['tw_masonry_cols'] : $defaults['tw_masonry_cols'] ) ) );
 
 	$output['tw_nav_my_label'] = isset( $input['tw_nav_my_label'] ) && '' !== trim( $input['tw_nav_my_label'] )
 		? sanitize_text_field( $input['tw_nav_my_label'] )
@@ -819,6 +823,26 @@ function echo_sanitize_extra_settings( $input, &$output ) {
  *
  * @return string
  */
+/**
+ * 文章列表容器的 class
+ *
+ * @param string $extra 额外 class。
+ * @return string
+ */
+function echo_post_list_class( $extra = '' ) {
+	$classes = array( 'echo-post-list' );
+
+	if ( echo_my_config( 'tw_masonry', false ) ) {
+		$classes[] = 'echo-post-list--masonry';
+	}
+
+	if ( '' !== $extra ) {
+		$classes[] = $extra;
+	}
+
+	return implode( ' ', $classes );
+}
+
 function echo_extra_css() {
 	$css  = ':root{';
 	$css .= '--echo-entry-font-size:' . absint( echo_my_config( 'tw_font_size', 17 ) ) . 'px;';
@@ -827,6 +851,7 @@ function echo_extra_css() {
 	if ( $entry_width > 0 ) {
 		$css .= '--echo-entry-max-width:' . $entry_width . 'px;';
 	}
+	$css .= '--echo-masonry-cols:' . max( 2, min( 4, absint( echo_my_config( 'tw_masonry_cols', 3 ) ) ) ) . ';';
 	$css .= '}';
 
 	if ( ! echo_my_config( 'tw_card_hover', true ) ) {
