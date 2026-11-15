@@ -298,7 +298,7 @@ function echo_my_module_profile() {
 	?>
 	<section class="echo-my-card echo-my-profile">
 		<div class="echo-my-profile__head">
-			<div class="echo-my-profile__avatar"><?php echo get_avatar( $user->ID, $size ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+			<div class="echo-my-profile__avatar" style="--echo-avatar-size:<?php echo (int) $size; ?>px"><?php echo get_avatar( $user->ID, $size ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
 			<div class="echo-my-profile__id">
 				<h2 class="echo-my-profile__name"><?php echo esc_html( $user->display_name ); ?></h2>
 				<p class="echo-my-profile__handle">@<?php echo esc_html( $user->user_login ); ?></p>
