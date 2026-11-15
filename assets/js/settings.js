@@ -213,6 +213,135 @@
 			$tr.next('tr').after($tr);
 		});
 
+		// 拖拽排序
+		var dragRow = null;
+
+		$wrap.on('dragstart', 'tr.echo-link-row', function (e) {
+			dragRow = $(this).addClass('is-dragging');
+			if (e.originalEvent && e.originalEvent.dataTransfer) {
+				e.originalEvent.dataTransfer.effectAllowed = 'move';
+				try {
+					e.originalEvent.dataTransfer.setData('text/plain', 'echo-link-row');
+				} catch (err) {
+					/* IE 兼容 */
+				}
+			}
+		});
+
+		$wrap.on('dragover', 'tr.echo-link-row', function (e) {
+			if (!dragRow) {
+				return;
+			}
+			e.preventDefault();
+			var $target = $(this);
+			if ($target.is(dragRow)) {
+				return;
+			}
+			var rect = this.getBoundingClientRect();
+			var after = (e.originalEvent.clientY - rect.top) > rect.height / 2;
+			if (after) {
+				$target.after(dragRow);
+			} else {
+				$target.before(dragRow);
+			}
+		});
+
+		$wrap.on('dragend', 'tr.echo-link-row', function () {
+			$(this).removeClass('is-dragging');
+			dragRow = null;
+		});
+
+		// 从媒体库选择图标
+		$wrap.on('click', '.echo-link-logo-pick', function (e) {
+			e.preventDefault();
+			var $btn = $(this);
+			var $input = $btn.closest('.echo-link-logo-row').find('.echo-link-logo');
+
+			if (!window.wp || !wp.media) {
+				$input.trigger('focus');
+				return;
+			}
+
+			var frame = wp.media({
+				title: '选择图标',
+				button: { text: '使用这张图片' },
+				multiple: false,
+				library: { type: 'image' }
+			});
+
+			frame.on('select', function () {
+				var att = frame.state().get('selection').first().toJSON();
+				var url = att.sizes && att.sizes.thumbnail ? att.sizes.thumbnail.url : att.url;
+				$input.val(url).trigger('change');
+			});
+
+			frame.open();
+		});
+
+		// 批量导入
+		$wrap.on('click', '#echo-link-import', function () {
+			var text = $('#echo-link-bulk-text').val() || '';
+			var added = 0;
+
+			text.split(/\r?\n/).forEach(function (line) {
+				line = line.trim();
+				if (!line) {
+					return;
+				}
+
+				var parts = line.split('|').map(function (part) {
+					return part.trim();
+				});
+				var url = parts[1] || '';
+
+				// 兼容整行只填网址
+				if (!/^https?:\/\//i.test(url) && /^https?:\/\//i.test(parts[0] || '')) {
+					url = parts[0];
+					parts = [''];
+				}
+
+				if (!/^https?:\/\//i.test(url)) {
+					return;
+				}
+
+				$rows.find('.echo-link-empty').remove();
+				$rows.append(rowHtml);
+
+				var $tr = $rows.find('tr.echo-link-row').last();
+				$tr.find('.echo-link-name').val(parts[0] || '');
+				$tr.find('.echo-link-url').val(url);
+				$tr.find('.echo-link-desc').val(parts[2] || '');
+				$tr.find('.echo-link-group').val(parts[3] || '');
+				$tr.find('.echo-link-logo').val(parts[4] || '');
+				added++;
+			});
+
+			if (added) {
+				showToast('已导入 ' + added + ' 条，记得点「保存友情链接」', 'success');
+			} else {
+				showToast('没有识别到有效网址', 'error');
+			}
+		});
+
+		// 导出当前列表
+		$wrap.on('click', '#echo-link-export', function () {
+			var lines = [];
+
+			$rows.find('tr.echo-link-row').each(function () {
+				var $tr = $(this);
+				lines.push([
+					$tr.find('.echo-link-name').val() || '',
+					$tr.find('.echo-link-url').val() || '',
+					$tr.find('.echo-link-desc').val() || '',
+					$tr.find('.echo-link-group').val() || '',
+					$tr.find('.echo-link-logo').val() || ''
+				].join(' | '));
+			});
+
+			$('#echo-link-bulk-text').val(lines.join('\n')).trigger('focus').trigger('select');
+			showToast('已导出 ' + lines.length + ' 条到文本框，可直接复制', 'success');
+		});
+
 		$wrap.on('click', '#echo-link-save', function () {
 			var links = [];
 			$rows.find('tr.echo-link-row').each(function () {
@@ -222,7 +351,8 @@
 					url: $tr.find('.echo-link-url').val(),
 					desc: $tr.find('.echo-link-desc').val(),
 					group: $tr.find('.echo-link-group').val(),
-					logo: $tr.find('.echo-link-logo').val()
+					logo: $tr.find('.echo-link-logo').val(),
+					enabled: $tr.find('.echo-link-enabled').is(':checked')
 				});
 			});
 
