@@ -524,22 +524,43 @@
 	 * @param {string} type    success | error
 	 */
 	function showToast(message, type) {
-		var $toast = $('#echo-toast');
+		type = type || 'success';
 
-		if (!$toast.length) {
-			$toast = $('<div id="echo-toast" class="echo-toast"></div>').appendTo('body');
+		var $stack = $('#echo-toast-stack');
+		if (!$stack.length) {
+			$stack = $('<div id="echo-toast-stack" class="echo-toast-stack" role="status" aria-live="polite"></div>').appendTo('body');
 		}
 
-		$toast
-			.removeClass('echo-toast--success echo-toast--error')
-			.addClass('echo-toast--' + (type || 'success'))
-			.text(message)
-			.addClass('echo-toast--show');
+		var icons = {
+			success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+			error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
+			info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
+		};
 
-		clearTimeout($toast.data('timer'));
-		$toast.data('timer', setTimeout(function () {
-			$toast.removeClass('echo-toast--show');
-		}, 2200));
+		var $toast = $(
+			'<div class="echo-toast echo-toast--' + type + '">' +
+				'<span class="echo-toast__icon">' + (icons[type] || icons.info) + '</span>' +
+				'<span class="echo-toast__text"></span>' +
+				'<span class="echo-toast__bar"></span>' +
+			'</div>'
+		);
+
+		$toast.find('.echo-toast__text').text(message);
+		$stack.append($toast);
+
+		// 最多同时显示 3 条
+		$stack.children('.echo-toast').slice(0, -3).remove();
+
+		window.requestAnimationFrame(function () {
+			$toast.addClass('is-in');
+		});
+
+		setTimeout(function () {
+			$toast.removeClass('is-in').addClass('is-out');
+			setTimeout(function () {
+				$toast.remove();
+			}, 260);
+		}, 2600);
 	}
 
 	/**
