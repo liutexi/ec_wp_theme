@@ -923,3 +923,20 @@ body.echo-style-miuix .echo-code-copy {
 body.echo-style-miuix .echo-code-copy:hover {
     background: rgba(255, 255, 255, 0.24);
 }
+
+/* 友情链接（Miuix） */
+body.echo-style-miuix .echo-link-card {
+    border: 0;
+    border-radius: 18px;
+    background: var(--miuix-surface-container, #fff);
+    box-shadow: none;
+}
+
+body.echo-style-miuix .echo-link-card:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+body.echo-style-miuix .echo-link-card__logo {
+    border-radius: 14px;
+    background: var(--miuix-secondary-container, #f0f0f0);
+}
