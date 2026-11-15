@@ -45,6 +45,7 @@ function echo_extra_defaults() {
 		'tw_heading_decor'    => true,
 		'tw_reading_progress' => false,
 		'tw_back_to_top'      => true,
+		'tw_code_copy'        => true,
 		'tw_smooth_scroll'    => true,
 		'tw_nav_my'           => true,
 		'tw_nav_my_label'     => '我的',
@@ -800,7 +801,7 @@ function echo_sanitize_extra_settings( $input, &$output ) {
 	$line_height = isset( $input['tw_line_height'] ) ? (float) $input['tw_line_height'] : $defaults['tw_line_height'];
 	$output['tw_line_height'] = round( max( 1.4, min( 2.4, $line_height ) ), 2 );
 
-	foreach ( array( 'tw_card_hover', 'tw_heading_decor', 'tw_reading_progress', 'tw_back_to_top', 'tw_smooth_scroll', 'tw_nav_my', 'tw_author_avatar', 'tw_lead_paragraph' ) as $bool_key ) {
+	foreach ( array( 'tw_card_hover', 'tw_heading_decor', 'tw_reading_progress', 'tw_back_to_top', 'tw_code_copy', 'tw_smooth_scroll', 'tw_nav_my', 'tw_author_avatar', 'tw_lead_paragraph' ) as $bool_key ) {
 		$output[ $bool_key ] = isset( $input[ $bool_key ] ) && '1' === (string) $input[ $bool_key ];
 	}
 
