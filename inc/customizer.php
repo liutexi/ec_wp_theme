@@ -766,6 +766,9 @@ function echo_settings_page_html() {
 						<button type="button"
 							class="echo-settings-nav__item<?php echo esc_attr( $active ); ?>"
 							data-target="<?php echo esc_attr( $section_id ); ?>">
+							<?php if ( function_exists( 'echo_settings_icon' ) ) : ?>
+								<span class="echo-settings-nav__icon"><?php echo echo_settings_icon( $section_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
+							<?php endif; ?>
 							<span class="echo-settings-nav__text"><?php echo esc_html( $label ); ?></span>
 						</button>
 						<?php
@@ -785,7 +788,12 @@ function echo_settings_page_html() {
 							data-panel="<?php echo esc_attr( $section_id ); ?>">
 							<?php
 							if ( ! empty( $section['title'] ) ) {
-								printf( '<h2 class="echo-settings-panel__title">%s</h2>', esc_html( $section['title'] ) );
+								$icon_html = function_exists( 'echo_settings_icon' ) ? echo_settings_icon( $section_id ) : '';
+								printf(
+									'<h2 class="echo-settings-panel__title">%s<span>%s</span></h2>',
+									$icon_html, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+									esc_html( $section['title'] )
+								);
 							}
 							if ( ! empty( $section['callback'] ) ) {
 								call_user_func( $section['callback'], $section );
