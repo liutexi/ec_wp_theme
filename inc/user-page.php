@@ -607,7 +607,7 @@ function echo_user_section_profile( $user ) {
 	?>
 	<section class="echo-user-card echo-user-profile">
 		<div class="echo-user-profile__head">
-			<div class="echo-user-profile__avatar"><?php echo get_avatar( $user->ID, $size ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+			<div class="echo-user-profile__avatar" style="--echo-avatar-size:<?php echo (int) $size; ?>px"><?php echo get_avatar( $user->ID, $size ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
 			<div class="echo-user-profile__id">
 				<h1 class="echo-user-profile__name"><?php echo esc_html( $user->display_name ); ?></h1>
 				<p class="echo-user-profile__meta">
