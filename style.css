@@ -1452,8 +1452,11 @@ body.echo-style-miuix .echo-single--my {
 
 .echo-my-profile__avatar .avatar {
     display: block;
+    width: var(--echo-avatar-size, 96px);
+    height: var(--echo-avatar-size, 96px);
     border-radius: 50%;
     object-fit: cover;
+    background: var(--echo-bg-alt);
 }
 
 .echo-my-profile__id {
@@ -2169,8 +2172,11 @@ body.echo-style-miuix .echo-single--auth {
 
 .echo-user-profile__avatar img {
     display: block;
+    width: var(--echo-avatar-size, 96px);
+    height: var(--echo-avatar-size, 96px);
     border-radius: 50%;
     object-fit: cover;
+    background: var(--echo-bg-alt);
 }
 
 .echo-user-profile__name {
