@@ -590,17 +590,102 @@ function echo_settings_page_html() {
 	if ( ! current_user_can( 'manage_options' ) ) {
 		return;
 	}
+
+	$sections = isset( $GLOBALS['wp_settings_sections']['echo-settings'] )
+		? $GLOBALS['wp_settings_sections']['echo-settings']
+		: array();
+
+	// 展示顺序（未列出的按注册顺序排在后面）
+	$nav_order = array(
+		'echo_section_identity',
+		'echo_section_colors',
+		'echo_section_layout',
+		'echo_section_style',
+		'echo_section_footer',
+		'echo_section_my',
+		'echo_section_tweaks',
+		'echo_section_auth',
+		'echo_section_user',
+		'echo_section_permalink',
+	);
+	$ordered = array();
+	foreach ( $nav_order as $section_id ) {
+		if ( isset( $sections[ $section_id ] ) ) {
+			$ordered[ $section_id ] = $sections[ $section_id ];
+		}
+	}
+	foreach ( $sections as $section_id => $section ) {
+		if ( ! isset( $ordered[ $section_id ] ) ) {
+			$ordered[ $section_id ] = $section;
+		}
+	}
+
+	$first_id = '';
+	foreach ( array_keys( $ordered ) as $section_id ) {
+		$first_id = $section_id;
+		break;
+	}
 	?>
 	<div class="wrap echo-settings-wrap">
 		<h1 class="echo-settings-title"><?php esc_html_e( 'Echo 主题设置', 'echo' ); ?></h1>
 		<p class="echo-settings-intro"><?php esc_html_e( '自定义站点外观与显示选项。', 'echo' ); ?></p>
 
 		<form method="post" action="options.php">
-			<?php
-			settings_fields( 'echo_settings_group' );
-			do_settings_sections( 'echo-settings' );
-			submit_button( __( '保存设置', 'echo' ) );
-			?>
+			<?php settings_fields( 'echo_settings_group' ); ?>
+
+			<div class="echo-settings-shell">
+				<nav class="echo-settings-nav" aria-label="<?php esc_attr_e( '设置分类', 'echo' ); ?>">
+					<?php
+					$index = 0;
+					foreach ( $ordered as $section_id => $section ) :
+						$active = ( 0 === $index ) ? ' is-active' : '';
+						$label  = ! empty( $section['title'] ) ? $section['title'] : $section_id;
+						?>
+						<button type="button"
+							class="echo-settings-nav__item<?php echo esc_attr( $active ); ?>"
+							data-target="<?php echo esc_attr( $section_id ); ?>">
+							<span class="echo-settings-nav__text"><?php echo esc_html( $label ); ?></span>
+						</button>
+						<?php
+						++$index;
+					endforeach;
+					?>
+				</nav>
+
+				<div class="echo-settings-panels">
+					<?php
+					$index = 0;
+					foreach ( $ordered as $section_id => $section ) :
+						$active = ( 0 === $index ) ? ' is-active' : '';
+						?>
+						<section class="echo-settings-panel<?php echo esc_attr( $active ); ?>"
+							id="echo-panel-<?php echo esc_attr( $section_id ); ?>"
+							data-panel="<?php echo esc_attr( $section_id ); ?>">
+							<?php
+							if ( ! empty( $section['title'] ) ) {
+								printf( '<h2 class="echo-settings-panel__title">%s</h2>', esc_html( $section['title'] ) );
+							}
+							if ( ! empty( $section['callback'] ) ) {
+								call_user_func( $section['callback'], $section );
+							}
+							if ( ! empty( $GLOBALS['wp_settings_fields']['echo-settings'][ $section_id ] ) ) {
+								echo '<table class="form-table" role="presentation"><tbody>';
+								do_settings_fields( 'echo-settings', $section_id );
+								echo '</tbody></table>';
+							}
+							?>
+						</section>
+						<?php
+						++$index;
+					endforeach;
+					?>
+				</div>
+			</div>
+
+			<div class="echo-settings-actions">
+				<?php submit_button( __( '保存设置', 'echo' ), 'primary', 'submit', false ); ?>
+				<span class="echo-settings-actions__hint"><?php esc_html_e( '修改后记得保存。', 'echo' ); ?></span>
+			</div>
 		</form>
 
 		<?php echo_render_category_manager(); ?>
