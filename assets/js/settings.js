@@ -5,8 +5,8 @@
 	'use strict';
 
 	$(function () {
-		// 主题色取色器
-		$('.echo-color-field').wpColorPicker();
+		// 左侧分类导航（取色器按面板懒初始化，避免在隐藏容器里算错尺寸）
+		initSettingsNav();
 
 		initColorPresets();
 		initWidthSlider();
@@ -22,6 +22,81 @@
 	/**
 	 * 主题色预设色块：点击填充取色器
 	 */
+	/**
+	 * 设置页左侧分类导航
+	 */
+	function initSettingsNav() {
+		var $nav = $('.echo-settings-nav');
+		var $panels = $('.echo-settings-panel');
+
+		if (!$nav.length || !$panels.length) {
+			initColorPickers(document);
+			return;
+		}
+
+		var $items = $nav.find('.echo-settings-nav__item');
+
+		function activate(id, persist) {
+			if (!id) {
+				return;
+			}
+
+			$items.removeClass('is-active').filter('[data-target="' + id + '"]').addClass('is-active');
+			$panels.removeClass('is-active').filter('[data-panel="' + id + '"]').addClass('is-active');
+			initColorPickers($panels.filter('[data-panel="' + id + '"]'));
+
+			if (persist) {
+				try {
+					window.localStorage.setItem('echoSettingsPanel', id);
+				} catch (e) {
+					/* 忽略隐私模式限制 */
+				}
+				if (window.history && window.history.replaceState) {
+					window.history.replaceState(null, '', '#' + id);
+				}
+			}
+		}
+
+		$nav.on('click', '.echo-settings-nav__item', function () {
+			activate($(this).attr('data-target'), true);
+		});
+
+		var saved = '';
+		var hash = (window.location.hash || '').replace('#', '');
+		try {
+			saved = window.localStorage.getItem('echoSettingsPanel') || '';
+		} catch (e) {
+			saved = '';
+		}
+
+		var initial = '';
+		if (hash && $items.filter('[data-target="' + hash + '"]').length) {
+			initial = hash;
+		} else if (saved && $items.filter('[data-target="' + saved + '"]').length) {
+			initial = saved;
+		} else {
+			initial = $items.first().attr('data-target');
+		}
+
+		activate(initial, false);
+	}
+
+	/**
+	 * 按面板范围初始化取色器（同一元素只初始化一次）
+	 */
+	function initColorPickers(scope) {
+		$(scope).find('.echo-color-field').each(function () {
+			var $el = $(this);
+			if ($el.data('echoPickerReady')) {
+				return;
+			}
+			$el.data('echoPickerReady', true);
+			if ($.fn.wpColorPicker) {
+				$el.wpColorPicker();
+			}
+		});
+	}
+
 	function initColorPresets() {
 		var $presets = $('.echo-color-preset');
 		var $field = $('.echo-color-field');
