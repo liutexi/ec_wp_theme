@@ -14,6 +14,7 @@
 		initInstantSave();
 		initSwitchState();
 		initCategoryManager();
+		initLinksManager();
 		initPostManager();
 		initBackupManager();
 		initToast();
@@ -173,6 +174,82 @@
 	/**
 	 * 分类管理：新建 / 编辑 / 删除 / 设为默认（全部 AJAX）
 	 */
+	/**
+	 * 友情链接管理：增删、上下移动、整表保存
+	 */
+	function initLinksManager() {
+		var $wrap = $('#echo-links-manager');
+		if (!$wrap.length) {
+			return;
+		}
+
+		var $rows = $('#echo-link-rows');
+		var rowHtml = $('#echo-link-row-template').html() || '';
+
+		function ensureNotEmpty() {
+			if (!$rows.find('tr').length) {
+				$rows.append('<tr class="echo-link-empty"><td colspan="6">还没有友情链接，点下方「添加一条」开始。</td></tr>');
+			}
+		}
+
+		$wrap.on('click', '#echo-link-add', function () {
+			$rows.find('.echo-link-empty').remove();
+			$rows.append(rowHtml);
+			$rows.find('tr.echo-link-row').last().find('.echo-link-name').trigger('focus');
+		});
+
+		$wrap.on('click', '.echo-link-remove', function () {
+			$(this).closest('tr').remove();
+			ensureNotEmpty();
+		});
+
+		$wrap.on('click', '.echo-link-up', function () {
+			var $tr = $(this).closest('tr');
+			$tr.prev('tr').before($tr);
+		});
+
+		$wrap.on('click', '.echo-link-down', function () {
+			var $tr = $(this).closest('tr');
+			$tr.next('tr').after($tr);
+		});
+
+		$wrap.on('click', '#echo-link-save', function () {
+			var links = [];
+			$rows.find('tr.echo-link-row').each(function () {
+				var $tr = $(this);
+				links.push({
+					name: $tr.find('.echo-link-name').val(),
+					url: $tr.find('.echo-link-url').val(),
+					desc: $tr.find('.echo-link-desc').val(),
+					group: $tr.find('.echo-link-group').val(),
+					logo: $tr.find('.echo-link-logo').val()
+				});
+			});
+
+			var $btn = $(this).prop('disabled', true);
+			var $data = $('#echo-ajax-data');
+
+			$.post($data.data('ajax-url'), {
+				action: 'echo_save_links',
+				nonce: $data.data('nonce'),
+				links: JSON.stringify(links)
+			})
+				.done(function (res) {
+					if (res && res.success) {
+						showToast(res.data.message, 'success');
+					} else {
+						showToast((res && res.data && res.data.message) || '保存失败', 'error');
+					}
+				})
+				.fail(function () {
+					showToast('保存失败，请重试', 'error');
+				})
+				.always(function () {
+					$btn.prop('disabled', false);
+				});
+		});
+	}
+
 	function initCategoryManager() {
 		var $root = $('#echo-cat-manager');
 		if (!$root.length) { return; }
