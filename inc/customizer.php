@@ -40,7 +40,8 @@ function echo_default_settings() {
 		),
 		echo_extra_defaults(),
 		echo_auth_defaults(),
-		echo_user_defaults()
+		echo_user_defaults(),
+		echo_links_defaults()
 	);
 }
 
@@ -89,6 +90,7 @@ function echo_settings_sections_map() {
 		'echo_section_auth'      => __( '登录 / 注册', 'echo' ),
 		'echo_section_user'      => __( '用户主页', 'echo' ),
 		'echo_section_categories' => __( '文章分类', 'echo' ),
+		'echo_section_links'      => __( '友情链接', 'echo' ),
 		'echo_section_permalink' => __( '固定链接', 'echo' ),
 	);
 }
@@ -494,6 +496,74 @@ function echo_settings_init() {
 		'echo-settings'
 	);
 
+	// 友情链接（数据在独立区块管理，这里放显示参数）
+	add_settings_section(
+		'echo_section_links',
+		__( '友情链接', 'echo' ),
+		'__return_false',
+		'echo-settings'
+	);
+
+	add_settings_field(
+		'echo_links_cols',
+		__( '链接列数', 'echo' ),
+		'echo_field_number',
+		'echo-settings',
+		'echo_section_links',
+		array(
+			'label_for' => 'links_cols',
+			'min'       => 2,
+			'max'       => 4,
+			'step'      => 1,
+			'desc'      => __( '短代码与默认布局的列数，移动端自动降为 1 列。', 'echo' ),
+		)
+	);
+
+	add_settings_field(
+		'echo_links_show_desc',
+		__( '显示描述', 'echo' ),
+		'echo_field_checkbox',
+		'echo-settings',
+		'echo_section_links',
+		array(
+			'label_for' => 'links_show_desc',
+		)
+	);
+
+	add_settings_field(
+		'echo_links_show_logo',
+		__( '显示图标', 'echo' ),
+		'echo_field_checkbox',
+		'echo-settings',
+		'echo_section_links',
+		array(
+			'label_for' => 'links_show_logo',
+			'desc'      => __( '没有图标时显示名称首字。', 'echo' ),
+		)
+	);
+
+	add_settings_field(
+		'echo_links_blank',
+		__( '新窗口打开', 'echo' ),
+		'echo_field_checkbox',
+		'echo-settings',
+		'echo_section_links',
+		array(
+			'label_for' => 'links_blank',
+		)
+	);
+
+	add_settings_field(
+		'echo_links_nofollow',
+		__( '添加 nofollow', 'echo' ),
+		'echo_field_checkbox',
+		'echo-settings',
+		'echo_section_links',
+		array(
+			'label_for' => 'links_nofollow',
+		)
+	);
+
 	add_settings_field(
 		'echo_exclude_categories',
 		__( '首页排除的分类', 'echo' ),
@@ -637,6 +707,9 @@ function echo_sanitize_settings( $input ) {
 	// 用户主页
 	echo_sanitize_user_settings( $input, $output );
 
+	// 友情链接
+	echo_sanitize_links_settings( $input, $output );
+
 	return $output;
 }
 
@@ -738,6 +811,7 @@ function echo_settings_page_html() {
 		</form>
 
 		<?php echo_render_category_manager(); ?>
+		<?php echo_render_links_manager(); ?>
 		<?php echo_render_post_manager(); ?>
 		<?php echo_render_backup_manager(); ?>
 
