@@ -27,7 +27,7 @@ function echo_user_defaults() {
 		'user_allow_edit'      => true,
 		'user_allow_password'  => true,
 		'user_allow_avatar'    => true,
-		'user_avatar_max_kb'   => 2048,
+		'user_avatar_max_kb'   => 4096,
 		'user_avatar_size'     => 96,
 		'user_recent_posts'    => 5,
 		'user_recent_comments' => 5,
@@ -285,11 +285,33 @@ function echo_user_filter_avatar( $args, $id_or_email ) {
 
 	$data = echo_user_avatar_data( $uid );
 	if ( $data ) {
-		$args['url'] = add_query_arg( 'v', isset( $data['v'] ) ? (string) $data['v'] : '1', $data['url'] );
+		$args['url']          = add_query_arg( 'v', isset( $data['v'] ) ? (string) $data['v'] : '1', $data['url'] );
+		$args['found_avatar'] = true;
 	}
 	return $args;
 }
 add_filter( 'pre_get_avatar_data', 'echo_user_filter_avatar', 10, 2 );
+
+/**
+ * 兜底：数据最终返回前再确认一次自定义头像
+ *
+ * 部分插件会在 pre 阶段之后改动 url，这里以高优先级覆盖回来。
+ *
+ * @param array $args        头像参数。
+ * @param mixed $id_or_email 用户标识。
+ * @return array
+ */
+function echo_user_filter_avatar_data( $args, $id_or_email ) {
+	static $running = false;
+	if ( $running ) {
+		return $args;
+	}
+	$running = true;
+	$args    = echo_user_filter_avatar( $args, $id_or_email );
+	$running = false;
+	return $args;
+}
+add_filter( 'get_avatar_data', 'echo_user_filter_avatar_data', 9999, 2 );
 
 /**
  * 删除自定义头像（含文件）
@@ -342,7 +364,7 @@ function echo_user_handle_avatar_upload( $uid ) {
 		return false;
 	}
 
-	$max_kb = max( 256, min( 8192, absint( echo_user_config( 'user_avatar_max_kb', 2048 ) ) ) );
+	$max_kb = max( 256, min( 8192, absint( echo_user_config( 'user_avatar_max_kb', 4096 ) ) ) );
 	if ( (int) $file['size'] > $max_kb * 1024 ) {
 		echo_user_set_feedback( 'error', sprintf( /* translators: %d: 最大 KB */ __( '头像文件超过 %d KB 限制。', 'echo' ), $max_kb ) );
 		return false;
@@ -436,6 +458,18 @@ function echo_user_handle_update( $uid ) {
 
 	if ( isset( $_GET['updated'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		echo_user_set_feedback( 'notice', __( '资料已更新。', 'echo' ) );
+	}
+
+	/*
+	 * 上传体积超过服务器 post_max_size 时，PHP 会丢弃整个 POST，
+	 * 表现为「点了保存什么都没发生」。这里显式提示，避免静默失败。
+	 */
+	if ( empty( $_POST ) && ! empty( $_SERVER['CONTENT_LENGTH'] ) && (int) $_SERVER['CONTENT_LENGTH'] > 0 ) {
+		echo_user_set_feedback(
+			'error',
+			__( '提交内容超过服务器限制，头像可能没上传成功。请换一张更小的图片，或联系管理员调大 post_max_size / upload_max_filesize。', 'echo' )
+		);
+		return;
 	}
 
 	if ( empty( $_POST['echo_user_action'] ) || 'update' !== sanitize_key( wp_unslash( $_POST['echo_user_action'] ) ) ) {
@@ -759,16 +793,20 @@ function echo_user_section_edit( $user ) {
 						<?php endif; ?>
 						<p class="echo-user-field">
 							<label for="echo-user-avatar"><?php esc_html_e( '上传新头像', 'echo' ); ?></label>
-							<input id="echo-user-avatar" name="echo_user_avatar" type="file" accept="image/jpeg,image/png,image/gif,image/webp" />
-							<span class="echo-user-hint">
+							<?php $echo_max_kb = max( 256, min( 8192, absint( echo_user_config( 'user_avatar_max_kb', 4096 ) ) ) ); ?>
+							<input id="echo-user-avatar" name="echo_user_avatar" type="file"
+								accept="image/jpeg,image/png,image/gif,image/webp"
+								data-max-kb="<?php echo esc_attr( (string) $echo_max_kb ); ?>" />
+							<span class="echo-user-hint echo-user-hint--avatar">
 								<?php
 								printf(
 									/* translators: %d: 最大 KB */
 									esc_html__( '支持 JPG / PNG / GIF / WebP，最大 %d KB；不更换头像请保持不选择文件。', 'echo' ),
-									esc_html( (string) max( 256, min( 8192, absint( echo_user_config( 'user_avatar_max_kb', 2048 ) ) ) ) )
+									esc_html( (string) $echo_max_kb )
 								);
 								?>
 							</span>
+							<span class="echo-user-hint echo-user-hint--avatar-error" role="alert" hidden></span>
 						</p>
 					</fieldset>
 				<?php endif; ?>
