@@ -3,7 +3,7 @@ Contributors: LogicTneXus
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 0.0.1
+Stable tag: 0.0.2-preview
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Tags: blog, two-columns, right-sidebar, responsive-layout, custom-menu, threaded-comments, translation-ready
@@ -76,6 +76,11 @@ Echo 是一款简洁、专注阅读体验的博客 / 社区风格 WordPress 主�
 「Echo 设置 → 我的界面」底部有「自定义 CSS」输入框，也可直接修改 style.css 中的 :root 变量。
 
 == 更新日志 ==
+
+= 0.0.2-preview =
+* 新增彩虹聚合登录适配：登录页第三方登录按钮、个人中心社交账号绑定入口、社交头像（优先级低于自定义头像）
+* 自动检测插件钩子，未安装插件时零输出、不留空白
+* 后台「登录 / 注册」新增 4 项开关
 
 = 0.0.1 =
 * 首个正式版
