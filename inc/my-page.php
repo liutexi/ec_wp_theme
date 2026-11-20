@@ -298,6 +298,39 @@ function echo_my_module_profile() {
 	$profile_url = ( function_exists( 'echo_user_url' ) && echo_user_config( 'user_enabled', true ) )
 		? echo_user_url( $user->ID )
 		: '';
+
+	// 编辑资料地址：用户主页的编辑区优先，否则后台资料页
+	$edit_url = $profile_url ? $profile_url . '#echo-user-edit' : admin_url( 'profile.php' );
+
+	// 身份
+	$roles     = (array) $user->roles;
+	$role_name = '';
+	if ( in_array( 'administrator', $roles, true ) ) {
+		$role_name = __( '管理员', 'echo' );
+	} elseif ( in_array( 'editor', $roles, true ) ) {
+		$role_name = __( '编辑', 'echo' );
+	} elseif ( in_array( 'author', $roles, true ) ) {
+		$role_name = __( '作者', 'echo' );
+	} elseif ( in_array( 'contributor', $roles, true ) ) {
+		$role_name = __( '投稿者', 'echo' );
+	} else {
+		$role_name = __( '订阅者', 'echo' );
+	}
+
+	// 邮箱脱敏
+	$email  = (string) $user->user_email;
+	$masked = '';
+	if ( '' !== $email && false !== strpos( $email, '@' ) ) {
+		list( $name, $domain ) = explode( '@', $email, 2 );
+		$keep   = min( 2, strlen( $name ) );
+		$masked = substr( $name, 0, $keep ) . str_repeat( '*', max( 1, strlen( $name ) - $keep ) ) . '@' . $domain;
+	}
+
+	// 注册时间
+	$joined = '';
+	if ( ! empty( $user->user_registered ) ) {
+		$joined = mysql2date( 'Y年n月j日', $user->user_registered );
+	}
 	?>
 	<section class="echo-my-card echo-my-profile">
 		<div class="echo-my-profile__head">
@@ -309,7 +342,22 @@ function echo_my_module_profile() {
 					<a class="echo-my-profile__site" href="<?php echo esc_url( $site ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $site ); ?></a>
 				<?php endif; ?>
 			</div>
+			<a class="echo-my-profile__edit" href="<?php echo esc_url( $edit_url ); ?>"><?php esc_html_e( '编辑资料', 'echo' ); ?></a>
 		</div>
+
+		<?php if ( $role_name || $masked || $joined ) : ?>
+			<ul class="echo-my-profile__meta">
+				<?php if ( $role_name ) : ?>
+					<li><span class="echo-my-profile__meta-label"><?php esc_html_e( '身份', 'echo' ); ?></span><span class="echo-my-profile__badge"><?php echo esc_html( $role_name ); ?></span></li>
+				<?php endif; ?>
+				<?php if ( $masked ) : ?>
+					<li><span class="echo-my-profile__meta-label"><?php esc_html_e( '邮箱', 'echo' ); ?></span><span><?php echo esc_html( $masked ); ?></span></li>
+				<?php endif; ?>
+				<?php if ( $joined ) : ?>
+					<li><span class="echo-my-profile__meta-label"><?php esc_html_e( '加入于', 'echo' ); ?></span><span><?php echo esc_html( $joined ); ?></span></li>
+				<?php endif; ?>
+			</ul>
+		<?php endif; ?>
 		<?php if ( $bio ) : ?>
 			<p class="echo-my-profile__bio"><?php echo esc_html( $bio ); ?></p>
 		<?php endif; ?>
