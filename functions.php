@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // 主题常量
-define( 'ECHO_VERSION', 'V0.0.2-preview-deadb17' );
+define( 'ECHO_VERSION', 'v0.0.1-preview-17bc1a2' );
 
 // 主题仓库地址：前台 / 后台页脚与 Theme URI 统一引用，避免写错
 define( 'ECHO_REPO_URL', 'https://github.com/liutexi/ec_wp_theme' );

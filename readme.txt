@@ -3,7 +3,7 @@ Contributors: LogicTneXus
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: V0.0.2-preview-deadb17
+Stable tag: v0.0.1-preview-17bc1a2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Tags: blog, two-columns, right-sidebar, responsive-layout, custom-menu, threaded-comments, translation-ready
@@ -88,6 +88,15 @@ Echo 是一款简洁、专注阅读体验的博客 / 社区风格 WordPress 主�
 「Echo 设置 → 我的界面」底部有「自定义 CSS」输入框，也可直接修改 style.css 中的 :root 变量。
 
 == 更新日志 ==
+
+= v0.0.1-preview-17bc1a2 =
+* 新增原生 SMTP 发信：主机、端口、SSL / STARTTLS、认证、发件人、超时均可配置，无需再装邮件插件
+* 新增「Echo 设置 → 邮件 / SMTP」分类，内置 7 家服务商预设与一键发送测试邮件（失败回显 SMTP 原因）
+* 新增邮箱验证码注册：6 位数字、10 分钟有效期、60 秒重发冷却、单邮箱与单 IP 双重限流
+* 验证码邮件与注册欢迎邮件支持自定义主题与正文（{site} {code} {minutes} {user} {login_url}）
+* SMTP 密码不回显，留空即保持不变
+* Miuix 风格新增 MIUI / HyperOS 加载动画：环形弧线、三点呼吸、骨架屏微光、顶部跳转进度条
+* 登录、注册提交按钮与验证码按钮的加载态改为 MIUI 环形弧线
 
 = V0.0.2-preview-deadb17 =
 * 原生集成彩虹聚合登录（内置 OAuth 流程与平台图标，无需再安装插件）
