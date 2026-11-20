@@ -40,6 +40,7 @@ function echo_default_settings() {
 		),
 		echo_extra_defaults(),
 		echo_auth_defaults(),
+		echo_social_defaults(),
 		echo_user_defaults(),
 		echo_links_defaults()
 	);
@@ -331,6 +332,12 @@ function echo_settings_init() {
 		array( 'auth_lostpassword_title', __( '找回密码标题', 'echo' ), 'echo_field_text', array( 'desc' => __( '找回密码视图的标题文字。默认「找回密码」。', 'echo' ) ) ),
 		array( 'auth_welcome', __( '欢迎文案', 'echo' ), 'echo_field_textarea', array( 'rows' => 2, 'desc' => __( '显示在标题下方，留空则不显示。', 'echo' ) ) ),
 		array( 'auth_shortcode', __( '第三方登录短代码', 'echo' ), 'echo_field_text', array( 'desc' => __( '可选。填入第三方登录插件提供的短代码，会渲染在表单下方。', 'echo' ) ) ),
+
+		// 彩虹聚合登录适配（检测插件钩子自动渲染，未安装插件时零输出）
+		array( 'social_login', __( '显示第三方登录按钮', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '自动检测彩虹聚合登录（Clogin Passport）等插件，在登录 / 注册表单下方显示第三方登录按钮。未安装插件时无提示。', 'echo' ) ) ),
+		array( 'social_title', __( '第三方登录分隔标题', 'echo' ), 'echo_field_text', array( 'desc' => __( '按钮区上方的分隔标题，留空则不显示。默认「第三方登录」。', 'echo' ) ) ),
+		array( 'social_binding', __( '个人中心显示绑定入口', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '在「我的」资料卡显示社交账号绑定 / 解绑入口，需插件启用对应功能。', 'echo' ) ) ),
+		array( 'social_avatar', __( '使用社交账号头像', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '用户未上传自定义头像时，优先使用插件保存的社交头像，再回退 Gravatar。', 'echo' ) ) ),
 		array( 'auth_layout', __( '卡片风格', 'echo' ), 'echo_field_select', array( 'options' => array( 'auto' => __( '跟随全局风格', 'echo' ), 'classic' => __( '强制经典', 'echo' ), 'miuix' => __( '强制 Miuix', 'echo' ) ) ) ),
 		array( 'auth_show_sidebar', __( '显示侧边栏', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '默认关闭，登录 / 注册页整页居中展示。', 'echo' ) ) ),
 		array( 'auth_throttle', __( '提交频率限制', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '同一 IP 15 分钟内登录失败 12 次、注册 6 次、找回密码 8 次后暂停提交，防止暴力尝试与邮件轰炸。', 'echo' ) ) ),
@@ -716,6 +723,9 @@ function echo_sanitize_settings( $input ) {
 
 	// 登录 / 注册
 	echo_sanitize_auth_settings( $input, $output );
+
+	// 彩虹聚合登录
+	echo_sanitize_social_settings( $input, $output );
 
 	// 用户主页
 	echo_sanitize_user_settings( $input, $output );
