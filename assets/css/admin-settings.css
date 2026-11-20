@@ -1462,3 +1462,54 @@
 .echo-settings-nav__item.is-active .echo-settings-nav__icon {
     color: #fff;
 }
+
+/* ==========================================================================
+   聚合登录：平台多选
+   ========================================================================== */
+.echo-social-types {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 640px;
+}
+
+.echo-social-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 11px 6px 7px;
+    border: 1px solid #dcdcde;
+    border-radius: 999px;
+    background: #fff;
+    color: #50575e;
+    font-size: 12px;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+    user-select: none;
+}
+
+.echo-social-type input {
+    margin: 0;
+    width: 14px;
+    height: 14px;
+}
+
+.echo-social-type img {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    object-fit: contain;
+    background: #f6f7f7;
+}
+
+.echo-social-type:hover {
+    border-color: #2271b1;
+}
+
+.echo-social-type.is-on {
+    border-color: #2271b1;
+    background: #f0f6fc;
+    color: #135e96;
+    font-weight: 600;
+}
