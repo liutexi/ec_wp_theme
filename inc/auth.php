@@ -1000,6 +1000,10 @@ function echo_auth_render( $default_view = 'login' ) {
 			if ( '' !== $short && in_array( $view, array( 'login', 'register' ), true ) ) {
 				echo '<div class="echo-auth__shortcode">' . do_shortcode( $short ) . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
+
+			if ( in_array( $view, array( 'login', 'register' ), true ) && function_exists( 'echo_social_login_buttons' ) ) {
+				echo_social_login_buttons();
+			}
 			?>
 
 			<p class="echo-auth__footer">
