@@ -467,6 +467,22 @@ function echo_auth_do_register() {
 		echo_auth_set_feedback( 'error', __( '该邮箱已注册。', 'echo' ), 'user_email' );
 		return;
 	}
+	if ( echo_auth_config( 'auth_email_code', false ) && function_exists( 'echo_mail_verify_register_code' ) ) {
+		$code = isset( $_POST['echo_auth_code'] ) ? preg_replace( '/\D+/', '', (string) wp_unslash( $_POST['echo_auth_code'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( '' === $code ) {
+			echo_auth_set_feedback( 'error', __( '请填写邮箱验证码。', 'echo' ), 'echo_auth_code' );
+			return;
+		}
+		if ( 6 !== strlen( $code ) ) {
+			echo_auth_set_feedback( 'error', __( '验证码为 6 位数字，请检查后重试。', 'echo' ), 'echo_auth_code' );
+			return;
+		}
+		$code_check = echo_mail_verify_register_code( $email, $code );
+		if ( is_wp_error( $code_check ) ) {
+			echo_auth_set_feedback( 'error', $code_check->get_error_message(), 'echo_auth_code' );
+			return;
+		}
+	}
 	if ( echo_auth_config( 'auth_terms_enabled', false ) && empty( $_POST['echo_auth_terms'] ) ) {
 		echo_auth_set_feedback( 'error', __( '请先阅读并同意相关条款。', 'echo' ), 'echo_auth_terms' );
 		return;
@@ -531,6 +547,11 @@ function echo_auth_do_register() {
 	}
 
 	wp_new_user_notification( $user_id, null, 'admin' );
+
+	// 可选：再发一封欢迎邮件（内部会检查开关）
+	if ( function_exists( 'echo_mail_send_welcome' ) ) {
+		echo_mail_send_welcome( $user_id );
+	}
 
 	if ( $throttle ) {
 		echo_auth_throttle_clear( 'register' );
@@ -852,6 +873,32 @@ function echo_auth_form_register() {
 			<input id="echo-auth-email" name="user_email" type="email" autocomplete="email" required data-field="user_email"
 				value="<?php echo isset( $_POST['user_email'] ) ? esc_attr( sanitize_email( wp_unslash( $_POST['user_email'] ) ) ) : ''; ?>" />
 		</p>
+
+		<?php if ( echo_auth_config( 'auth_email_code', false ) ) : ?>
+			<p class="echo-auth__field">
+				<label for="echo-auth-code"><?php esc_html_e( '邮箱验证码', 'echo' ); ?></label>
+				<span class="echo-auth__code-row">
+					<input id="echo-auth-code" name="echo_auth_code" type="text" inputmode="numeric" pattern="[0-9]*"
+						maxlength="6" autocomplete="one-time-code" required data-field="echo_auth_code"
+						placeholder="<?php esc_attr_e( '6 位数字', 'echo' ); ?>"
+						value="<?php echo isset( $_POST['echo_auth_code'] ) ? esc_attr( preg_replace( '/\D+/', '', (string) wp_unslash( $_POST['echo_auth_code'] ) ) ) : ''; ?>" />
+					<button type="button" class="echo-auth__code-btn" data-echo-send-code
+						data-nonce="<?php echo esc_attr( wp_create_nonce( 'echo_auth_mail' ) ); ?>"><?php esc_html_e( '获取验证码', 'echo' ); ?></button>
+				</span>
+				<span class="echo-auth__code-status" data-code-status aria-live="polite"></span>
+				<span class="echo-auth__hint">
+					<?php
+					echo esc_html(
+						sprintf(
+							/* translators: %d: 有效期分钟 */
+							__( '验证码 %d 分钟内有效，请同时检查垃圾邮件。', 'echo' ),
+							function_exists( 'echo_mail_code_ttl' ) ? echo_mail_code_ttl() : 10
+						)
+					);
+					?>
+				</span>
+			</p>
+		<?php endif; ?>
 
 		<?php if ( $set_password ) : ?>
 			<p class="echo-auth__field">

@@ -15,6 +15,8 @@
 		initCodeCopy();
 		initAuthExperience();
 		initSubmitGuard();
+		initEmailCode();
+		initPageProgress();
 	});
 
 	/**
@@ -562,5 +564,224 @@
 				btn.textContent = '处理中…';
 			});
 		});
+	}
+
+	/**
+	 * 注册邮箱验证码：发送、倒计时、状态提示
+	 */
+	function initEmailCode() {
+		var buttons = document.querySelectorAll('[data-echo-send-code]');
+		if (!buttons.length) {
+			return;
+		}
+
+		var cfg = window.echoL10n || {};
+		var labels = cfg.mail || {};
+
+		function t(key, fallback) {
+			return labels[key] || fallback;
+		}
+
+		Array.prototype.forEach.call(buttons, function (btn) {
+			var form = btn.closest('form');
+			if (!form) {
+				return;
+			}
+
+			var emailInput = form.querySelector('[data-field="user_email"]');
+			var codeInput = form.querySelector('[data-field="echo_auth_code"]');
+			var statusEl = form.querySelector('[data-code-status]');
+			var idleLabel = btn.textContent;
+			var timer = null;
+
+			function setStatus(text, type) {
+				if (!statusEl) {
+					return;
+				}
+				statusEl.textContent = text || '';
+				statusEl.className = 'echo-auth__code-status' + (type ? ' is-' + type : '');
+			}
+
+			function resetBtn() {
+				window.clearInterval(timer);
+				btn.disabled = false;
+				btn.classList.remove('is-loading', 'is-cooling');
+				btn.textContent = t('resend', idleLabel);
+			}
+
+			function countdown(seconds) {
+				var left = seconds;
+				window.clearInterval(timer);
+				btn.disabled = true;
+				btn.classList.remove('is-loading');
+				btn.classList.add('is-cooling');
+				btn.textContent = t('cooldown', '%d 秒后重发').replace('%d', left);
+
+				timer = window.setInterval(function () {
+					left -= 1;
+					if (left <= 0) {
+						resetBtn();
+						return;
+					}
+					btn.textContent = t('cooldown', '%d 秒后重发').replace('%d', left);
+				}, 1000);
+			}
+
+			btn.addEventListener('click', function () {
+				if (btn.disabled) {
+					return;
+				}
+
+				var email = emailInput ? emailInput.value.trim() : '';
+				if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+					if (emailInput) {
+						emailInput.classList.add('is-invalid');
+						try {
+							emailInput.focus();
+						} catch (e) {
+							/* 忽略 */
+						}
+					}
+					setStatus(t('needEmail', '请先填写正确的邮箱地址。'), 'error');
+					return;
+				}
+				if (emailInput) {
+					emailInput.classList.remove('is-invalid');
+				}
+
+				var body = 'action=echo_send_register_code'
+					+ '&nonce=' + encodeURIComponent(btn.getAttribute('data-nonce') || cfg.mailNonce || '')
+					+ '&email=' + encodeURIComponent(email);
+
+				btn.disabled = true;
+				btn.classList.add('is-loading');
+				btn.textContent = t('sending', '发送中…');
+				setStatus('', '');
+
+				window.fetch(cfg.ajaxUrl || '/wp-admin/admin-ajax.php', {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+					body: body
+				})
+					.then(function (res) {
+						return res.json();
+					})
+					.then(function (res) {
+						var data = (res && res.data) || {};
+						if (res && res.success) {
+							setStatus(data.message || '', 'success');
+							if (codeInput) {
+								try {
+									codeInput.focus();
+								} catch (e) {
+									/* 忽略 */
+								}
+							}
+							countdown(parseInt(data.cooldown, 10) || 60);
+							return;
+						}
+						setStatus(data.message || t('failed', '发送失败，请稍后重试。'), 'error');
+						if (data.cooldown) {
+							countdown(parseInt(data.cooldown, 10) || 60);
+						} else {
+							resetBtn();
+						}
+					})
+					.catch(function () {
+						setStatus(t('failed', '发送失败，请稍后重试。'), 'error');
+						resetBtn();
+					});
+			});
+
+			// 只允许输入数字，最多 6 位
+			if (codeInput) {
+				codeInput.addEventListener('input', function () {
+					var clean = codeInput.value.replace(/\D+/g, '').slice(0, 6);
+					if (clean !== codeInput.value) {
+						codeInput.value = clean;
+					}
+				});
+			}
+		});
+	}
+
+	/**
+	 * Miuix 风格页面切换进度条（仅启用 Miuix 外观时生效）
+	 */
+	function initPageProgress() {
+		if (!document.body || !document.body.classList.contains('echo-style-miuix')) {
+			return;
+		}
+
+		var bar = null;
+		var fallback = null;
+
+		function show() {
+			if (bar) {
+				return;
+			}
+			bar = document.createElement('div');
+			bar.className = 'miuix-progress';
+			bar.setAttribute('aria-hidden', 'true');
+			document.body.appendChild(bar);
+
+			window.clearTimeout(fallback);
+			fallback = window.setTimeout(hide, 8000);
+		}
+
+		function hide() {
+			window.clearTimeout(fallback);
+			if (!bar) {
+				return;
+			}
+			var el = bar;
+			bar = null;
+			el.classList.add('is-done');
+			window.setTimeout(function () {
+				if (el.parentNode) {
+					el.parentNode.removeChild(el);
+				}
+			}, 220);
+		}
+
+		document.addEventListener('click', function (e) {
+			if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+				return;
+			}
+
+			var link = e.target.closest ? e.target.closest('a[href]') : null;
+			if (!link) {
+				return;
+			}
+			if (link.target && link.target !== '_self') {
+				return;
+			}
+			if (link.hasAttribute('download')) {
+				return;
+			}
+
+			var href = link.getAttribute('href') || '';
+			if (!href || href.charAt(0) === '#' || /^(mailto:|tel:|javascript:|data:)/i.test(href)) {
+				return;
+			}
+			if (link.host && link.host !== window.location.host) {
+				return;
+			}
+			if (link.pathname === window.location.pathname && link.search === window.location.search && link.hash) {
+				return;
+			}
+
+			show();
+		});
+
+		document.addEventListener('submit', function (e) {
+			if (e.defaultPrevented) {
+				return;
+			}
+			show();
+		});
+
+		window.addEventListener('pageshow', hide);
 	}
 })();

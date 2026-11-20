@@ -40,6 +40,7 @@ function echo_default_settings() {
 		),
 		echo_extra_defaults(),
 		echo_auth_defaults(),
+		echo_mail_defaults(),
 		echo_social_defaults(),
 		echo_user_defaults(),
 		echo_links_defaults()
@@ -89,6 +90,7 @@ function echo_settings_sections_map() {
 		'echo_section_my'        => __( '我的界面', 'echo' ),
 		'echo_section_tweaks'    => __( '前端微调', 'echo' ),
 		'echo_section_auth'      => __( '登录 / 注册', 'echo' ),
+		'echo_section_mail'      => __( '邮件 / SMTP', 'echo' ),
 		'echo_section_social'    => __( '聚合登录', 'echo' ),
 		'echo_section_user'      => __( '用户主页', 'echo' ),
 		'echo_section_categories' => __( '文章分类', 'echo' ),
@@ -321,6 +323,13 @@ function echo_settings_init() {
 		array( 'auth_allow_register', __( '允许前台注册', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '需同时开启 WordPress「设置 → 常规 → 任何人都可以注册」。', 'echo' ) ) ),
 		array( 'auth_register_password', __( '注册时自设密码', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '开启：用户自己填写密码；关闭：由 WordPress 生成随机密码并邮件发送。', 'echo' ) ) ),
 		array( 'auth_password_min', __( '密码最小长度', 'echo' ), 'echo_field_number', array( 'min' => 6, 'max' => 32, 'step' => 1, 'suffix' => '位' ) ),
+		array( 'auth_email_code', __( '注册需邮箱验证码', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '注册表单会多出「邮箱验证码」一栏，验证通过才创建账号。请先在「邮件 / SMTP」配好发信，否则验证码发不出去。', 'echo' ) ) ),
+		array( 'auth_email_code_ttl', __( '验证码有效期', 'echo' ), 'echo_field_number', array( 'min' => 5, 'max' => 60, 'step' => 1, 'suffix' => '分钟' ) ),
+		array( 'auth_email_subject', __( '验证码邮件主题', 'echo' ), 'echo_field_text', array( 'desc' => __( '支持 {site}、{code}、{minutes} 占位符。留空使用默认主题。', 'echo' ) ) ),
+		array( 'auth_email_body', __( '验证码邮件正文', 'echo' ), 'echo_field_textarea', array( 'rows' => 6, 'class' => 'echo-code-textarea', 'desc' => __( '支持 {site}、{code}、{minutes} 占位符，会自动套上邮件版式。留空使用默认正文。', 'echo' ) ) ),
+		array( 'auth_email_welcome', __( '注册成功后发欢迎邮件', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '账号创建成功后，再发一封欢迎信，方便用户留存登录地址。', 'echo' ) ) ),
+		array( 'auth_email_welcome_subject', __( '欢迎邮件主题', 'echo' ), 'echo_field_text', array( 'desc' => __( '支持 {site}、{user} 占位符。', 'echo' ) ) ),
+		array( 'auth_email_welcome_body', __( '欢迎邮件正文', 'echo' ), 'echo_field_textarea', array( 'rows' => 5, 'class' => 'echo-code-textarea', 'desc' => __( '支持 {site}、{user}、{login_url} 占位符。留空使用默认正文。', 'echo' ) ) ),
 		array( 'auth_auto_login', __( '注册后自动登录', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '仅在「注册时自设密码」开启时生效；生成密码模式会提示查收邮件。', 'echo' ) ) ),
 		array( 'auth_redirect_logged_in', __( '已登录访问时跳转', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '已登录用户打开登录 / 注册页时，直接跳到「登录后跳转」目标。', 'echo' ) ) ),
 		array( 'auth_after_login', __( '登录后跳转', 'echo' ), 'echo_field_select', array( 'options' => array( 'my' => __( '个人中心', 'echo' ), 'home' => __( '首页', 'echo' ), 'custom' => __( '自定义地址', 'echo' ) ) ) ),
@@ -346,6 +355,38 @@ function echo_settings_init() {
 		$args = isset( $field[3] ) ? $field[3] : array();
 		$args['label_for'] = $field[0];
 		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_auth', $args );
+	}
+
+	// 邮件 / SMTP
+	add_settings_section(
+		'echo_section_mail',
+		__( '邮件 / SMTP', 'echo' ),
+		'echo_section_mail_desc',
+		'echo-settings'
+	);
+
+	$echo_mail_fields = array(
+		array( 'smtp_enabled', __( '启用 SMTP 发信', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '关闭时使用服务器自带的 mail()，多数虚拟主机下容易进垃圾箱或被拒收。', 'echo' ) ) ),
+		array( 'smtp_preset', __( '常用服务商', 'echo' ), 'echo_field_smtp_preset', array() ),
+		array( 'smtp_host', __( 'SMTP 主机', 'echo' ), 'echo_field_text', array( 'desc' => __( '例如 smtp.qq.com。不要带 http:// 或端口。', 'echo' ) ) ),
+		array( 'smtp_port', __( '端口', 'echo' ), 'echo_field_number', array( 'min' => 1, 'max' => 65535, 'step' => 1, 'desc' => __( 'SSL 一般 465，STARTTLS 一般 587，明文 25。', 'echo' ) ) ),
+		array( 'smtp_secure', __( '加密方式', 'echo' ), 'echo_field_select', array( 'options' => array( 'ssl' => 'SSL（465）', 'tls' => 'STARTTLS（587）', 'none' => __( '不加密（25）', 'echo' ) ), 'desc' => __( '与服务商要求保持一致，腾讯 / 网易系邮箱多为 SSL 465。', 'echo' ) ) ),
+		array( 'smtp_auth', __( '需要登录认证', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'smtp_user', __( 'SMTP 账号', 'echo' ), 'echo_field_text', array( 'desc' => __( '通常是完整邮箱地址，例如 you@qq.com。', 'echo' ) ) ),
+		array( 'smtp_pass', __( 'SMTP 密码', 'echo' ), 'echo_field_secret', array( 'desc' => __( 'QQ / 163 等邮箱需要填写「授权码」而不是登录密码；授权码在邮箱设置里单独生成。出于安全考虑，已保存的密码不会回显，留空即保持不变。', 'echo' ) ) ),
+		array( 'smtp_from_email', __( '发件邮箱', 'echo' ), 'echo_field_text', array( 'desc' => __( '留空则用 SMTP 账号。网易 / QQ 要求发件邮箱与登录账号一致，否则会被拒信。', 'echo' ) ) ),
+		array( 'smtp_from_name', __( '发件人名称', 'echo' ), 'echo_field_text', array( 'desc' => __( '收件箱里显示的发送者名称，留空使用站点名称。', 'echo' ) ) ),
+		array( 'smtp_timeout', __( '连接超时', 'echo' ), 'echo_field_number', array( 'min' => 5, 'max' => 60, 'step' => 1, 'suffix' => '秒', 'desc' => __( 'SMTP 连不上时，避免页面长时间卡住。', 'echo' ) ) ),
+		array( 'mail_test', __( '发送测试', 'echo' ), 'echo_field_mail_test', array() ),
+	);
+
+	foreach ( $echo_mail_fields as $field ) {
+		$args = isset( $field[3] ) ? $field[3] : array();
+		// 纯操作类字段（预设、测试）不对应具体设置项，不加 label_for
+		if ( ! in_array( $field[0], array( 'smtp_preset', 'mail_test' ), true ) ) {
+			$args['label_for'] = $field[0];
+		}
+		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_mail', $args );
 	}
 
 	// 聚合登录（主题原生集成，无需插件）
@@ -821,6 +862,9 @@ function echo_sanitize_settings( $input ) {
 
 	// 登录 / 注册
 	echo_sanitize_auth_settings( $input, $output );
+
+	// 邮件 / SMTP 与注册邮件
+	echo_sanitize_mail_settings( $input, $output );
 
 	// 彩虹聚合登录
 	echo_sanitize_social_settings( $input, $output );

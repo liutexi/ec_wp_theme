@@ -21,6 +21,9 @@ require get_template_directory() . '/inc/my-page.php';
 // 引入登录 / 注册界面（同上，默认值需在 customizer 之前合并）
 require get_template_directory() . '/inc/auth.php';
 
+// 邮件 / SMTP 与注册邮件（默认值需在 customizer 之前合并）
+require get_template_directory() . '/inc/mail.php';
+
 // 彩虹聚合登录适配
 require get_template_directory() . '/inc/social-login.php';
 
@@ -129,10 +132,19 @@ function echo_scripts() {
 		'echo-main',
 		'echoL10n',
 		array(
-			'codeCopy' => function_exists( 'echo_my_config' ) ? (bool) echo_my_config( 'tw_code_copy', true ) : false,
-			'copy'     => __( '复制', 'echo' ),
-			'copied'   => __( '已复制', 'echo' ),
-			'copyFail' => __( '复制失败', 'echo' ),
+			'codeCopy'  => function_exists( 'echo_my_config' ) ? (bool) echo_my_config( 'tw_code_copy', true ) : false,
+			'copy'      => __( '复制', 'echo' ),
+			'copied'    => __( '已复制', 'echo' ),
+			'copyFail'  => __( '复制失败', 'echo' ),
+			'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+			'mailNonce' => wp_create_nonce( 'echo_auth_mail' ),
+			'mail'      => array(
+				'sending'   => __( '发送中…', 'echo' ),
+				'resend'    => __( '重新获取', 'echo' ),
+				'cooldown'  => __( '%d 秒后重发', 'echo' ),
+				'needEmail' => __( '请先填写正确的邮箱地址。', 'echo' ),
+				'failed'    => __( '发送失败，请稍后重试。', 'echo' ),
+			),
 		)
 	);
 

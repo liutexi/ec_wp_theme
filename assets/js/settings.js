@@ -17,6 +17,7 @@
 		initLinksManager();
 		initPostManager();
 		initBackupManager();
+		initMailTools();
 		initToast();
 	});
 
@@ -717,6 +718,75 @@
 	/**
 	 * 右下角即时通知（toast）
 	 */
+	/**
+	 * 邮件 / SMTP：服务商预设、密码显隐、发送测试邮件
+	 */
+	function initMailTools() {
+		var $presets = $('.echo-smtp-presets');
+		if (!$presets.length && !$('[data-mail-test]').length) {
+			return;
+		}
+
+		var data = window.echoSettingsData || {};
+
+		$presets.on('click', '.echo-smtp-presets__item', function () {
+			var $btn = $(this);
+			var $host = $('#smtp_host');
+			if (!$host.length) {
+				return;
+			}
+
+			$host.val($btn.data('smtp-host'));
+			$('#smtp_port').val($btn.data('smtp-port'));
+			$('#smtp_secure').val($btn.data('smtp-secure'));
+
+			$btn.addClass('is-active').siblings().removeClass('is-active');
+			$host.trigger('input').trigger('change');
+			showToast('已填入 ' + $.trim($btn.text()) + ' 的主机与端口，记得补账号密码', 'success');
+		});
+
+		$(document).on('click', '[data-echo-secret-toggle]', function () {
+			var $btn = $(this);
+			var $input = $btn.siblings('[data-echo-secret]');
+			if (!$input.length) {
+				return;
+			}
+			var show = $input.attr('type') === 'password';
+			$input.attr('type', show ? 'text' : 'password');
+			$btn.text(show ? '隐藏' : '显示');
+		});
+
+		$(document).on('click', '[data-mail-test]', function () {
+			var $btn = $(this);
+			var $field = $btn.closest('td');
+			var $status = $field.find('[data-mail-test-status]');
+			var to = $.trim($field.find('[data-mail-test-to]').val() || '');
+
+			$btn.prop('disabled', true).addClass('is-loading');
+			$status.removeClass('is-error is-success').text('正在连接 SMTP…');
+
+			$.post(data.ajaxUrl || window.ajaxurl, {
+				action: 'echo_test_mail',
+				nonce: data.nonce || $('#echo-ajax-data').data('nonce') || '',
+				email: to
+			})
+				.done(function (res) {
+					if (res && res.success) {
+						$status.addClass('is-success').text((res.data && res.data.message) || '发送成功');
+					} else {
+						$status.addClass('is-error').text((res && res.data && res.data.message) || '发送失败');
+					}
+				})
+				.fail(function (xhr) {
+					var msg = xhr && xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message;
+					$status.addClass('is-error').text(msg || '请求失败，请刷新页面后重试');
+				})
+				.always(function () {
+					$btn.prop('disabled', false).removeClass('is-loading');
+				});
+		});
+	}
+
 	function initToast() {
 		// 页面加载后，若存在保存成功提示，弹 toast（一般由 options.php 跳转回来）
 		var $notice = $('.wrap .notice-success, .wrap #setting-error-settings_updated');

@@ -1513,3 +1513,129 @@
     color: #135e96;
     font-weight: 600;
 }
+
+/* ==========================================================================
+   邮件 / SMTP
+   ========================================================================== */
+.echo-mail-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0 6px;
+    font-size: 13px;
+    color: #1d2327;
+}
+
+.echo-mail-status__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #d63638;
+    box-shadow: 0 0 0 3px rgba(214, 54, 56, 0.12);
+    flex: 0 0 auto;
+}
+
+.echo-mail-status__dot.is-on {
+    background: #00a32a;
+    box-shadow: 0 0 0 3px rgba(0, 163, 42, 0.14);
+}
+
+.echo-mail-warn {
+    margin: 6px 0;
+    padding: 8px 12px;
+    border-left: 3px solid #dba617;
+    border-radius: 4px;
+    background: #fcf9e8;
+    color: #7a5c00;
+    font-size: 13px;
+}
+
+.echo-smtp-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.echo-smtp-presets__item {
+    border-radius: 999px !important;
+}
+
+.echo-smtp-presets__item.is-active {
+    border-color: #2271b1 !important;
+    background: #f0f6fc !important;
+    color: #135e96 !important;
+    font-weight: 600;
+}
+
+.echo-secret-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+}
+
+.echo-secret-field input[type="password"],
+.echo-secret-field input[type="text"] {
+    min-width: 260px;
+}
+
+.echo-secret-toggle {
+    flex: 0 0 auto;
+}
+
+.echo-mail-test {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.echo-mail-test__btn {
+    position: relative;
+}
+
+.echo-mail-test__btn.is-loading {
+    color: transparent !important;
+}
+
+.echo-mail-test__btn.is-loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 14px;
+    height: 14px;
+    margin: -7px 0 0 -7px;
+    border: 2px solid rgba(34, 113, 177, 0.25);
+    border-top-color: #2271b1;
+    border-radius: 50%;
+    animation: echo-mail-spin 0.7s linear infinite;
+}
+
+.echo-mail-test__status {
+    min-height: 20px;
+    margin: 8px 0 4px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #50575e;
+}
+
+.echo-mail-test__status.is-success {
+    color: #00733a;
+}
+
+.echo-mail-test__status.is-error {
+    color: #b32d2e;
+}
+
+@keyframes echo-mail-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .echo-mail-test__btn.is-loading::after {
+        animation-duration: 1.8s;
+    }
+}
