@@ -21,6 +21,9 @@ require get_template_directory() . '/inc/my-page.php';
 // 引入登录 / 注册界面（同上，默认值需在 customizer 之前合并）
 require get_template_directory() . '/inc/auth.php';
 
+// 彩虹聚合登录适配
+require get_template_directory() . '/inc/social-login.php';
+
 // 引入用户主页（/uid/{id}）与自助资料编辑
 require get_template_directory() . '/inc/user-page.php';
 
