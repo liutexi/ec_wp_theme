@@ -13,6 +13,8 @@
 		initAvatarInput();
 		initAvatarFallback();
 		initCodeCopy();
+		initAuthExperience();
+		initSubmitGuard();
 	});
 
 	/**
@@ -378,6 +380,187 @@
 			}
 			document.body.removeChild(ta);
 			ok ? resolve() : reject(new Error('copy failed'));
+		});
+	}
+
+	/**
+	 * 登录 / 注册体验增强
+	 * - 密码强度
+	 * - 确认密码实时比对
+	 * - 字段实时校验（邮箱格式 / 最小长度）
+	 * - 错误字段高亮并聚焦（服务端返回 data-error-field）
+	 */
+	function initAuthExperience() {
+		var forms = document.querySelectorAll('.echo-auth__form');
+		if (!forms.length) {
+			return;
+		}
+
+		Array.prototype.forEach.call(forms, function (form) {
+			// 密码强度
+			Array.prototype.forEach.call(form.querySelectorAll('[data-strength="1"]'), function (input) {
+				var wrap = form.querySelector('[data-strength-for="' + input.id + '"]');
+				if (!wrap) {
+					return;
+				}
+				var bar = wrap.querySelector('.echo-auth__strength-bar');
+				var text = wrap.querySelector('.echo-auth__strength-text');
+				var min = parseInt(input.getAttribute('data-min') || '6', 10);
+
+				input.addEventListener('input', function () {
+					var val = input.value;
+					if (!val) {
+						wrap.hidden = true;
+						bar.style.width = '0%';
+						text.textContent = '';
+						return;
+					}
+					var score = 0;
+					if (val.length >= min) { score++; }
+					if (val.length >= min + 4) { score++; }
+					if (/[a-z]/.test(val) && /[A-Z]/.test(val)) { score++; }
+					if (/[0-9]/.test(val)) { score++; }
+					if (/[^A-Za-z0-9]/.test(val)) { score++; }
+
+					wrap.hidden = false;
+					var level, label, width;
+					if (val.length < min) {
+						level = 'weak'; label = '太短（至少 ' + min + ' 位）'; width = 25;
+					} else if (score <= 2) {
+						level = 'weak'; label = '弱'; width = 33;
+					} else if (score === 3) {
+						level = 'mid'; label = '中'; width = 66;
+					} else {
+						level = 'strong'; label = '强'; width = 100;
+					}
+					wrap.setAttribute('data-level', level);
+					bar.style.width = width + '%';
+					text.textContent = label;
+				});
+			});
+
+			// 确认密码实时比对
+			Array.prototype.forEach.call(form.querySelectorAll('[data-match]'), function (input) {
+				var target = form.querySelector('#' + input.getAttribute('data-match'));
+				if (!target) {
+					return;
+				}
+				function check() {
+					if (!input.value) {
+						input.setCustomValidity('');
+						input.classList.remove('is-invalid');
+						return;
+					}
+					var ok = input.value === target.value;
+					input.classList.toggle('is-invalid', !ok);
+					input.setCustomValidity(ok ? '' : '两次输入的密码不一致');
+				}
+				input.addEventListener('input', check);
+				target.addEventListener('input', check);
+			});
+
+			// 邮箱格式
+			var email = form.querySelector('[data-field="user_email"]');
+			if (email) {
+				email.addEventListener('blur', function () {
+					var ok = !email.value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value);
+					email.classList.toggle('is-invalid', !ok);
+				});
+			}
+
+			// 用户重新输入时立即清除错误态（有 data-match 的字段由一致性检查自行管理）
+			Array.prototype.forEach.call(form.querySelectorAll('[data-field]'), function (el) {
+				if (el.hasAttribute('data-match')) {
+					return;
+				}
+				el.addEventListener('input', function () {
+					if (el.value.trim() !== '') {
+						el.classList.remove('is-invalid');
+						el.removeAttribute('aria-invalid');
+					}
+				});
+			});
+
+			// 服务端错误字段：高亮 + 聚焦
+			var alert = document.querySelector('.echo-auth__alert--error[data-error-field]');
+			if (alert) {
+				var field = alert.getAttribute('data-error-field');
+				var target = form.querySelector('[data-field="' + field + '"]');
+				if (target) {
+					target.classList.add('is-invalid');
+					target.setAttribute('aria-invalid', 'true');
+					try {
+						target.focus({ preventScroll: true });
+					} catch (e) {
+						target.focus();
+					}
+				}
+			}
+		});
+	}
+
+	/**
+	 * 提交前的前端校验 + 防重复
+	 * - 必填为空 / 邮箱格式错 / 两次密码不一致时拦下并聚焦
+	 * - 通过后按钮进入 loading，避免连点重复提交
+	 */
+	function initSubmitGuard() {
+		Array.prototype.forEach.call(document.querySelectorAll('.echo-auth__form'), function (form) {
+			form.addEventListener('submit', function (e) {
+				var bad = null;
+
+				Array.prototype.forEach.call(form.querySelectorAll('[required], [data-match], [type="email"]'), function (el) {
+					if (bad) {
+						return;
+					}
+					// 蜜罐 / 隐藏字段跳过
+					if (el.type === 'hidden' || el.classList.contains('echo-auth__hp')) {
+						return;
+					}
+					if (el.type === 'checkbox') {
+						if (el.required && !el.checked) {
+							bad = el;
+						}
+						return;
+					}
+					if (el.required && el.value.trim() === '') {
+						bad = el;
+						return;
+					}
+					if (el.type === 'email' && el.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value)) {
+						bad = el;
+						return;
+					}
+					if (el.validity && el.validity.customError) {
+						bad = el;
+					}
+				});
+
+				if (bad) {
+					e.preventDefault();
+					bad.classList.add('is-invalid');
+					try {
+						bad.focus({ preventScroll: false });
+					} catch (err) {
+						bad.focus();
+					}
+					return;
+				}
+
+				var btn = form.querySelector('.echo-auth__submit');
+				if (!btn || btn.classList.contains('is-loading')) {
+					if (btn) {
+						e.preventDefault();
+					}
+					return;
+				}
+				btn.classList.add('is-loading');
+				btn.disabled = true;
+				if (!btn.getAttribute('data-label')) {
+					btn.setAttribute('data-label', btn.textContent);
+				}
+				btn.textContent = '处理中…';
+			});
 		});
 	}
 })();
