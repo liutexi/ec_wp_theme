@@ -940,3 +940,31 @@ body.echo-style-miuix .echo-link-card__logo {
     border-radius: 14px;
     background: var(--miuix-secondary-container, #f0f0f0);
 }
+
+/* 彩虹聚合登录（Miuix） */
+body.echo-style-miuix .echo-social__list a,
+body.echo-style-miuix .echo-social__list button,
+body.echo-style-miuix .echo-social__list [class*="clogin"],
+body.echo-style-miuix .echo-social__list [class*="social-login"] {
+    border: 0;
+    border-radius: 16px !important;
+    background: var(--miuix-secondary-container, #e8e8e8);
+}
+
+body.echo-style-miuix .echo-social__divider {
+    color: var(--miuix-outline, #767676);
+}
+
+body.echo-style-miuix .echo-social__divider::before,
+body.echo-style-miuix .echo-social__divider::after {
+    background: var(--miuix-divider, #e0e0e0);
+}
+
+body.echo-style-miuix .echo-social-binding {
+    border-top-color: var(--miuix-divider, #e0e0e0);
+}
+
+body.echo-style-miuix .echo-social-binding .echo-social__list a,
+body.echo-style-miuix .echo-social-binding .echo-social__list button {
+    border-radius: 999px !important;
+}
