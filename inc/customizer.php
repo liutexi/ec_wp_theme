@@ -103,20 +103,21 @@ function echo_settings_sections_map() {
  * @return void
  */
 function echo_settings_menu() {
-	// 挂在 WordPress 原生「设置」(options-general.php) 下，作为其子菜单
-	add_submenu_page(
-		'options-general.php',
-		__( 'Echo 设置', 'echo' ),   // 页面标题
-		__( 'Echo 设置', 'echo' ),   // 菜单标题
-		'manage_options',            // 权限
-		'echo-settings',             // 菜单 slug
-		'echo_settings_page_html'    // 渲染回调
+	// 顶级菜单，位置 99 —— 排在 WordPress 后台所有默认菜单最下方
+	add_menu_page(
+		__( 'Echo 设置', 'echo' ),    // 页面标题
+		__( 'Echo 设置', 'echo' ),    // 菜单标题
+		'manage_options',             // 权限
+		'echo-settings',              // 菜单 slug
+		'echo_settings_page_html',    // 渲染回调
+		'dashicons-admin-appearance', // 图标
+		99                            // 位置：最底部
 	);
 
 	// 分类子项：点击直达对应分类面板
 	foreach ( echo_settings_sections_map() as $section_id => $label ) {
 		add_submenu_page(
-			'options-general.php',
+			'echo-settings',
 			$label . ' - ' . __( 'Echo 设置', 'echo' ),
 			$label,
 			'manage_options',
@@ -124,6 +125,9 @@ function echo_settings_menu() {
 			'echo_settings_page_html'
 		);
 	}
+
+	// 去掉 WP 自动生成的同名子项，避免重复
+	remove_submenu_page( 'echo-settings', 'echo-settings' );
 }
 add_action( 'admin_menu', 'echo_settings_menu' );
 
@@ -139,8 +143,7 @@ function echo_settings_highlight_submenu() {
 		return;
 	}
 
-	$parent_file  = 'options-general.php'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-	$submenu_file = 'echo-settings'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+	$parent_file = 'echo-settings'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 
 	$panel = isset( $_GET['panel'] ) ? sanitize_key( wp_unslash( $_GET['panel'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	if ( $panel ) {
