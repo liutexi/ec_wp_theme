@@ -318,6 +318,9 @@ function echo_my_module_profile() {
 				<a class="echo-my-profile__site" href="<?php echo esc_url( $profile_url ); ?>"><?php esc_html_e( '查看我的主页', 'echo' ); ?></a>
 			</p>
 		<?php endif; ?>
+		<?php if ( function_exists( 'echo_social_binding_buttons' ) ) : ?>
+			<?php echo_social_binding_buttons( $user ); ?>
+		<?php endif; ?>
 	</section>
 	<?php
 }
