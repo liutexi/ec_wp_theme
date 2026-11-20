@@ -2954,3 +2954,198 @@ body.echo-style-miuix .echo-single--links {
     clip: auto;
     white-space: normal;
 }
+
+/* ==========================================================================
+   登录 / 注册体验增强
+   ========================================================================== */
+
+/* 警告条：图标 + 文本 */
+.echo-auth__alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+}
+
+.echo-auth__alert-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.echo-auth__alert--error .echo-auth__alert-icon {
+    background: #ef4444;
+    color: #fff;
+}
+
+.echo-auth__alert--success .echo-auth__alert-icon {
+    background: #10b981;
+    color: #fff;
+}
+
+/* 字段校验失败态 */
+.echo-auth__field input.is-invalid,
+.echo-auth__field input[aria-invalid="true"] {
+    border-color: #ef4444 !important;
+    background: #fef2f2;
+}
+
+.echo-auth__field input.is-invalid:focus,
+.echo-auth__field input[aria-invalid="true"]:focus {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* 密码强度 */
+.echo-auth__strength {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 7px;
+}
+
+.echo-auth__strength-track {
+    flex: 1 1 auto;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--echo-bg-alt);
+    overflow: hidden;
+}
+
+.echo-auth__strength-bar {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: 999px;
+    background: #ef4444;
+    transition: width 0.25s ease, background 0.25s ease;
+}
+
+.echo-auth__strength[data-level="mid"] .echo-auth__strength-bar {
+    background: #f59e0b;
+}
+
+.echo-auth__strength[data-level="strong"] .echo-auth__strength-bar {
+    background: #10b981;
+}
+
+.echo-auth__strength-text {
+    flex: 0 0 auto;
+    color: var(--echo-text-muted);
+    font-size: 0.78rem;
+    min-width: 32px;
+    text-align: right;
+}
+
+.echo-auth__strength[data-level="mid"] .echo-auth__strength-text {
+    color: #b45309;
+}
+
+.echo-auth__strength[data-level="strong"] .echo-auth__strength-text {
+    color: #047857;
+}
+
+/* 提交按钮 loading */
+.echo-auth__submit.is-loading {
+    position: relative;
+    color: transparent !important;
+    cursor: progress;
+    opacity: 0.85;
+}
+
+.echo-auth__submit.is-loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: echo-auth-spin 0.7s linear infinite;
+}
+
+@keyframes echo-auth-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .echo-auth__submit.is-loading::after {
+        animation-duration: 1.6s;
+    }
+}
+
+/* 用户中心资料卡增强 */
+.echo-my-profile__head {
+    position: relative;
+    flex-wrap: wrap;
+}
+
+.echo-my-profile__edit {
+    margin-left: auto;
+    align-self: flex-start;
+    padding: 6px 14px;
+    border: 1px solid var(--echo-border);
+    border-radius: 999px;
+    background: var(--echo-surface);
+    color: var(--echo-text-secondary);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: border-color var(--echo-transition), color var(--echo-transition), background var(--echo-transition);
+}
+
+.echo-my-profile__edit:hover {
+    border-color: var(--echo-primary);
+    color: var(--echo-primary);
+    background: var(--echo-bg-alt);
+}
+
+.echo-my-profile__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin: 14px 0 0;
+    padding: 12px 0 0;
+    border-top: 1px dashed var(--echo-border);
+    list-style: none;
+    font-size: 0.84rem;
+    color: var(--echo-text-secondary);
+}
+
+.echo-my-profile__meta li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.echo-my-profile__meta-label {
+    color: var(--echo-text-muted);
+}
+
+.echo-my-profile__badge {
+    padding: 1px 9px;
+    border-radius: 999px;
+    background: var(--echo-bg-alt);
+    color: var(--echo-primary);
+    font-weight: 600;
+    font-size: 0.78rem;
+}
+
+@media (max-width: 600px) {
+    .echo-my-profile__edit {
+        margin-left: 0;
+        order: 3;
+    }
+}
