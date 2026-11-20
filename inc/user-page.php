@@ -784,21 +784,36 @@ function echo_user_section_edit( $user ) {
 				<?php wp_nonce_field( 'echo_user_update', 'echo_user_nonce' ); ?>
 				<input type="hidden" name="echo_user_action" value="update" />
 
-				<?php if ( echo_user_config( 'user_allow_avatar', true ) ) : ?>
-					<?php $custom_avatar = echo_user_avatar_data( $user->ID ); ?>
+					<?php if ( echo_user_config( 'user_allow_avatar', true ) ) : ?>
+					<?php
+					$custom_avatar = echo_user_avatar_data( $user->ID );
+					$social_avatar = ( ! $custom_avatar && function_exists( 'echo_social_effective_avatar' ) )
+						? echo_social_effective_avatar( null, $user->ID )
+						: null;
+					$current_avatar = $custom_avatar ? $custom_avatar : $social_avatar;
+					$is_social      = ! $custom_avatar && $social_avatar;
+					?>
 					<fieldset class="echo-user-fieldset echo-user-avatar-fieldset">
 						<legend><?php esc_html_e( '头像', 'echo' ); ?></legend>
-						<?php if ( $custom_avatar ) : ?>
+						<?php if ( $current_avatar ) : ?>
 							<div class="echo-user-avatar-row">
 								<img class="echo-user-avatar-row__img"
-									src="<?php echo esc_url( add_query_arg( 'v', isset( $custom_avatar['v'] ) ? (string) $custom_avatar['v'] : '1', set_url_scheme( $custom_avatar['url'] ) ) ); ?>"
+									src="<?php echo esc_url( add_query_arg( 'v', isset( $current_avatar['v'] ) ? (string) $current_avatar['v'] : '1', set_url_scheme( $current_avatar['url'] ) ) ); ?>"
 									alt="<?php esc_attr_e( '当前头像', 'echo' ); ?>" />
-								<span class="echo-user-hint"><?php esc_html_e( '当前使用自定义头像。', 'echo' ); ?></span>
+								<span class="echo-user-hint">
+									<?php if ( $is_social ) : ?>
+										<?php esc_html_e( '当前使用社交账号头像（来自聚合登录）。上传新头像可覆盖。', 'echo' ); ?>
+									<?php else : ?>
+										<?php esc_html_e( '当前使用自定义头像。', 'echo' ); ?>
+									<?php endif; ?>
+								</span>
 							</div>
-							<label class="echo-user-check">
-								<input type="checkbox" name="remove_avatar" value="1" />
-								<?php esc_html_e( '恢复默认头像（Gravatar）', 'echo' ); ?>
-							</label>
+							<?php if ( ! $is_social ) : ?>
+								<label class="echo-user-check">
+									<input type="checkbox" name="remove_avatar" value="1" />
+									<?php esc_html_e( '恢复默认头像（Gravatar）', 'echo' ); ?>
+								</label>
+							<?php endif; ?>
 						<?php else : ?>
 							<p class="echo-user-hint"><?php esc_html_e( '当前使用 Gravatar 头像（基于你的邮箱）。', 'echo' ); ?></p>
 						<?php endif; ?>
