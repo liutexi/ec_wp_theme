@@ -2816,3 +2816,141 @@ body.echo-style-miuix .echo-single--links {
     padding-bottom: 14px;
     border-bottom: 1px solid var(--echo-border);
 }
+
+/* ==========================================================================
+   彩虹聚合登录适配（登录按钮 / 绑定入口）
+   插件输出的按钮结构各家不一，这里用通用选择器统一视觉
+   ========================================================================== */
+.echo-social-login {
+    margin-top: 18px;
+}
+
+.echo-social__divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    color: var(--echo-text-muted, #8b949e);
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+
+.echo-social__divider::before,
+.echo-social__divider::after {
+    content: "";
+    flex: 1 1 auto;
+    height: 1px;
+    background: var(--echo-border, #d0d7de);
+}
+
+.echo-social__list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* 插件按钮：常见结构是 a > img/svg + 文字，统一成圆形图标按钮 */
+.echo-social__list a,
+.echo-social__list button,
+.echo-social__list .social-login-btn,
+.echo-social__list [class*="clogin"],
+.echo-social__list [class*="social-login"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-width: 44px;
+    min-height: 44px;
+    margin: 0 !important;
+    padding: 8px !important;
+    border: 1px solid var(--echo-border, #d0d7de);
+    border-radius: 50% !important;
+    background: var(--echo-surface, #fff);
+    color: var(--echo-text-secondary, #57606a);
+    font-size: 0.8rem;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform var(--echo-transition, 0.2s), border-color var(--echo-transition, 0.2s), box-shadow var(--echo-transition, 0.2s);
+}
+
+.echo-social__list a:hover,
+.echo-social__list button:hover,
+.echo-social__list [class*="clogin"]:hover,
+.echo-social__list [class*="social-login"]:hover {
+    transform: translateY(-2px);
+    border-color: var(--echo-primary, #2563eb);
+    box-shadow: var(--echo-shadow, 0 4px 14px rgba(0, 0, 0, 0.08));
+}
+
+/* 图标：统一尺寸，圆形裁切 */
+.echo-social__list img,
+.echo-social__list svg {
+    width: 22px !important;
+    height: 22px !important;
+    max-width: 22px !important;
+    max-height: 22px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    object-fit: contain;
+}
+
+/* 插件若在按钮里塞了文字标签，默认隐藏，只留图标（圆形放不下文字） */
+.echo-social-login .echo-social__list a > span,
+.echo-social-login .echo-social__list a > em,
+.echo-social-login .echo-social__list button > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.echo-social-login .echo-social__list a,
+.echo-social-login .echo-social__list button {
+    position: relative;
+}
+
+/* 个人中心绑定区 */
+.echo-social-binding {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--echo-border, #d0d7de);
+}
+
+.echo-social-binding__title {
+    margin: 0 0 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--echo-text, #1f2328);
+}
+
+.echo-social-binding .echo-social__list {
+    justify-content: flex-start;
+}
+
+/* 绑定区的按钮允许带文字（解绑 / 已绑定），不做纯图标裁切 */
+.echo-social-binding .echo-social__list a,
+.echo-social-binding .echo-social__list button,
+.echo-social-binding .echo-social__list [class*="clogin"] {
+    min-width: 0;
+    min-height: 0;
+    padding: 6px 14px !important;
+    border-radius: 999px !important;
+    gap: 6px;
+    font-size: 0.82rem;
+}
+
+.echo-social-binding .echo-social__list a > span,
+.echo-social-binding .echo-social__list a > em {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+}
