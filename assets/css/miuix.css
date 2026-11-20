@@ -968,3 +968,36 @@ body.echo-style-miuix .echo-social-binding .echo-social__list a,
 body.echo-style-miuix .echo-social-binding .echo-social__list button {
     border-radius: 999px !important;
 }
+
+/* 登录 / 注册体验增强（Miuix） */
+body.echo-style-miuix .echo-auth__field input.is-invalid,
+.echo-auth--miuix .echo-auth__field input.is-invalid {
+    background: #fdecec;
+}
+
+body.echo-style-miuix .echo-auth__strength-track,
+.echo-auth--miuix .echo-auth__strength-track {
+    background: var(--miuix-secondary-container, #e8e8e8);
+}
+
+body.echo-style-miuix .echo-auth__alert,
+.echo-auth--miuix .echo-auth__alert {
+    border-radius: 16px;
+}
+
+/* 用户中心资料卡增强（Miuix） */
+body.echo-style-miuix .echo-my-profile__edit,
+.echo-my--miuix .echo-my-profile__edit {
+    border: 0;
+    background: var(--miuix-secondary-container, #e8e8e8);
+}
+
+body.echo-style-miuix .echo-my-profile__meta,
+.echo-my--miuix .echo-my-profile__meta {
+    border-top-color: var(--miuix-divider, #e0e0e0);
+}
+
+body.echo-style-miuix .echo-my-profile__badge,
+.echo-my--miuix .echo-my-profile__badge {
+    background: var(--miuix-secondary-container, #e8e8e8);
+}
