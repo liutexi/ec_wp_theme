@@ -236,14 +236,38 @@ function echo_auth_throttle_clear( $action ) {
  * @param string $text 文案。
  * @return void
  */
-function echo_auth_set_feedback( $type, $text ) {
+function echo_auth_set_feedback( $type, $text, $field = '' ) {
 	if ( ! isset( $GLOBALS['echo_auth_feedback'] ) || ! is_array( $GLOBALS['echo_auth_feedback'] ) ) {
 		$GLOBALS['echo_auth_feedback'] = array(
-			'error'  => '',
-			'notice' => '',
+			'error'    => '',
+			'notice'   => '',
+			'field'    => '',
+			'field_id' => '',
 		);
 	}
 	$GLOBALS['echo_auth_feedback'][ $type ] = $text;
+
+	// 错误可绑定到具体字段：前端据此高亮输入框并聚焦
+	if ( 'error' === $type && '' !== $field ) {
+		$GLOBALS['echo_auth_feedback']['field'] = $field;
+	}
+}
+
+/**
+ * 反馈数据（供模板与前端读取）
+ *
+ * @return array
+ */
+function echo_auth_feedback_data() {
+	$fb = isset( $GLOBALS['echo_auth_feedback'] ) && is_array( $GLOBALS['echo_auth_feedback'] )
+		? $GLOBALS['echo_auth_feedback']
+		: array();
+
+	return array(
+		'error'  => isset( $fb['error'] ) ? $fb['error'] : '',
+		'notice' => isset( $fb['notice'] ) ? $fb['notice'] : '',
+		'field'  => isset( $fb['field'] ) ? $fb['field'] : '',
+	);
 }
 
 /**
@@ -349,8 +373,12 @@ function echo_auth_do_login() {
 	$password = isset( $_POST['pwd'] ) ? (string) $_POST['pwd'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- 密码不能清洗。
 	$remember = ! empty( $_POST['rememberme'] );
 
-	if ( '' === $login || '' === $password ) {
-		echo_auth_set_feedback( 'error', __( '请填写用户名和密码。', 'echo' ) );
+	if ( '' === $login ) {
+		echo_auth_set_feedback( 'error', __( '请填写用户名或邮箱。', 'echo' ), 'log' );
+		return;
+	}
+	if ( '' === $password ) {
+		echo_auth_set_feedback( 'error', __( '请填写密码。', 'echo' ), 'pwd' );
 		return;
 	}
 
@@ -369,7 +397,7 @@ function echo_auth_do_login() {
 		}
 		$code = $user->get_error_code();
 		if ( in_array( $code, array( 'invalid_username', 'incorrect_password', 'invalid_email', 'invalidcombo' ), true ) ) {
-			echo_auth_set_feedback( 'error', __( '用户名或密码不正确。', 'echo' ) );
+			echo_auth_set_feedback( 'error', __( '用户名或密码不正确。', 'echo' ), 'pwd' );
 		} else {
 			echo_auth_set_feedback( 'error', wp_strip_all_tags( $user->get_error_message() ) );
 		}
@@ -415,28 +443,32 @@ function echo_auth_do_register() {
 	$login = isset( $_POST['user_login'] ) ? sanitize_user( wp_unslash( $_POST['user_login'] ) ) : '';
 	$email = isset( $_POST['user_email'] ) ? sanitize_email( wp_unslash( $_POST['user_email'] ) ) : '';
 
-	if ( '' === $login || '' === $email ) {
-		echo_auth_set_feedback( 'error', __( '请填写用户名和邮箱。', 'echo' ) );
+	if ( '' === $login ) {
+		echo_auth_set_feedback( 'error', __( '请填写用户名。', 'echo' ), 'user_login' );
+		return;
+	}
+	if ( '' === $email ) {
+		echo_auth_set_feedback( 'error', __( '请填写邮箱。', 'echo' ), 'user_email' );
 		return;
 	}
 	if ( ! validate_username( $login ) ) {
-		echo_auth_set_feedback( 'error', __( '用户名包含非法字符，请更换。', 'echo' ) );
+		echo_auth_set_feedback( 'error', __( '用户名包含非法字符，请更换。', 'echo' ), 'user_login' );
 		return;
 	}
 	if ( username_exists( $login ) ) {
-		echo_auth_set_feedback( 'error', __( '该用户名已被占用。', 'echo' ) );
+		echo_auth_set_feedback( 'error', __( '该用户名已被占用。', 'echo' ), 'user_login' );
 		return;
 	}
 	if ( ! is_email( $email ) ) {
-		echo_auth_set_feedback( 'error', __( '邮箱格式不正确。', 'echo' ) );
+		echo_auth_set_feedback( 'error', __( '邮箱格式不正确。', 'echo' ), 'user_email' );
 		return;
 	}
 	if ( email_exists( $email ) ) {
-		echo_auth_set_feedback( 'error', __( '该邮箱已注册。', 'echo' ) );
+		echo_auth_set_feedback( 'error', __( '该邮箱已注册。', 'echo' ), 'user_email' );
 		return;
 	}
 	if ( echo_auth_config( 'auth_terms_enabled', false ) && empty( $_POST['echo_auth_terms'] ) ) {
-		echo_auth_set_feedback( 'error', __( '请先阅读并同意相关条款。', 'echo' ) );
+		echo_auth_set_feedback( 'error', __( '请先阅读并同意相关条款。', 'echo' ), 'echo_auth_terms' );
 		return;
 	}
 
@@ -463,16 +495,20 @@ function echo_auth_do_register() {
 	$confirm  = isset( $_POST['user_pass2'] ) ? (string) $_POST['user_pass2'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 	$min      = max( 6, min( 32, absint( echo_auth_config( 'auth_password_min', 6 ) ) ) );
 
-	if ( '' === $password || '' === $confirm ) {
-		echo_auth_set_feedback( 'error', __( '请设置并确认密码。', 'echo' ) );
+	if ( '' === $password ) {
+		echo_auth_set_feedback( 'error', __( '请设置密码。', 'echo' ), 'user_pass' );
+		return;
+	}
+	if ( '' === $confirm ) {
+		echo_auth_set_feedback( 'error', __( '请再次输入密码。', 'echo' ), 'user_pass2' );
 		return;
 	}
 	if ( $password !== $confirm ) {
-		echo_auth_set_feedback( 'error', __( '两次输入的密码不一致。', 'echo' ) );
+		echo_auth_set_feedback( 'error', __( '两次输入的密码不一致。', 'echo' ), 'user_pass2' );
 		return;
 	}
 	if ( strlen( $password ) < $min ) {
-		echo_auth_set_feedback( 'error', sprintf( /* translators: %d: 最小密码长度 */ __( '密码至少需要 %d 位。', 'echo' ), $min ) );
+		echo_auth_set_feedback( 'error', sprintf( /* translators: %d: 最小密码长度 */ __( '密码至少需要 %d 位。', 'echo' ), $min ), 'user_pass' );
 		return;
 	}
 
@@ -663,13 +699,20 @@ add_action( 'template_redirect', 'echo_auth_redirect_logged_in' );
 function echo_auth_render_feedback() {
 	$fb = isset( $GLOBALS['echo_auth_feedback'] ) && is_array( $GLOBALS['echo_auth_feedback'] )
 		? $GLOBALS['echo_auth_feedback']
-		: array( 'error' => '', 'notice' => '' );
+		: array( 'error' => '', 'notice' => '', 'field' => '' );
 
 	if ( ! empty( $fb['error'] ) ) {
-		printf( '<div class="echo-auth__alert echo-auth__alert--error" role="alert">%s</div>', esc_html( $fb['error'] ) );
+		printf(
+			'<div class="echo-auth__alert echo-auth__alert--error" role="alert"%s><span class="echo-auth__alert-icon" aria-hidden="true">!</span><span>%s</span></div>',
+			! empty( $fb['field'] ) ? ' data-error-field="' . esc_attr( $fb['field'] ) . '"' : '',
+			esc_html( $fb['error'] )
+		);
 	}
 	if ( ! empty( $fb['notice'] ) ) {
-		printf( '<div class="echo-auth__alert echo-auth__alert--success" role="status">%s</div>', esc_html( $fb['notice'] ) );
+		printf(
+			'<div class="echo-auth__alert echo-auth__alert--success" role="status"><span class="echo-auth__alert-icon" aria-hidden="true">✓</span><span>%s</span></div>',
+			esc_html( $fb['notice'] )
+		);
 	}
 }
 
@@ -751,14 +794,14 @@ function echo_auth_form_login() {
 
 		<p class="echo-auth__field">
 			<label for="echo-auth-login"><?php esc_html_e( '用户名或邮箱', 'echo' ); ?></label>
-			<input id="echo-auth-login" name="log" type="text" autocomplete="username" required
+			<input id="echo-auth-login" name="log" type="text" autocomplete="username" required data-field="log" autofocus
 				value="<?php echo isset( $_POST['log'] ) ? esc_attr( sanitize_text_field( wp_unslash( $_POST['log'] ) ) ) : ''; ?>" />
 		</p>
 
 		<p class="echo-auth__field">
 			<label for="echo-auth-pwd"><?php esc_html_e( '密码', 'echo' ); ?></label>
 			<span class="echo-auth__pwd-wrap">
-				<input id="echo-auth-pwd" name="pwd" type="password" autocomplete="current-password" required />
+				<input id="echo-auth-pwd" name="pwd" type="password" autocomplete="current-password" required data-field="pwd" />
 				<?php echo_auth_eye_button(); ?>
 			</span>
 		</p>
@@ -799,14 +842,14 @@ function echo_auth_form_register() {
 
 		<p class="echo-auth__field">
 			<label for="echo-auth-user"><?php esc_html_e( '用户名', 'echo' ); ?></label>
-			<input id="echo-auth-user" name="user_login" type="text" autocomplete="username" required
+			<input id="echo-auth-user" name="user_login" type="text" autocomplete="username" required data-field="user_login" autofocus
 				value="<?php echo isset( $_POST['user_login'] ) ? esc_attr( sanitize_user( wp_unslash( $_POST['user_login'] ) ) ) : ''; ?>" />
 			<span class="echo-auth__hint"><?php esc_html_e( '仅限字母、数字、下划线等，注册后不可修改。', 'echo' ); ?></span>
 		</p>
 
 		<p class="echo-auth__field">
 			<label for="echo-auth-email"><?php esc_html_e( '邮箱', 'echo' ); ?></label>
-			<input id="echo-auth-email" name="user_email" type="email" autocomplete="email" required
+			<input id="echo-auth-email" name="user_email" type="email" autocomplete="email" required data-field="user_email"
 				value="<?php echo isset( $_POST['user_email'] ) ? esc_attr( sanitize_email( wp_unslash( $_POST['user_email'] ) ) ) : ''; ?>" />
 		</p>
 
@@ -814,16 +857,20 @@ function echo_auth_form_register() {
 			<p class="echo-auth__field">
 				<label for="echo-auth-pass"><?php esc_html_e( '设置密码', 'echo' ); ?></label>
 				<span class="echo-auth__pwd-wrap">
-					<input id="echo-auth-pass" name="user_pass" type="password" autocomplete="new-password" required />
+					<input id="echo-auth-pass" name="user_pass" type="password" autocomplete="new-password" required data-field="user_pass" data-min="<?php echo (int) $min; ?>" data-strength="1" />
 					<?php echo_auth_eye_button(); ?>
 				</span>
 				<span class="echo-auth__hint"><?php echo esc_html( sprintf( /* translators: %d: 最小密码长度 */ __( '至少 %d 位字符。', 'echo' ), $min ) ); ?></span>
+				<span class="echo-auth__strength" data-strength-for="echo-auth-pass" hidden>
+					<span class="echo-auth__strength-track"><span class="echo-auth__strength-bar"></span></span>
+					<span class="echo-auth__strength-text" aria-live="polite"></span>
+				</span>
 			</p>
 
 			<p class="echo-auth__field">
 				<label for="echo-auth-pass2"><?php esc_html_e( '确认密码', 'echo' ); ?></label>
 				<span class="echo-auth__pwd-wrap">
-					<input id="echo-auth-pass2" name="user_pass2" type="password" autocomplete="new-password" required />
+					<input id="echo-auth-pass2" name="user_pass2" type="password" autocomplete="new-password" required data-field="user_pass2" data-match="echo-auth-pass" />
 					<?php echo_auth_eye_button(); ?>
 				</span>
 			</p>
@@ -858,7 +905,7 @@ function echo_auth_form_lostpassword() {
 
 		<p class="echo-auth__field">
 			<label for="echo-auth-lost"><?php esc_html_e( '用户名或邮箱', 'echo' ); ?></label>
-			<input id="echo-auth-lost" name="user_login" type="text" autocomplete="username" required
+			<input id="echo-auth-lost" name="user_login" type="text" autocomplete="username" required data-field="user_login" autofocus
 				value="<?php echo isset( $_POST['user_login'] ) ? esc_attr( sanitize_text_field( wp_unslash( $_POST['user_login'] ) ) ) : ''; ?>" />
 			<span class="echo-auth__hint"><?php esc_html_e( '我们会向该账号的注册邮箱发送重置链接。', 'echo' ); ?></span>
 		</p>
@@ -889,16 +936,20 @@ function echo_auth_form_reset( $key, $login ) {
 		<p class="echo-auth__field">
 			<label for="echo-auth-newpass"><?php esc_html_e( '新密码', 'echo' ); ?></label>
 			<span class="echo-auth__pwd-wrap">
-				<input id="echo-auth-newpass" name="user_pass" type="password" autocomplete="new-password" required />
+				<input id="echo-auth-newpass" name="user_pass" type="password" autocomplete="new-password" required data-field="user_pass" data-min="<?php echo (int) $min; ?>" data-strength="1" autofocus />
 				<?php echo_auth_eye_button(); ?>
 			</span>
 			<span class="echo-auth__hint"><?php echo esc_html( sprintf( /* translators: %d: 最小密码长度 */ __( '至少 %d 位字符。', 'echo' ), $min ) ); ?></span>
+			<span class="echo-auth__strength" data-strength-for="echo-auth-newpass" hidden>
+				<span class="echo-auth__strength-track"><span class="echo-auth__strength-bar"></span></span>
+				<span class="echo-auth__strength-text" aria-live="polite"></span>
+			</span>
 		</p>
 
 		<p class="echo-auth__field">
 			<label for="echo-auth-newpass2"><?php esc_html_e( '确认新密码', 'echo' ); ?></label>
 			<span class="echo-auth__pwd-wrap">
-				<input id="echo-auth-newpass2" name="user_pass2" type="password" autocomplete="new-password" required />
+				<input id="echo-auth-newpass2" name="user_pass2" type="password" autocomplete="new-password" required data-field="user_pass2" data-match="echo-auth-newpass" />
 				<?php echo_auth_eye_button(); ?>
 			</span>
 		</p>
