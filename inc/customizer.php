@@ -89,6 +89,7 @@ function echo_settings_sections_map() {
 		'echo_section_my'        => __( '我的界面', 'echo' ),
 		'echo_section_tweaks'    => __( '前端微调', 'echo' ),
 		'echo_section_auth'      => __( '登录 / 注册', 'echo' ),
+		'echo_section_social'    => __( '聚合登录', 'echo' ),
 		'echo_section_user'      => __( '用户主页', 'echo' ),
 		'echo_section_categories' => __( '文章分类', 'echo' ),
 		'echo_section_links'      => __( '友情链接', 'echo' ),
@@ -102,20 +103,20 @@ function echo_settings_sections_map() {
  * @return void
  */
 function echo_settings_menu() {
-	add_menu_page(
+	// 挂在 WordPress 原生「设置」(options-general.php) 下，作为其子菜单
+	add_submenu_page(
+		'options-general.php',
 		__( 'Echo 设置', 'echo' ),   // 页面标题
 		__( 'Echo 设置', 'echo' ),   // 菜单标题
 		'manage_options',            // 权限
 		'echo-settings',             // 菜单 slug
-		'echo_settings_page_html',   // 渲染回调
-		'dashicons-admin-appearance', // 图标
-		61                           // 位置（在「外观」之后）
+		'echo_settings_page_html'    // 渲染回调
 	);
 
-	// 分类子菜单：鼠标悬停「Echo 设置」时弹出，点击直达对应分类
+	// 分类子项：点击直达对应分类面板
 	foreach ( echo_settings_sections_map() as $section_id => $label ) {
 		add_submenu_page(
-			'echo-settings',
+			'options-general.php',
 			$label . ' - ' . __( 'Echo 设置', 'echo' ),
 			$label,
 			'manage_options',
@@ -123,9 +124,6 @@ function echo_settings_menu() {
 			'echo_settings_page_html'
 		);
 	}
-
-	// 去掉 WP 自动生成的同名子项，避免菜单里出现重复的「Echo 设置」
-	remove_submenu_page( 'echo-settings', 'echo-settings' );
 }
 add_action( 'admin_menu', 'echo_settings_menu' );
 
@@ -141,7 +139,8 @@ function echo_settings_highlight_submenu() {
 		return;
 	}
 
-	$parent_file = 'echo-settings'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+	$parent_file  = 'options-general.php'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+	$submenu_file = 'echo-settings'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 
 	$panel = isset( $_GET['panel'] ) ? sanitize_key( wp_unslash( $_GET['panel'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	if ( $panel ) {
@@ -334,10 +333,6 @@ function echo_settings_init() {
 		array( 'auth_shortcode', __( '第三方登录短代码', 'echo' ), 'echo_field_text', array( 'desc' => __( '可选。填入第三方登录插件提供的短代码，会渲染在表单下方。', 'echo' ) ) ),
 
 		// 彩虹聚合登录适配（检测插件钩子自动渲染，未安装插件时零输出）
-		array( 'social_login', __( '显示第三方登录按钮', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '自动检测彩虹聚合登录（Clogin Passport）等插件，在登录 / 注册表单下方显示第三方登录按钮。未安装插件时无提示。', 'echo' ) ) ),
-		array( 'social_title', __( '第三方登录分隔标题', 'echo' ), 'echo_field_text', array( 'desc' => __( '按钮区上方的分隔标题，留空则不显示。默认「第三方登录」。', 'echo' ) ) ),
-		array( 'social_binding', __( '个人中心显示绑定入口', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '在「我的」资料卡显示社交账号绑定 / 解绑入口，需插件启用对应功能。', 'echo' ) ) ),
-		array( 'social_avatar', __( '使用社交账号头像', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '用户未上传自定义头像时，优先使用插件保存的社交头像，再回退 Gravatar。', 'echo' ) ) ),
 		array( 'auth_layout', __( '卡片风格', 'echo' ), 'echo_field_select', array( 'options' => array( 'auto' => __( '跟随全局风格', 'echo' ), 'classic' => __( '强制经典', 'echo' ), 'miuix' => __( '强制 Miuix', 'echo' ) ) ) ),
 		array( 'auth_show_sidebar', __( '显示侧边栏', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '默认关闭，登录 / 注册页整页居中展示。', 'echo' ) ) ),
 		array( 'auth_throttle', __( '提交频率限制', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '同一 IP 15 分钟内登录失败 12 次、注册 6 次、找回密码 8 次后暂停提交，防止暴力尝试与邮件轰炸。', 'echo' ) ) ),
@@ -349,6 +344,106 @@ function echo_settings_init() {
 		$args['label_for'] = $field[0];
 		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_auth', $args );
 	}
+
+	// 聚合登录（主题原生集成，无需插件）
+	add_settings_section(
+		'echo_section_social',
+		__( '聚合登录', 'echo' ),
+		'__return_false',
+		'echo-settings'
+	);
+
+	add_settings_field(
+		'echo_social_appurl',
+		__( '接口地址', 'echo' ),
+		'echo_field_text',
+		'echo-settings',
+		'echo_section_social',
+		array(
+			'label_for' => 'social_appurl',
+			'desc'      => __( '彩虹聚合登录服务端地址，以 http:// 或 https:// 开头，例如 https://u.cccyun.cc', 'echo' ),
+		)
+	);
+	add_settings_field(
+		'echo_social_appid',
+		__( 'APPID', 'echo' ),
+		'echo_field_text',
+		'echo-settings',
+		'echo_section_social',
+		array( 'label_for' => 'social_appid' )
+	);
+	add_settings_field(
+		'echo_social_appkey',
+		__( 'APPKEY', 'echo' ),
+		'echo_field_text',
+		'echo-settings',
+		'echo_section_social',
+		array( 'label_for' => 'social_appkey' )
+	);
+	add_settings_field(
+		'echo_social_types',
+		__( '启用登录方式', 'echo' ),
+		'echo_field_social_types',
+		'echo-settings',
+		'echo_section_social',
+		array( 'label_for' => 'social_types' )
+	);
+	add_settings_field(
+		'echo_social_autoreg',
+		__( '自动注册', 'echo' ),
+		'echo_field_checkbox',
+		'echo-settings',
+		'echo_section_social',
+		array(
+			'label_for' => 'social_autoreg',
+			'instant'   => false,
+			'desc'      => __( '第三方账号首次登录时自动创建用户；需同时在「设置 → 常规」开启任何人可注册。', 'echo' ),
+		)
+	);
+	add_settings_field(
+		'echo_social_login',
+		__( '显示登录按钮', 'echo' ),
+		'echo_field_checkbox',
+		'echo-settings',
+		'echo_section_social',
+		array(
+			'label_for' => 'social_login',
+			'instant'   => false,
+			'desc'      => __( '在登录 / 注册表单下方显示第三方登录按钮。', 'echo' ),
+		)
+	);
+	add_settings_field(
+		'echo_social_title',
+		__( '分隔标题', 'echo' ),
+		'echo_field_text',
+		'echo-settings',
+		'echo_section_social',
+		array( 'label_for' => 'social_title' )
+	);
+	add_settings_field(
+		'echo_social_binding',
+		__( '个人中心显示绑定入口', 'echo' ),
+		'echo_field_checkbox',
+		'echo-settings',
+		'echo_section_social',
+		array(
+			'label_for' => 'social_binding',
+			'instant'   => false,
+			'desc'      => __( '在「我的」资料卡显示社交账号绑定 / 解绑入口。', 'echo' ),
+		)
+	);
+	add_settings_field(
+		'echo_social_avatar',
+		__( '使用社交头像', 'echo' ),
+		'echo_field_checkbox',
+		'echo-settings',
+		'echo_section_social',
+		array(
+			'label_for' => 'social_avatar',
+			'instant'   => false,
+			'desc'      => __( '用户未上传自定义头像时优先使用社交头像，再回退 Gravatar。', 'echo' ),
+		)
+	);
 
 	// 用户主页（UID）
 	add_settings_section(
@@ -1540,6 +1635,34 @@ function echo_field_checkbox( $args ) {
  * @param array $args 字段参数。
  * @return void
  */
+/**
+ * 聚合登录平台多选（带平台图标）
+ *
+ * @param array $args 字段参数。
+ * @return void
+ */
+function echo_field_social_types( $args ) {
+	$key     = isset( $args['label_for'] ) ? $args['label_for'] : 'social_types';
+	$value   = echo_get_setting( $key, array() );
+	$value   = is_array( $value ) ? $value : array();
+	$all     = function_exists( 'echo_social_platforms' ) ? echo_social_platforms() : array();
+	$base    = get_template_directory_uri() . '/inc/clogin/icon/';
+	?>
+	<div class="echo-social-types">
+		<?php foreach ( $all as $type => $label ) : ?>
+			<?php $icon = $base . $type . '.png'; ?>
+			<label class="echo-social-type<?php echo in_array( $type, $value, true ) ? ' is-on' : ''; ?>">
+				<input type="checkbox" name="echo_settings[<?php echo esc_attr( $key ); ?>][]"
+					value="<?php echo esc_attr( $type ); ?>" <?php checked( in_array( $type, $value, true ), true ); ?> />
+				<img src="<?php echo esc_url( $icon ); ?>" alt="" />
+				<span><?php echo esc_html( $label ); ?></span>
+			</label>
+		<?php endforeach; ?>
+	</div>
+	<p class="description"><?php esc_html_e( '勾选要启用的平台。前台只显示这里勾选的按钮。', 'echo' ); ?></p>
+	<?php
+}
+
 function echo_field_exclude_categories( $args ) {
 	$excluded = echo_get_setting( 'exclude_categories', array() );
 	$excluded = is_array( $excluded ) ? $excluded : array();
