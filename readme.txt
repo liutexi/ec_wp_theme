@@ -3,7 +3,7 @@ Contributors: LogicTneXus
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: V0.0.2-preview-031ad3b
+Stable tag: V0.0.2-preview-deadb17
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Tags: blog, two-columns, right-sidebar, responsive-layout, custom-menu, threaded-comments, translation-ready
@@ -77,7 +77,7 @@ Echo 是一款简洁、专注阅读体验的博客 / 社区风格 WordPress 主�
 
 == 更新日志 ==
 
-= V0.0.2-preview-031ad3b =
+= V0.0.2-preview-deadb17 =
 * 原生集成彩虹聚合登录（内置 OAuth 流程与平台图标，无需再安装插件）
 * 登录页 / 注册页 / wp-login.php / wp_login_form() 均显示第三方登录按钮
 * 个人中心与后台资料页显示社交账号绑定入口；支持自动注册与社交头像
