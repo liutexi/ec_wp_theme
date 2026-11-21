@@ -125,6 +125,13 @@ function echo_scripts() {
 	$style_ver  = file_exists( $style_path ) ? ECHO_VERSION . '.' . filemtime( $style_path ) : ECHO_VERSION;
 	wp_enqueue_style( 'echo-style', get_stylesheet_uri(), array(), $style_ver );
 
+	// 前台写文章页样式：体积很小，全站加载以确保任何访问方式（路由 / 手动选模板）下样式都生效
+	$fp_path = get_template_directory() . '/assets/css/front-post.css';
+	if ( file_exists( $fp_path ) ) {
+		$fp_ver = ECHO_VERSION . '.' . filemtime( $fp_path );
+		wp_enqueue_style( 'echo-front-post', get_template_directory_uri() . '/assets/css/front-post.css', array( 'echo-style' ), $fp_ver );
+	}
+
 	// 交互脚本
 	$main_path = get_template_directory() . '/assets/js/main.js';
 	$main_ver  = file_exists( $main_path ) ? ECHO_VERSION . '.' . filemtime( $main_path ) : ECHO_VERSION;
