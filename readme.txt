@@ -3,7 +3,7 @@ Contributors: LogicTneXus
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: V0.0.2-Preview-ee846b4
+Stable tag: V0.0.2-Preview-123f24c
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Tags: blog, two-columns, right-sidebar, responsive-layout, custom-menu, threaded-comments, translation-ready
@@ -89,7 +89,8 @@ Echo 是一款简洁、专注阅读体验的博客 / 社区风格 WordPress 主�
 
 == 更新日志 ==
 
-= V0.0.2-Preview-ee846b4 =
+= V0.0.2-Preview-123f24c =
+* 更新主题预览图（screenshot.png）为 EcHo 文字 Logo 实装效果，README 增加主题实装图
 * 新增文字 Logo：默认显示「EcHo」（Ec 用主题色高亮），可在「站点标识」设置中开关、修改内容与强调部分；优先级低于图片 Logo
 * 新增外链跳转提醒中转页：全站外部链接点击时先经 /go 中转页提醒（显示目标网站与网址）再跳转
 * 跳转方式后台可控：倒计时自动（1-30 秒）或手动点击；标题/文案/按钮/新窗口均可配置，支持白名单域名
