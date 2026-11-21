@@ -3,7 +3,7 @@ Contributors: LogicTneXus
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: V0.0.2-Preview-097e4b9
+Stable tag: V0.0.2-Preview-acff310
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Tags: blog, two-columns, right-sidebar, responsive-layout, custom-menu, threaded-comments, translation-ready
@@ -89,7 +89,10 @@ Echo 是一款简洁、专注阅读体验的博客 / 社区风格 WordPress 主�
 
 == 更新日志 ==
 
-= V0.0.2-Preview-097e4b9 =
+= V0.0.2-Preview-acff310 =
+* 新增前台文章管理：管理员（编辑/管理员角色）可在 /write 列表查看全站文章，直接发布、编辑、删除任意文章
+* 一键发布：管理员可将待审核/草稿文章直接发布；删除采用移入回收站，可在后台还原（独立 nonce 与确认弹窗）
+* 作者本人可编辑、删除自己的文章；管理员状态选项始终包含「直接发布」
 * 重新设计前台写文章界面：渐变引导横幅、分区卡片布局、内联 SVG 图标，视觉更清晰统一
 * 分类改为胶囊选择、提交方式改为带说明的单选卡片、封面改为上传区；补齐响应式与深色模式适配
 * 新增前台发文章：登录用户无需进入后台即可在 /write 页面撰写、编辑自己的文章
