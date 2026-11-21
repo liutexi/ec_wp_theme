@@ -13,8 +13,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// 输出前处理提交 / 加载编辑器依赖。
+// 输出前处理提交 / 删除 / 发布。
 echo_front_post_handle_submission();
+echo_front_post_handle_deletion();
+echo_front_post_handle_publish();
 
 $echo_fp_post    = echo_front_post_editing_post();
 $echo_fp_is_edit = (bool) $echo_fp_post;
@@ -96,6 +98,18 @@ get_header();
 						<div class="echo-fp-alert echo-fp-alert--error" role="alert">
 							<?php echo_front_post_icon( 'info' ); ?>
 							<span><?php esc_html_e( '文章已保存，但封面上传失败，你可以在下方重试。', 'echo' ); ?></span>
+						</div>
+					<?php endif; ?>
+					<?php if ( isset( $_GET['deleted'] ) && '1' === sanitize_key( wp_unslash( $_GET['deleted'] ) ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+						<div class="echo-fp-alert echo-fp-alert--success" role="status">
+							<?php echo_front_post_icon( 'check' ); ?>
+							<span><?php esc_html_e( '文章已删除（已移入回收站）。', 'echo' ); ?></span>
+						</div>
+					<?php endif; ?>
+					<?php if ( isset( $_GET['published'] ) && '1' === sanitize_key( wp_unslash( $_GET['published'] ) ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+						<div class="echo-fp-alert echo-fp-alert--success" role="status">
+							<?php echo_front_post_icon( 'check' ); ?>
+							<span><?php esc_html_e( '文章已发布。', 'echo' ); ?></span>
 						</div>
 					<?php endif; ?>
 
@@ -275,21 +289,21 @@ get_header();
 						</div>
 					</form>
 
-					<!-- 我的文章 -->
+					<!-- 文章列表（管理员为全站文章管理） -->
 					<section class="echo-fp-panel echo-fp-mylist">
 						<div class="echo-fp-panel__head">
 							<span class="echo-fp-panel__icon echo-fp-panel__icon--list"><?php echo_front_post_icon( 'list' ); ?></span>
 							<div class="echo-fp-panel__heading">
-								<h2><?php esc_html_e( '我的文章', 'echo' ); ?></h2>
-								<p><?php esc_html_e( '你最近创建的文章，点击标题可继续编辑。', 'echo' ); ?></p>
+								<h2><?php echo_front_post_is_manager() ? esc_html_e( '文章管理', 'echo' ) : esc_html_e( '我的文章', 'echo' ); ?></h2>
+								<p><?php echo_front_post_is_manager() ? esc_html_e( '全站文章：可编辑、发布或删除任意文章。', 'echo' ) : esc_html_e( '你最近创建的文章，点击标题可继续编辑。', 'echo' ); ?></p>
 							</div>
 						</div>
 						<div class="echo-fp-panel__body">
-							<?php $my_posts = echo_front_post_my_posts( 10 ); ?>
+							<?php $my_posts = echo_front_post_my_posts( 20 ); ?>
 							<?php if ( empty( $my_posts ) ) : ?>
 								<div class="echo-fp-empty">
 									<?php echo_front_post_icon( 'file' ); ?>
-									<p><?php esc_html_e( '你还没有写过文章，从上面开始创作吧。', 'echo' ); ?></p>
+									<p><?php esc_html_e( '还没有文章，从上面开始创作吧。', 'echo' ); ?></p>
 								</div>
 							<?php else : ?>
 								<ul class="echo-fp-posts">
@@ -304,8 +318,32 @@ get_header();
 												<?php endif; ?>
 											</span>
 											<span class="echo-fp-posts__meta">
+												<?php if ( echo_front_post_is_manager() ) : ?>
+													<span class="echo-fp-posts__author"><?php echo esc_html( get_the_author_meta( 'display_name', $mp->post_author ) ); ?></span>
+												<?php endif; ?>
 												<span class="echo-fp-status echo-fp-status--<?php echo esc_attr( $mp->post_status ); ?>"><?php echo esc_html( echo_front_post_status_label( $mp->post_status ) ); ?></span>
 												<time><?php echo esc_html( get_the_date( '', $mp ) ); ?></time>
+											</span>
+											<span class="echo-fp-posts__actions">
+												<?php if ( echo_front_post_can_edit( $mp->ID ) ) : ?>
+													<a class="echo-fp-posts__action" href="<?php echo esc_url( echo_front_post_url( $mp->ID ) ); ?>" title="<?php esc_attr_e( '编辑', 'echo' ); ?>"><?php echo_front_post_icon( 'pen' ); ?></a>
+												<?php endif; ?>
+												<?php if ( echo_front_post_is_manager() && 'publish' !== $mp->post_status && echo_front_post_can_edit( $mp->ID ) ) : ?>
+													<form class="echo-fp-posts__inline-form" method="post" action="<?php echo esc_url( echo_front_post_url() ); ?>">
+														<input type="hidden" name="echo_fp_action" value="publish" />
+														<input type="hidden" name="echo_fp_id" value="<?php echo esc_attr( $mp->ID ); ?>" />
+														<?php wp_nonce_field( 'echo_front_post_publish', 'echo_fp_pub_nonce' ); ?>
+														<button type="submit" class="echo-fp-posts__action echo-fp-posts__action--publish" title="<?php esc_attr_e( '直接发布', 'echo' ); ?>"><?php echo_front_post_icon( 'send' ); ?></button>
+													</form>
+												<?php endif; ?>
+												<?php if ( echo_front_post_can_delete( $mp->ID ) ) : ?>
+													<form class="echo-fp-posts__inline-form" method="post" action="<?php echo esc_url( echo_front_post_url() ); ?>">
+														<input type="hidden" name="echo_fp_action" value="delete" />
+														<input type="hidden" name="echo_fp_id" value="<?php echo esc_attr( $mp->ID ); ?>" />
+														<?php wp_nonce_field( 'echo_front_post_delete', 'echo_fp_del_nonce' ); ?>
+														<button type="submit" class="echo-fp-posts__action echo-fp-posts__action--delete" title="<?php esc_attr_e( '删除', 'echo' ); ?>" onclick="return confirm('<?php echo esc_js( __( '确定要删除这篇文章吗？将移入回收站。', 'echo' ) ); ?>');"><?php echo_front_post_icon( 'trash' ); ?></button>
+													</form>
+												<?php endif; ?>
 											</span>
 										</li>
 									<?php endforeach; ?>

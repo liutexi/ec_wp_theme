@@ -41,6 +41,7 @@ if ( ! function_exists( 'echo_front_post_icon' ) ) {
 			'info'    => '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
 			'check'   => '<polyline points="20 6 9 17 4 12"/>',
 			'upload'  => '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
+			'trash'   => '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>',
 		);
 		if ( ! isset( $paths[ $name ] ) ) {
 			return;
@@ -315,6 +316,45 @@ function echo_front_post_can_edit( $post_id ) {
 }
 
 /**
+ * 是否为前台内容管理员（编辑 / 管理员）
+ *
+ * 具备「编辑他人文章 + 发布文章 + 删除他人文章」三项能力者，
+ * 可在前台管理全站文章：直接发布、编辑、删除。
+ *
+ * @return bool
+ */
+function echo_front_post_is_manager() {
+	return is_user_logged_in()
+		&& current_user_can( 'edit_others_posts' )
+		&& current_user_can( 'publish_posts' )
+		&& current_user_can( 'delete_others_posts' );
+}
+
+/**
+ * 是否有权删除指定文章
+ *
+ * 作者本人可删除自己的文章；管理员可删除他人的文章。
+ * 删除采用移入回收站（非强制删除），可在后台还原。
+ *
+ * @param int $post_id 文章 ID。
+ * @return bool
+ */
+function echo_front_post_can_delete( $post_id ) {
+	$post_id = absint( $post_id );
+	if ( ! $post_id || ! echo_front_post_can_write() ) {
+		return false;
+	}
+	$post = get_post( $post_id );
+	if ( ! $post || 'post' !== $post->post_type || 'trash' === $post->post_status ) {
+		return false;
+	}
+	if ( (int) $post->post_author === get_current_user_id() ) {
+		return current_user_can( 'delete_post', $post_id );
+	}
+	return current_user_can( 'delete_others_posts' ) && current_user_can( 'delete_post', $post_id );
+}
+
+/**
  * 当前用户可用的发布状态
  *
  * @return array 状态 => 名称。
@@ -330,12 +370,18 @@ function echo_front_post_status_options() {
 		$allowed = array( 'draft', 'pending' );
 	}
 
+	// 管理员始终拥有「直接发布」选项（不受后台勾选限制）。
+	if ( echo_front_post_is_manager() ) {
+		$allowed[] = 'publish';
+		$allowed   = array_values( array_unique( $allowed ) );
+	}
+
 	$options = array();
 	foreach ( $all as $key => $label ) {
 		if ( ! in_array( $key, $allowed, true ) ) {
 			continue;
 		}
-		// 直接发布需要对应权限；无权限时该项降级为「提交审核」由提交逻辑兜底。
+		// 直接发布需要对应权限；无权限时该项由提交逻辑降级为「提交审核」。
 		$options[ $key ] = $label;
 	}
 	if ( empty( $options ) ) {
@@ -564,6 +610,83 @@ function echo_front_post_handle_submission() {
 	exit;
 }
 
+/**
+ * 处理删除文章请求
+ *
+ * 独立 nonce 与动作名，移入回收站（可在后台还原）。
+ * 成功后重定向回列表页并通过查询参数给出提示。
+ *
+ * @return void
+ */
+function echo_front_post_handle_deletion() {
+	if ( ! echo_front_post_can_write() ) {
+		return;
+	}
+	if ( ! isset( $_POST['echo_fp_action'] ) || 'delete' !== sanitize_key( wp_unslash( $_POST['echo_fp_action'] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return;
+	}
+	if ( ! isset( $_POST['echo_fp_del_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['echo_fp_del_nonce'] ) ), 'echo_front_post_delete' ) ) {
+		echo_front_post_set_feedback( 'error', __( '删除请求已过期，请刷新后重试。', 'echo' ) );
+		return;
+	}
+
+	$post_id = isset( $_POST['echo_fp_id'] ) ? absint( $_POST['echo_fp_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! echo_front_post_can_delete( $post_id ) ) {
+		echo_front_post_set_feedback( 'error', __( '你没有权限删除这篇文章。', 'echo' ) );
+		return;
+	}
+
+	$deleted = wp_trash_post( $post_id );
+	if ( ! $deleted ) {
+		echo_front_post_set_feedback( 'error', __( '删除失败，请稍后重试。', 'echo' ) );
+		return;
+	}
+
+	wp_safe_redirect( add_query_arg( 'deleted', '1', echo_front_post_url() ) );
+	exit;
+}
+
+/**
+ * 处理一键发布请求（管理员）
+ *
+ * 将待审核 / 草稿文章直接改为已发布。
+ *
+ * @return void
+ */
+function echo_front_post_handle_publish() {
+	if ( ! echo_front_post_can_write() || ! echo_front_post_is_manager() ) {
+		return;
+	}
+	if ( ! isset( $_POST['echo_fp_action'] ) || 'publish' !== sanitize_key( wp_unslash( $_POST['echo_fp_action'] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return;
+	}
+	if ( ! isset( $_POST['echo_fp_pub_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['echo_fp_pub_nonce'] ) ), 'echo_front_post_publish' ) ) {
+		echo_front_post_set_feedback( 'error', __( '发布请求已过期，请刷新后重试。', 'echo' ) );
+		return;
+	}
+
+	$post_id = isset( $_POST['echo_fp_id'] ) ? absint( $_POST['echo_fp_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! echo_front_post_can_edit( $post_id ) || ! current_user_can( 'publish_posts' ) ) {
+		echo_front_post_set_feedback( 'error', __( '你没有权限发布这篇文章。', 'echo' ) );
+		return;
+	}
+
+	$result = wp_update_post(
+		array(
+			'ID'          => $post_id,
+			'post_status' => 'publish',
+		),
+		true
+	);
+	if ( is_wp_error( $result ) ) {
+		echo_front_post_set_feedback( 'error', wp_strip_all_tags( $result->get_error_message() ) );
+		return;
+	}
+
+	wp_safe_redirect( add_query_arg( 'published', '1', echo_front_post_url() ) );
+	exit;
+}
+
 /* ============================================================
  * 前台渲染辅助
  * ============================================================ */
@@ -591,16 +714,18 @@ function echo_front_post_editing_post() {
  * @return array
  */
 function echo_front_post_my_posts( $limit = 10 ) {
-	return get_posts(
-		array(
-			'author'         => get_current_user_id(),
-			'posts_per_page' => max( 1, min( 50, absint( $limit ) ) ),
-			'post_type'      => 'post',
-			'post_status'    => array( 'publish', 'pending', 'draft', 'private' ),
-			'orderby'        => 'date',
-			'order'          => 'DESC',
-		)
+	$args = array(
+		'posts_per_page' => max( 1, min( 50, absint( $limit ) ) ),
+		'post_type'      => 'post',
+		'post_status'    => array( 'publish', 'pending', 'draft', 'private' ),
+		'orderby'        => 'date',
+		'order'          => 'DESC',
 	);
+	// 管理员可查看全站文章；普通用户仅看自己的。
+	if ( ! echo_front_post_is_manager() ) {
+		$args['author'] = get_current_user_id();
+	}
+	return get_posts( $args );
 }
 
 /**
