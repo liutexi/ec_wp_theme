@@ -703,6 +703,8 @@ function echo_settings_init() {
 		array( 'fp_allow_thumbnail', __( '允许上传封面', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
 		array( 'fp_thumbnail_max_kb', __( '封面大小上限', 'echo' ), 'echo_field_number', array( 'min' => 256, 'max' => 8192, 'step' => 256, 'suffix' => 'KB' ) ),
 		array( 'fp_content_min', __( '正文最少字数', 'echo' ), 'echo_field_number', array( 'min' => 0, 'max' => 5000, 'step' => 50, 'desc' => __( '0 表示不限制。', 'echo' ) ) ),
+		array( 'fp_editor_modes', __( '可用的输入模式', 'echo' ), 'echo_field_fp_editor_modes', array() ),
+		array( 'fp_editor_default', __( '默认输入模式', 'echo' ), 'echo_field_fp_editor_default', array() ),
 		array( 'fp_nav', __( '导航栏显示入口', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '在有发文权限的用户导航栏显示「写文章」入口。', 'echo' ) ) ),
 		array( 'fp_nav_label', __( '入口文字', 'echo' ), 'echo_field_text', array( 'desc' => __( '默认「写文章」。', 'echo' ) ) ),
 	);

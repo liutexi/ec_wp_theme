@@ -42,6 +42,8 @@ if ( ! function_exists( 'echo_front_post_icon' ) ) {
 			'check'   => '<polyline points="20 6 9 17 4 12"/>',
 			'upload'  => '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
 			'trash'   => '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>',
+			'code'    => '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+			'eye'     => '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
 		);
 		if ( ! isset( $paths[ $name ] ) ) {
 			return;
@@ -70,6 +72,8 @@ function echo_front_post_defaults() {
 		'fp_allow_thumbnail' => true,
 		'fp_thumbnail_max_kb' => 4096,
 		'fp_content_min'    => 0,
+		'fp_editor_modes'   => array( 'visual', 'markdown', 'html' ),
+		'fp_editor_default' => 'visual',
 		'fp_nav'            => true,
 		'fp_nav_label'      => __( '写文章', 'echo' ),
 	);
@@ -88,6 +92,203 @@ function echo_front_post_config( $key = null, $default = null ) {
 		return $settings;
 	}
 	return isset( $settings[ $key ] ) ? $settings[ $key ] : $default;
+}
+
+/* ============================================================
+ * 编辑器输入模式（可视化 / Markdown / HTML）
+ * ============================================================ */
+
+/**
+ * 允许的编辑器模式（带名称）
+ *
+ * @return array mode => label
+ */
+function echo_front_post_editor_modes() {
+	return array(
+		'visual'   => __( '可视化', 'echo' ),
+		'markdown' => __( 'Markdown', 'echo' ),
+		'html'     => __( 'HTML', 'echo' ),
+	);
+}
+
+/**
+ * 当前启用的编辑器模式
+ *
+ * @return array 启用的 mode 列表，至少含一项。
+ */
+function echo_front_post_allowed_modes() {
+	$all      = array_keys( echo_front_post_editor_modes() );
+	$modes    = echo_front_post_config( 'fp_editor_modes', $all );
+	$modes    = is_array( $modes ) ? $modes : $all;
+	$modes    = array_values( array_intersect( $modes, $all ) );
+	return empty( $modes ) ? array( 'visual' ) : $modes;
+}
+
+/**
+ * 规范化编辑器模式
+ *
+ * @param string $mode      待校验的模式。
+ * @param string $fallback  无效时的回退值。
+ * @return string
+ */
+function echo_front_post_normalize_mode( $mode, $fallback = '' ) {
+	$allowed = echo_front_post_allowed_modes();
+	if ( '' === $fallback || ! in_array( $fallback, $allowed, true ) ) {
+		$fallback = in_array( 'visual', $allowed, true ) ? 'visual' : $allowed[0];
+	}
+	return in_array( $mode, $allowed, true ) ? $mode : $fallback;
+}
+
+/**
+ * 默认编辑器模式
+ *
+ * @return string
+ */
+function echo_front_post_default_mode() {
+	$default = (string) echo_front_post_config( 'fp_editor_default', 'visual' );
+	return echo_front_post_normalize_mode( $default );
+}
+
+/**
+ * 极简 Markdown → HTML 转换
+ *
+ * 支持：标题、加粗/斜体/行内代码、链接、图片、引用、有序/无序列表、
+ * 围栏代码块、分隔线、段落与换行。先转义 HTML 再还原允许的标记，避免 XSS。
+ * 最终由调用方再做 wp_kses_post 清洗。
+ *
+ * @param string $markdown Markdown 原文。
+ * @return string HTML。
+ */
+function echo_front_post_markdown_to_html( $markdown ) {
+	$markdown = str_replace( array( "\r\n", "\r" ), "\n", (string) $markdown );
+
+	// 抽出围栏代码块，占位保护。
+	$code_blocks = array();
+	$markdown    = preg_replace_callback(
+		'/```([^\n`]*)\n?([\s\S]*?)```/',
+		function ( $m ) use ( &$code_blocks ) {
+			$idx                = count( $code_blocks );
+			$lang               = trim( $m[1] );
+			$class              = '' !== $lang ? ' class="language-' . esc_attr( sanitize_html_class( $lang ) ) . '"' : '';
+			$code_blocks[ $idx ] = '<pre><code' . $class . '>' . esc_html( rtrim( $m[2], "\n" ) ) . '</code></pre>';
+			return "\n\nechofpcodeblock{$idx}echofpcodeblock\n\n";
+		},
+		$markdown
+	);
+
+	// 转义 HTML 特殊字符。
+	$markdown = esc_html( $markdown );
+
+	// 行内元素（转义后处理，标签本身由这里生成）。
+	$markdown = preg_replace( '/`([^`]+)`/', '<code>$1</code>', $markdown );
+	$markdown = preg_replace( '/\*\*([^*]+)\*\*/', '<strong>$1</strong>', $markdown );
+	$markdown = preg_replace( '/(?<!\*)\*([^*]+)\*(?!\*)/', '<em>$1</em>', $markdown );
+	$markdown = preg_replace( '/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/', '<a href="$2" rel="noopener noreferrer" target="_blank">$1</a>', $markdown );
+	$markdown = preg_replace( '/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/', '<img src="$2" alt="$1" />', $markdown );
+
+	// 块级元素逐行处理。
+	$lines = explode( "\n", $markdown );
+	$out   = array();
+	$in_ul = false;
+	$in_ol = false;
+
+	$close_lists = function () use ( &$in_ul, &$in_ol, &$out ) {
+		if ( $in_ul ) {
+			$out[] = '</ul>';
+			$in_ul = false;
+		}
+		if ( $in_ol ) {
+			$out[] = '</ol>';
+			$in_ol = false;
+		}
+	};
+
+	foreach ( $lines as $line ) {
+		$line = rtrim( $line );
+
+		// 代码块占位符。
+		if ( preg_match( '/^echofpcodeblock(\d+)echofpcodeblock$/', trim( $line ), $m ) ) {
+			$close_lists();
+			$out[] = isset( $code_blocks[ (int) $m[1] ] ) ? $code_blocks[ (int) $m[1] ] : '';
+			continue;
+		}
+
+		if ( '' === trim( $line ) ) {
+			$close_lists();
+			continue;
+		}
+
+		// 标题：# ~ ######
+		if ( preg_match( '/^(#{1,6})\s+(.*)$/', $line, $m ) ) {
+			$close_lists();
+			$level = min( 6, strlen( $m[1] ) );
+			$out[] = '<h' . $level . '>' . $m[2] . '</h' . $level . '>';
+			continue;
+		}
+
+		// 分隔线。
+		if ( preg_match( '/^\s*(-{3,}|\*{3,}|_{3,})\s*$/', $line ) ) {
+			$close_lists();
+			$out[] = '<hr />';
+			continue;
+		}
+
+		// 无序列表。
+		if ( preg_match( '/^\s*[-*+]\s+(.*)$/', $line, $m ) ) {
+			if ( $in_ol ) {
+				$out[] = '</ol>';
+				$in_ol = false;
+			}
+			if ( ! $in_ul ) {
+				$out[] = '<ul>';
+				$in_ul = true;
+			}
+			$out[] = '<li>' . $m[1] . '</li>';
+			continue;
+		}
+
+		// 有序列表。
+		if ( preg_match( '/^\s*\d+\.\s+(.*)$/', $line, $m ) ) {
+			if ( $in_ul ) {
+				$out[] = '</ul>';
+				$in_ul = false;
+			}
+			if ( ! $in_ol ) {
+				$out[] = '<ol>';
+				$in_ol = true;
+			}
+			$out[] = '<li>' . $m[1] . '</li>';
+			continue;
+		}
+
+		// 引用。
+		if ( preg_match( '/^\s*&gt;\s?(.*)$/', $line, $m ) ) {
+			$close_lists();
+			$out[] = '<blockquote>' . $m[1] . '</blockquote>';
+			continue;
+		}
+
+		$close_lists();
+		$out[] = '<p>' . $line . '</p>';
+	}
+	$close_lists();
+
+	return implode( "\n", $out );
+}
+
+/**
+ * 按编辑器模式把提交内容渲染为安全的 HTML
+ *
+ * @param string $content 原始内容。
+ * @param string $mode    visual / markdown / html。
+ * @return string
+ */
+function echo_front_post_render_content( $content, $mode ) {
+	if ( 'markdown' === $mode ) {
+		return wp_kses_post( echo_front_post_markdown_to_html( $content ) );
+	}
+	// visual 与 html 都按 HTML 处理并清洗。
+	return wp_kses_post( $content );
 }
 
 /**
@@ -524,8 +725,16 @@ function echo_front_post_handle_submission() {
 	}
 
 	$title   = isset( $_POST['echo_fp_title'] ) ? sanitize_text_field( wp_unslash( $_POST['echo_fp_title'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$content = isset( $_POST['echo_fp_content'] ) ? wp_kses_post( wp_unslash( $_POST['echo_fp_content'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 	$excerpt = isset( $_POST['echo_fp_excerpt'] ) ? sanitize_textarea_field( wp_unslash( $_POST['echo_fp_excerpt'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+	// 编辑器模式：按配置规范化，按模式取对应字段的原文。
+	$mode          = isset( $_POST['echo_fp_mode'] ) ? sanitize_key( wp_unslash( $_POST['echo_fp_mode'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$mode          = echo_front_post_normalize_mode( $mode, echo_front_post_default_mode() );
+	$content_field = 'markdown' === $mode ? 'echo_fp_markdown' : ( 'html' === $mode ? 'echo_fp_html' : 'echo_fp_content' );
+	$raw_content   = isset( $_POST[ $content_field ] ) ? wp_unslash( $_POST[ $content_field ] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	// 保存原文到 meta 前先做与输出一致的清洗，避免存储危险内容。
+	$safe_source = 'markdown' === $mode ? sanitize_textarea_field( $raw_content ) : wp_kses_post( $raw_content );
+	$content     = echo_front_post_render_content( $raw_content, $mode );
 
 	if ( '' === trim( $title ) ) {
 		echo_front_post_set_feedback( 'error', __( '文章标题不能为空。', 'echo' ) );
@@ -580,6 +789,14 @@ function echo_front_post_handle_submission() {
 	}
 	$post_id = (int) $result;
 
+	// 记录编辑器模式与原文（编辑时用原文回填对应输入框）。
+	update_post_meta( $post_id, '_echo_fp_mode', $mode );
+	if ( in_array( $mode, array( 'markdown', 'html' ), true ) ) {
+		update_post_meta( $post_id, '_echo_fp_source', $safe_source );
+	} else {
+		delete_post_meta( $post_id, '_echo_fp_source' );
+	}
+
 	// 分类
 	if ( echo_front_post_config( 'fp_allow_category', true ) ) {
 		$cats  = isset( $_POST['echo_fp_cats'] ) ? (array) wp_unslash( $_POST['echo_fp_cats'] ) : array(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -609,6 +826,27 @@ function echo_front_post_handle_submission() {
 	wp_safe_redirect( add_query_arg( $redirect_args, echo_front_post_url( $post_id ) ) );
 	exit;
 }
+
+/**
+ * AJAX：预览 Markdown / HTML 输入渲染后的效果
+ *
+ * @return void
+ */
+function echo_front_post_ajax_preview() {
+	if ( ! echo_front_post_can_write() ) {
+		wp_send_json_error( array( 'message' => __( '无权预览。', 'echo' ) ), 403 );
+	}
+	if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'echo_front_post_preview' ) ) {
+		wp_send_json_error( array( 'message' => __( '页面已过期，请刷新后重试。', 'echo' ) ), 400 );
+	}
+
+	$mode    = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( $_POST['mode'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$mode    = echo_front_post_normalize_mode( $mode, echo_front_post_default_mode() );
+	$content = isset( $_POST['content'] ) ? wp_unslash( $_POST['content'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+
+	wp_send_json_success( array( 'html' => echo_front_post_render_content( $content, $mode ) ) );
+}
+add_action( 'wp_ajax_echo_front_post_preview', 'echo_front_post_ajax_preview' );
 
 /**
  * 处理删除文章请求
@@ -754,6 +992,62 @@ function echo_front_post_status_label( $status ) {
  * @param array $args 字段参数。
  * @return void
  */
+/**
+ * 编辑器模式多选字段
+ *
+ * @param array $args 字段参数。
+ * @return void
+ */
+function echo_field_fp_editor_modes( $args ) {
+	$key   = $args['label_for'];
+	$value = echo_get_setting( $key, array( 'visual', 'markdown', 'html' ) );
+	$value = is_array( $value ) ? $value : array();
+	foreach ( echo_front_post_editor_modes() as $k => $label ) :
+		?>
+		<label class="echo-checkbox-row">
+			<input type="checkbox" name="echo_settings[<?php echo esc_attr( $key ); ?>][]" value="<?php echo esc_attr( $k ); ?>"
+				<?php checked( in_array( $k, $value, true ), true ); ?> />
+			<?php echo esc_html( $label ); ?>
+		</label>
+		<?php
+	endforeach;
+	printf(
+		'<p class="description">%s</p>',
+		esc_html__( '勾选用户可在写文章时使用的输入模式，至少保留一种。', 'echo' )
+	);
+}
+
+/**
+ * 默认编辑器模式字段
+ *
+ * @param array $args 字段参数。
+ * @return void
+ */
+function echo_field_fp_editor_default( $args ) {
+	$key     = $args['label_for'];
+	$value   = (string) echo_get_setting( $key, 'visual' );
+	$allowed = echo_front_post_allowed_modes();
+	printf( '<select id="%1$s" name="echo_settings[%1$s]">', esc_attr( $key ) );
+	foreach ( echo_front_post_editor_modes() as $m => $label ) {
+		if ( ! in_array( $m, $allowed, true ) ) {
+			continue;
+		}
+		printf(
+			'<option value="%1$s" %2$s>%3$s</option>',
+			esc_attr( $m ),
+			selected( $value, $m, false ),
+			esc_html( $label )
+		);
+	}
+	echo '</select>';
+}
+
+/**
+ * 可用提交方式字段
+ *
+ * @param array $args 字段参数。
+ * @return void
+ */
 function echo_field_fp_status( $args ) {
 	$key    = $args['label_for'];
 	$value  = echo_get_setting( $key, array( 'draft', 'pending' ) );
@@ -857,6 +1151,21 @@ function echo_sanitize_front_post_settings( $input, &$output ) {
 
 	$output['fp_thumbnail_max_kb'] = max( 256, min( 8192, absint( isset( $input['fp_thumbnail_max_kb'] ) ? $input['fp_thumbnail_max_kb'] : 4096 ) ) );
 	$output['fp_content_min']      = max( 0, min( 5000, absint( isset( $input['fp_content_min'] ) ? $input['fp_content_min'] : 0 ) ) );
+
+	// 编辑器模式：至少保留一种。
+	$all_modes = array_keys( echo_front_post_editor_modes() );
+	$modes     = array();
+	if ( isset( $input['fp_editor_modes'] ) && is_array( $input['fp_editor_modes'] ) ) {
+		foreach ( $input['fp_editor_modes'] as $m ) {
+			if ( in_array( $m, $all_modes, true ) ) {
+				$modes[] = $m;
+			}
+		}
+	}
+	$modes                       = array_values( array_unique( $modes ) );
+	$output['fp_editor_modes']   = empty( $modes ) ? array( 'visual' ) : $modes;
+	$default_mode                = isset( $input['fp_editor_default'] ) ? sanitize_key( $input['fp_editor_default'] ) : 'visual';
+	$output['fp_editor_default'] = in_array( $default_mode, $output['fp_editor_modes'], true ) ? $default_mode : $output['fp_editor_modes'][0];
 
 	$label = isset( $input['fp_nav_label'] ) ? sanitize_text_field( $input['fp_nav_label'] ) : '';
 	$output['fp_nav_label'] = '' !== trim( $label ) ? $label : __( '写文章', 'echo' );

@@ -21,8 +21,25 @@ echo_front_post_handle_publish();
 $echo_fp_post    = echo_front_post_editing_post();
 $echo_fp_is_edit = (bool) $echo_fp_post;
 $echo_fp_title   = $echo_fp_post ? $echo_fp_post->post_title : '';
-$echo_fp_content = $echo_fp_post ? $echo_fp_post->post_content : '';
 $echo_fp_excerpt = $echo_fp_post ? $echo_fp_post->post_excerpt : '';
+
+// 编辑器模式与内容回填：
+// 编辑时优先用保存的原文（Markdown/HTML），否则用正文 HTML（可视化）。
+$echo_fp_allowed_modes = echo_front_post_allowed_modes();
+$echo_fp_default_mode  = echo_front_post_default_mode();
+if ( $echo_fp_is_edit ) {
+	$echo_fp_saved_mode   = get_post_meta( $echo_fp_post->ID, '_echo_fp_mode', true );
+	$echo_fp_mode         = echo_front_post_normalize_mode( $echo_fp_saved_mode, $echo_fp_default_mode );
+	$echo_fp_source       = get_post_meta( $echo_fp_post->ID, '_echo_fp_source', true );
+	$echo_fp_content      = $echo_fp_post->post_content; // 可视化模式的初始值
+	$echo_fp_markdown     = in_array( $echo_fp_mode, array( 'markdown', 'html' ), true ) && '' !== $echo_fp_source ? $echo_fp_source : '';
+	$echo_fp_html         = 'html' === $echo_fp_mode && '' !== $echo_fp_source ? $echo_fp_source : '';
+} else {
+	$echo_fp_mode     = $echo_fp_default_mode;
+	$echo_fp_content  = '';
+	$echo_fp_markdown = '';
+	$echo_fp_html     = '';
+}
 
 // 提交方式的简短说明（仅作界面文案，不影响逻辑）。
 $echo_fp_status_desc = array(
@@ -139,22 +156,69 @@ get_header();
 								</div>
 
 								<div class="echo-fp-field">
-									<label class="echo-fp-label" for="echo_fp_content"><?php esc_html_e( '正文', 'echo' ); ?></label>
-									<?php
-									wp_editor(
-										$echo_fp_content,
-										'echo_fp_content',
-										array(
-											'textarea_name' => 'echo_fp_content',
-											'media_buttons' => false,
-											'textarea_rows' => 16,
-											'tinymce'       => array(
-												'toolbar1' => 'bold,italic,strikethrough,blockquote,bullist,numlist,link,unlink,undo,redo',
-												'toolbar2' => '',
-											),
-										)
-									);
-									?>
+									<div class="echo-fp-editor-head">
+										<label class="echo-fp-label" for="echo_fp_content"><?php esc_html_e( '正文', 'echo' ); ?></label>
+										<?php if ( count( $echo_fp_allowed_modes ) > 1 ) : ?>
+											<div class="echo-fp-modes" role="tablist" aria-label="<?php esc_attr_e( '输入模式', 'echo' ); ?>">
+												<?php foreach ( echo_front_post_editor_modes() as $echo_fp_m => $echo_fp_m_label ) : ?>
+													<?php if ( ! in_array( $echo_fp_m, $echo_fp_allowed_modes, true ) ) : ?>
+														<?php continue; ?>
+													<?php endif; ?>
+													<button type="button" class="echo-fp-mode<?php echo $echo_fp_mode === $echo_fp_m ? ' is-active' : ''; ?>"
+														data-mode="<?php echo esc_attr( $echo_fp_m ); ?>" role="tab"
+														aria-selected="<?php echo $echo_fp_mode === $echo_fp_m ? 'true' : 'false'; ?>">
+														<?php echo esc_html( $echo_fp_m_label ); ?>
+													</button>
+												<?php endforeach; ?>
+											</div>
+										<?php endif; ?>
+									</div>
+
+									<input type="hidden" name="echo_fp_mode" id="echo_fp_mode" value="<?php echo esc_attr( $echo_fp_mode ); ?>" />
+
+									<div class="echo-fp-editor-pane<?php echo 'visual' === $echo_fp_mode ? '' : ' is-hidden'; ?>" data-pane="visual">
+										<?php
+										wp_editor(
+											$echo_fp_content,
+											'echo_fp_content',
+											array(
+												'textarea_name' => 'echo_fp_content',
+												'media_buttons' => false,
+												'textarea_rows' => 16,
+												'tinymce'       => array(
+													'toolbar1' => 'bold,italic,strikethrough,blockquote,bullist,numlist,link,unlink,undo,redo',
+													'toolbar2' => '',
+												),
+											)
+										);
+										?>
+									</div>
+
+									<?php if ( in_array( 'markdown', $echo_fp_allowed_modes, true ) ) : ?>
+										<div class="echo-fp-editor-pane<?php echo 'markdown' === $echo_fp_mode ? '' : ' is-hidden'; ?>" data-pane="markdown">
+											<textarea name="echo_fp_markdown" id="echo_fp_markdown" class="echo-fp-codearea" rows="18"
+												placeholder="<?php esc_attr_e( '用 Markdown 编写，例如：# 标题、**加粗**、- 列表、``` 代码块', 'echo' ); ?>"><?php echo esc_textarea( $echo_fp_markdown ); ?></textarea>
+											<p class="echo-fp-editor-hint"><?php esc_html_e( '支持标题、加粗、斜体、列表、引用、链接、图片与代码块。', 'echo' ); ?></p>
+										</div>
+									<?php endif; ?>
+
+									<?php if ( in_array( 'html', $echo_fp_allowed_modes, true ) ) : ?>
+										<div class="echo-fp-editor-pane<?php echo 'html' === $echo_fp_mode ? '' : ' is-hidden'; ?>" data-pane="html">
+											<textarea name="echo_fp_html" id="echo_fp_html" class="echo-fp-codearea" rows="18"
+												placeholder="<?php esc_attr_e( '直接编写 HTML，例如：<h2>标题</h2><p>正文</p>', 'echo' ); ?>"><?php echo esc_textarea( $echo_fp_html ); ?></textarea>
+											<p class="echo-fp-editor-hint"><?php esc_html_e( '仅保留安全的 HTML 标签，脚本等危险内容会被自动过滤。', 'echo' ); ?></p>
+										</div>
+									<?php endif; ?>
+
+									<?php if ( in_array( $echo_fp_mode, array( 'markdown', 'html' ), true ) ) : ?>
+										<div class="echo-fp-preview-toolbar">
+											<button type="button" class="echo-fp-preview-btn" id="echo_fp_preview_btn">
+												<?php echo_front_post_icon( 'eye' ); ?>
+												<span><?php esc_html_e( '预览效果', 'echo' ); ?></span>
+											</button>
+										</div>
+										<div class="echo-fp-preview" id="echo_fp_preview" hidden></div>
+									<?php endif; ?>
 								</div>
 							</div>
 						</section>
@@ -361,16 +425,93 @@ get_header();
 <?php if ( echo_front_post_can_write() ) : ?>
 <script>
 (function () {
+	// 封面：显示所选文件名
 	var input = document.getElementById( 'echo_fp_thumb' );
-	if ( ! input ) { return; }
-	var box  = document.querySelector( '.echo-fp-upload' );
-	var text = document.querySelector( '.echo-fp-upload__text' );
-	input.addEventListener( 'change', function () {
-		var file = input.files && input.files[0];
-		if ( ! file ) { return; }
-		if ( text ) { text.textContent = file.name; }
-		if ( box ) { box.classList.add( 'echo-fp-upload--has-file' ); }
+	if ( input ) {
+		var box  = document.querySelector( '.echo-fp-upload' );
+		var text = document.querySelector( '.echo-fp-upload__text' );
+		input.addEventListener( 'change', function () {
+			var file = input.files && input.files[0];
+			if ( ! file ) { return; }
+			if ( text ) { text.textContent = file.name; }
+			if ( box ) { box.classList.add( 'echo-fp-upload--has-file' ); }
+		} );
+	}
+
+	// 输入模式切换
+	var modeField = document.getElementById( 'echo_fp_mode' );
+	var tabs = document.querySelectorAll( '.echo-fp-mode' );
+	var panes = document.querySelectorAll( '.echo-fp-editor-pane' );
+	var previewWrap = document.querySelector( '.echo-fp-preview-toolbar' );
+	var previewBox = document.getElementById( 'echo_fp_preview' );
+
+	function currentSource( mode ) {
+		if ( 'markdown' === mode ) {
+			return document.getElementById( 'echo_fp_markdown' );
+		}
+		if ( 'html' === mode ) {
+			return document.getElementById( 'echo_fp_html' );
+		}
+		return null;
+	}
+
+	function syncPreviewVisibility( mode ) {
+		var source = currentSource( mode );
+		if ( previewWrap ) { previewWrap.hidden = ! source; }
+		if ( previewBox ) {
+			previewBox.hidden = true;
+			if ( ! source ) { previewBox.innerHTML = ''; }
+		}
+	}
+
+	Array.prototype.forEach.call( tabs, function ( tab ) {
+		tab.addEventListener( 'click', function () {
+			var mode = tab.getAttribute( 'data-mode' );
+			if ( modeField ) { modeField.value = mode; }
+			Array.prototype.forEach.call( tabs, function ( t ) {
+				var active = t === tab;
+				t.classList.toggle( 'is-active', active );
+				t.setAttribute( 'aria-selected', active ? 'true' : 'false' );
+			} );
+			Array.prototype.forEach.call( panes, function ( p ) {
+				p.classList.toggle( 'is-hidden', p.getAttribute( 'data-pane' ) !== mode );
+			} );
+			syncPreviewVisibility( mode );
+		} );
 	} );
+
+	// 预览
+	var previewBtn = document.getElementById( 'echo_fp_preview_btn' );
+	if ( previewBtn ) {
+		previewBtn.addEventListener( 'click', function () {
+			var mode = modeField ? modeField.value : '';
+			var source = currentSource( mode );
+			if ( ! source || ! previewBox ) { return; }
+			var formData = new FormData();
+			formData.append( 'action', 'echo_front_post_preview' );
+			formData.append( 'nonce', '<?php echo esc_js( wp_create_nonce( 'echo_front_post_preview' ) ); ?>' );
+			formData.append( 'mode', mode );
+			formData.append( 'content', source.value );
+			previewBtn.disabled = true;
+			fetch( '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', { method: 'POST', body: formData, credentials: 'same-origin' } )
+				.then( function ( r ) { return r.json(); } )
+				.then( function ( res ) {
+					previewBtn.disabled = false;
+					if ( res && res.success && res.data && typeof res.data.html === 'string' ) {
+						previewBox.innerHTML = res.data.html;
+						previewBox.hidden = false;
+					} else {
+						previewBox.innerHTML = '<p><?php echo esc_js( __( '预览失败，请稍后重试。', 'echo' ) ); ?></p>';
+						previewBox.hidden = false;
+					}
+				} )
+				.catch( function () {
+					previewBtn.disabled = false;
+					previewBox.innerHTML = '<p><?php echo esc_js( __( '预览失败，请稍后重试。', 'echo' ) ); ?></p>';
+					previewBox.hidden = false;
+				} );
+		} );
+	}
 })();
 </script>
 <?php endif; ?>
