@@ -36,6 +36,9 @@ require get_template_directory() . '/inc/links.php';
 // 引入阅读互动（阅读量 / 点赞 / 收藏 / 热门排行，默认值需在 customizer 之前合并）
 require get_template_directory() . '/inc/engagement.php';
 
+// 引入表情模块（[.xxx] 短代码渲染 + 评论/写文章选择器，默认值需在 customizer 之前合并）
+require get_template_directory() . '/inc/emoji.php';
+
 // 设置页图标
 require get_template_directory() . '/inc/settings-icons.php';
 
@@ -186,6 +189,35 @@ function echo_scripts() {
 					'favedText'   => __( '已收藏', 'echo' ),
 					'favText'     => __( '收藏', 'echo' ),
 					'failedText'  => __( '操作失败，请重试', 'echo' ),
+				)
+			);
+		}
+	}
+
+	// 表情模块：样式与选择器脚本（全站加载，入口在 JS 内按按钮存在与否/开关判断生效）
+	if ( function_exists( 'echo_emoji_is_on' ) && echo_emoji_is_on() ) {
+		$emj_css = get_template_directory() . '/assets/css/emoji.css';
+		if ( file_exists( $emj_css ) ) {
+			$emj_css_ver = ECHO_VERSION . '.' . filemtime( $emj_css );
+			wp_enqueue_style( 'echo-emoji', get_template_directory_uri() . '/assets/css/emoji.css', array( 'echo-style' ), $emj_css_ver );
+			// 表情显示尺寸由后台设置驱动
+			$emj_size = (int) echo_emoji_config( 'emoji_size', 20 );
+			wp_add_inline_style( 'echo-emoji', ':root{--echo-emoji-size:' . $emj_size . 'px}' );
+		}
+		$emj_js = get_template_directory() . '/assets/js/emoji.js';
+		if ( file_exists( $emj_js ) ) {
+			$emj_js_ver = ECHO_VERSION . '.' . filemtime( $emj_js );
+			wp_enqueue_script( 'echo-emoji', get_template_directory_uri() . '/assets/js/emoji.js', array(), $emj_js_ver, true );
+			wp_localize_script(
+				'echo-emoji',
+				'echoEmoji',
+				array(
+					'baseUrl'   => echo_emoji_base_url(),
+					'data'      => echo_emoji_picker_data(),
+					'title'     => __( '表情', 'echo' ),
+					'search'    => __( '搜索表情…', 'echo' ),
+					'empty'     => __( '没有匹配的表情', 'echo' ),
+					'inserted'  => __( '已插入表情', 'echo' ),
 				)
 			);
 		}

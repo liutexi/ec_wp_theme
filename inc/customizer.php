@@ -49,7 +49,8 @@ function echo_default_settings() {
 		echo_links_defaults(),
 		echo_front_post_defaults(),
 		echo_lgo_defaults(),
-		function_exists( 'echo_eng_defaults' ) ? echo_eng_defaults() : array()
+		function_exists( 'echo_eng_defaults' ) ? echo_eng_defaults() : array(),
+		function_exists( 'echo_emoji_defaults' ) ? echo_emoji_defaults() : array()
 	);
 }
 
@@ -103,6 +104,7 @@ function echo_settings_sections_map() {
 		'echo_section_front_post' => __( '前台发文章', 'echo' ),
 		'echo_section_link_go'   => __( '外链中转页', 'echo' ),
 		'echo_section_eng'       => __( '阅读互动', 'echo' ),
+		'echo_section_emoji'      => __( '表情', 'echo' ),
 		'echo_section_links'      => __( '友情链接', 'echo' ),
 		'echo_section_permalink' => __( '固定链接', 'echo' ),
 	);
@@ -771,6 +773,29 @@ function echo_settings_init() {
 		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_eng', $args );
 	}
 
+	// 表情
+	add_settings_section(
+		'echo_section_emoji',
+		__( '表情', 'echo' ),
+		'__return_false',
+		'echo-settings'
+	);
+
+	$echo_emoji_fields = array(
+		array( 'emoji_enable', __( '启用表情', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '总开关：关闭后正文/评论不再渲染表情，输入框也不再显示表情按钮。', 'echo' ) ) ),
+		array( 'emoji_in_content', __( '正文渲染表情', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '将文章正文中的 [.表情名] 显示为表情图片（含前台发的文章）。', 'echo' ) ) ),
+		array( 'emoji_in_comment', __( '评论渲染表情', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '将评论内容中的 [.表情名] 显示为表情图片。', 'echo' ) ) ),
+		array( 'emoji_picker_post', __( '写文章显示表情按钮', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '在前台写文章页正文区显示表情选择器。', 'echo' ) ) ),
+		array( 'emoji_picker_comment', __( '评论框显示表情按钮', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '在评论输入框旁显示表情选择器。', 'echo' ) ) ),
+		array( 'emoji_size', __( '表情显示尺寸', 'echo' ), 'echo_field_number', array( 'min' => 12, 'max' => 48, 'step' => 1, 'suffix' => __( 'px', 'echo' ), 'desc' => __( '正文与评论中表情图片的显示大小，12–48 px。', 'echo' ) ) ),
+	);
+
+	foreach ( $echo_emoji_fields as $field ) {
+		$args              = isset( $field[3] ) ? $field[3] : array();
+		$args['label_for'] = $field[0];
+		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_emoji', $args );
+	}
+
 	// 友情链接（数据在独立区块管理，这里放显示参数）
 	add_settings_section(
 		'echo_section_links',
@@ -1017,6 +1042,9 @@ function echo_sanitize_settings( $input ) {
 	// 阅读互动
 	if ( function_exists( 'echo_sanitize_eng_settings' ) ) {
 		echo_sanitize_eng_settings( $input, $output );
+	}
+	if ( function_exists( 'echo_sanitize_emoji_settings' ) ) {
+		echo_sanitize_emoji_settings( $input, $output );
 	}
 
 	return $output;

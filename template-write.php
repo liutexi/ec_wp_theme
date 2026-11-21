@@ -158,6 +158,9 @@ get_header();
 								<div class="echo-fp-field">
 									<div class="echo-fp-editor-head">
 										<label class="echo-fp-label" for="echo_fp_content"><?php esc_html_e( '正文', 'echo' ); ?></label>
+										<?php if ( function_exists( 'echo_emoji_picker_button' ) ) : ?>
+											<?php echo_emoji_picker_button( 'post' ); ?>
+										<?php endif; ?>
 										<?php if ( count( $echo_fp_allowed_modes ) > 1 ) : ?>
 											<div class="echo-fp-modes" role="tablist" aria-label="<?php esc_attr_e( '输入模式', 'echo' ); ?>">
 												<?php foreach ( echo_front_post_editor_modes() as $echo_fp_m => $echo_fp_m_label ) : ?>

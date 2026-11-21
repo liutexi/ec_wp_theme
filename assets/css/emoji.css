@@ -1,0 +1,178 @@
+/* ============================================================
+ * Echo 表情模块样式
+ * 依赖主题变量：--echo-primary / --echo-surface / --echo-border 等
+ * ============================================================ */
+
+/* 正文 / 评论中的表情图片 */
+img.echo-emoji {
+    display: inline-block;
+    width: var(--echo-emoji-size, 20px);
+    height: var(--echo-emoji-size, 20px);
+    vertical-align: -0.18em;
+    margin: 0 1px;
+    line-height: 1;
+    object-fit: contain;
+}
+
+/* 表情选择按钮（写文章页 / 评论框） */
+.echo-emoji-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    appearance: none;
+    border: 1px solid var(--echo-border, #d1d5db);
+    background: var(--echo-bg, #fff);
+    color: var(--echo-text-secondary, #4b5563);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 7px 11px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s;
+}
+
+.echo-emoji-btn svg {
+    width: 16px;
+    height: 16px;
+    flex: none;
+}
+
+.echo-emoji-btn:hover,
+.echo-emoji-btn.is-active {
+    color: var(--echo-primary, #2563eb);
+    border-color: var(--echo-primary, #2563eb);
+    background: var(--echo-bg-alt, #f1f3f6);
+}
+
+/* 评论框场景：按钮紧跟输入框，留出间距 */
+#comment + .echo-emoji-btn,
+.comment-form-comment .echo-emoji-btn {
+    margin-top: 8px;
+}
+
+/* ============================================================
+ * 表情选择面板（动态插入到 body）
+ * ============================================================ */
+.echo-emoji-pop {
+    position: absolute;
+    z-index: 9999;
+    width: 320px;
+    max-width: calc(100vw - 24px);
+    background: var(--echo-surface, #fff);
+    color: var(--echo-text, #1f2937);
+    border: 1px solid var(--echo-border, #e5e7eb);
+    border-radius: var(--echo-radius, 14px);
+    box-shadow: var(--echo-shadow-lg, 0 12px 32px rgba(0, 0, 0, .16));
+    overflow: hidden;
+    display: none;
+}
+
+.echo-emoji-pop.is-open {
+    display: block;
+    animation: echo-emoji-pop-in .14s ease-out;
+}
+
+@keyframes echo-emoji-pop-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.echo-emoji-pop__head {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--echo-border, #e5e7eb);
+}
+
+.echo-emoji-pop__search {
+    width: 100%;
+    box-sizing: border-box;
+    appearance: none;
+    border: 1px solid var(--echo-border, #e5e7eb);
+    background: var(--echo-bg, #fff);
+    color: var(--echo-text, #1f2937);
+    font: inherit;
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+.echo-emoji-pop__search:focus {
+    border-color: var(--echo-primary, #2563eb);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--echo-primary, #2563eb) 16%, transparent);
+}
+
+.echo-emoji-pop__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+    gap: 4px;
+    padding: 10px;
+    max-height: 264px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.echo-emoji-pop__item {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    border-radius: 9px;
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .12s, transform .12s;
+}
+
+.echo-emoji-pop__item:hover {
+    background: var(--echo-bg-alt, #f1f3f6);
+    transform: scale(1.08);
+}
+
+.echo-emoji-pop__item img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.echo-emoji-pop__empty {
+    grid-column: 1 / -1;
+    padding: 28px 12px;
+    text-align: center;
+    color: var(--echo-text-muted, #6b7280);
+    font-size: 13px;
+}
+
+/* 深色模式 */
+@media (prefers-color-scheme: dark) {
+    .echo-emoji-btn {
+        background: var(--echo-surface, #1f2430);
+        color: var(--echo-text-secondary, #cbd5e1);
+        border-color: var(--echo-border, #374151);
+    }
+    .echo-emoji-pop {
+        background: var(--echo-surface, #1f2430);
+        color: var(--echo-text, #e5e7eb);
+        border-color: var(--echo-border, #374151);
+    }
+    .echo-emoji-pop__search {
+        background: var(--echo-bg, #171b24);
+        color: var(--echo-text, #e5e7eb);
+        border-color: var(--echo-border, #374151);
+    }
+    .echo-emoji-pop__item:hover {
+        background: var(--echo-bg-alt, #2a3140);
+    }
+}
+
+/* Miuix 风格：主题类命中时也切换深色（与主题其他模块一致） */
+body.echo-ui-miuix .echo-emoji-pop,
+body.dark .echo-emoji-pop {
+    background: var(--echo-surface, #1f2430);
+    color: var(--echo-text, #e5e7eb);
+}
