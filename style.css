@@ -440,6 +440,18 @@ ul, ol {
     gap: 6px;
 }
 
+/* 作者名链接：低调显示，悬停高亮，避免默认下划线破坏元信息排版 */
+.echo-card__author a,
+.echo-single__author a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.echo-card__author a:hover,
+.echo-single__author a:hover {
+    color: var(--echo-primary);
+}
+
 .echo-card__author .avatar {
     border-radius: 50%;
     object-fit: cover;

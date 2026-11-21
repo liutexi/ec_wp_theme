@@ -17,7 +17,7 @@
 		<?php echo echo_get_categories(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 		<span class="echo-card__author">
 			<?php echo get_avatar( get_the_author_meta( 'ID' ), 22 ); ?>
-			<?php the_author(); ?>
+			<a href="<?php echo esc_url( echo_user_author_link( get_the_author_meta( 'ID' ) ) ); ?>"><?php the_author(); ?></a>
 		</span>
 		<span class="echo-card__date"><?php echo esc_html( get_the_date() ); ?></span>
 		<span class="echo-card__comments">

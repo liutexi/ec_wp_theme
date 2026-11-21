@@ -44,6 +44,8 @@ function echo_user_defaults() {
 		'user_portal_cover'    => '',
 		'user_portal_dark'     => true,
 		'user_nav_edit'        => true,
+		// 作者归档页（/author/xxx）自动跳转到个人主页（/uid/{ID}）
+		'user_author_redirect' => true,
 	);
 }
 
@@ -1761,6 +1763,7 @@ function echo_sanitize_user_settings( $input, &$output ) {
 		'user_show_sidebar',
 		'user_portal',
 		'user_portal_dark',
+		'user_author_redirect',
 	);
 	foreach ( $bool_keys as $bool_key ) {
 		$output[ $bool_key ] = isset( $input[ $bool_key ] ) && '1' === (string) $input[ $bool_key ];
@@ -1877,3 +1880,86 @@ function echo_portal_nav_admin_save( $user_id ) {
 }
 add_action( 'personal_options_update', 'echo_portal_nav_admin_save' );
 add_action( 'edit_user_profile_update', 'echo_portal_nav_admin_save' );
+
+/**
+ * 作者归档页（/author/xxx）跳转到个人主页（/uid/{ID}）
+ *
+ * 让「作者名」类链接统一落到主题的三栏个人主页；访客文章归档不再显示简陋的默认归档页。
+ * 仅在作者归档主请求生效，排除后台 / feed / 已存在的用户主页请求，避免循环重定向。
+ *
+ * @return void
+ */
+function echo_user_author_archive_redirect() {
+	// 非作者归档页不处理；feed、后台请求保持原样。
+	if ( ! is_author() || is_feed() || is_admin() ) {
+		return;
+	}
+
+	// 开关关闭或用户主页功能关闭时不接管。
+	if ( ! echo_user_config( 'user_author_redirect', true ) || ! echo_user_config( 'user_enabled', true ) ) {
+		return;
+	}
+
+	// 作者归档页的 queried object id 即为作者用户 ID。
+	$author_id = absint( get_queried_object_id() );
+	if ( ! $author_id || ! get_userdata( $author_id ) ) {
+		return;
+	}
+
+	$target = echo_user_url( $author_id );
+	if ( ! $target ) {
+		return;
+	}
+
+	// 已在同一地址则不再跳转，避免潜在循环。
+	$current = home_url( add_query_arg( null, null ) );
+	if ( trailingslashit( $current ) === trailingslashit( $target ) ) {
+		return;
+	}
+
+	wp_safe_redirect( $target, 301 );
+	exit;
+}
+add_action( 'template_redirect', 'echo_user_author_archive_redirect', 5 );
+
+/**
+ * 作者归档链接应指向的地址
+ *
+ * 开关开启且用户存在时指向个人主页，否则回退到 WordPress 默认作者归档页。
+ *
+ * @param int $author_id 作者用户 ID。
+ * @return string 作者链接地址。
+ */
+function echo_user_author_link( $author_id ) {
+	$author_id = absint( $author_id );
+	if ( $author_id && get_userdata( $author_id ) && echo_user_config( 'user_author_redirect', true ) && echo_user_config( 'user_enabled', true ) ) {
+		return echo_user_url( $author_id );
+	}
+	return get_author_posts_url( $author_id );
+}
+
+/**
+ * 评论作者链接（注册用户）指向个人主页
+ *
+ * 仅改写已注册评论者的链接；访客评论沿用原逻辑（其填写的网站地址）。
+ *
+ * @param string $link       原链接 HTML。
+ * @param string $author     评论作者显示名。
+ * @param int    $comment_ID 评论 ID。
+ * @return string 处理后的链接 HTML。
+ */
+function echo_user_comment_author_link( $link, $author, $comment_ID ) {
+	if ( ! echo_user_config( 'user_author_redirect', true ) ) {
+		return $link;
+	}
+	$comment = get_comment( $comment_ID );
+	if ( ! $comment ) {
+		return $link;
+	}
+	$user_id = absint( $comment->user_id );
+	if ( ! $user_id || ! get_userdata( $user_id ) ) {
+		return $link; // 访客评论：保留原链接（其填写的网站地址）。
+	}
+	return '<a href="' . esc_url( echo_user_author_link( $user_id ) ) . '" rel="external nofollow" class="url">' . esc_html( $author ) . '</a>';
+}
+add_filter( 'get_comment_author_link', 'echo_user_comment_author_link', 10, 3 );

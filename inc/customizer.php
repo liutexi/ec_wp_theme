@@ -510,6 +510,7 @@ function echo_settings_init() {
 
 	$echo_user_fields = array(
 		array( 'user_enabled', __( '启用用户主页', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '启用后可通过 /uid/{用户ID} 访问公开主页；关闭后返回 404。', 'echo' ) ) ),
+		array( 'user_author_redirect', __( '作者链接跳转主页', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '开启后，访问 /author/xxx（文章页、评论里的作者链接）会自动 301 跳转到该作者的 /uid/{ID} 个人主页。', 'echo' ) ) ),
 		array( 'user_base', __( '链接前缀', 'echo' ), 'echo_field_text', array( 'desc' => sprintf( /* translators: %s: 示例地址 */ __( '默认 uid，示例：%s。修改后若出现 404，请到「设置 → 固定链接」点一次保存。', 'echo' ), home_url( '/' . echo_user_base() . '/1/' ) ) ) ),
 		array( 'user_allow_edit', __( '允许自助编辑', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '用户在自己的主页可以修改昵称、简介与个人网站。', 'echo' ) ) ),
 		array( 'user_allow_password', __( '允许修改密码', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '需要验证当前密码；密码长度沿用登录 / 注册里的最小长度设置。', 'echo' ) ) ),
