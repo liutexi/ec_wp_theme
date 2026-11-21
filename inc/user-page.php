@@ -37,6 +37,12 @@ function echo_user_defaults() {
 		'user_show_sidebar'    => false,
 		'user_card_style'      => 'auto',
 		'user_custom_css'      => '',
+		// 三栏个人主页（博客式：资料侧栏 + 文章卡片流 + 归档/分类侧栏）
+		'user_portal'          => true,
+		'user_portal_tagline'  => '白日依山尽，黄河入海流。',
+		'user_portal_posts'    => 12,
+		'user_portal_cover'    => '',
+		'user_portal_dark'     => true,
 	);
 }
 
@@ -193,6 +199,9 @@ add_filter( 'document_title_parts', 'echo_user_document_title' );
 function echo_user_body_class( $classes ) {
 	if ( echo_user_current_uid() ) {
 		$classes[] = 'echo-user-page';
+		if ( echo_user_config( 'user_portal', true ) ) {
+			$classes[] = 'echo-user-portal';
+		}
 	}
 	return $classes;
 }
@@ -887,6 +896,353 @@ function echo_user_section_edit( $user ) {
 	<?php
 }
 
+/* ============================================================
+ * 三栏个人主页（博客式）
+ * 左：资料 + 导航；中：文章卡片流；右：搜索 + 归档 + 分类
+ * 仅作用于 /uid/{id}，通过 body.echo-user-portal 控制样式
+ * ============================================================ */
+
+/**
+ * 个人主页内联 SVG 图标
+ *
+ * @param string $name 图标名。
+ * @return void
+ */
+function echo_user_icon( $name ) {
+	static $paths = array(
+		'home'    => '<path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/>',
+		'archive' => '<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><line x1="10" y1="12" x2="14" y2="12"/>',
+		'search'  => '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+		'link'    => '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+		'pen'     => '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+		'user'    => '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+		'login'   => '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>',
+		'moon'    => '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+		'sun'     => '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/>',
+		'calendar'=> '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+		'clock'   => '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+		'chevron' => '<polyline points="9 18 15 12 9 6"/>',
+		'comment' => '<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5z"/>',
+	);
+	if ( ! isset( $paths[ $name ] ) ) {
+		return;
+	}
+	echo '<svg class="echo-up-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' . $paths[ $name ] . '</svg>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+}
+
+/**
+ * 估算文章阅读时长（分钟），中文按约 400 字/分钟。
+ *
+ * @param int $post_id 文章 ID。
+ * @return int
+ */
+function echo_user_read_minutes( $post_id ) {
+	$content = get_post_field( 'post_content', $post_id );
+	$text    = wp_strip_all_tags( strip_shortcodes( (string) $content ) );
+	$length  = function_exists( 'mb_strlen' ) ? mb_strlen( $text, 'UTF-8' ) : strlen( $text );
+	return max( 1, (int) ceil( $length / 400 ) );
+}
+
+/**
+ * 左侧资料 + 导航侧栏
+ *
+ * @param WP_User $user 用户对象。
+ * @return void
+ */
+function echo_user_portal_rail( $user ) {
+	$size     = max( 48, min( 160, absint( echo_user_config( 'user_avatar_size', 96 ) ) ) );
+	$bio      = get_user_meta( $user->ID, 'description', true );
+	$site     = $user->user_url;
+	$is_me    = get_current_user_id() === (int) $user->ID;
+	$my_url   = function_exists( 'echo_my_page_url' ) ? echo_my_page_url() : '';
+	$tagline  = echo_user_config( 'user_portal_tagline', '' );
+	$tagline  = is_string( $tagline ) ? $tagline : '';
+	$logged   = is_user_logged_in();
+	?>
+	<aside class="echo-up-rail">
+		<div class="echo-up-rail__inner">
+			<a class="echo-up-avatar" href="<?php echo esc_url( echo_user_url( $user->ID ) ); ?>" aria-label="<?php echo esc_attr( $user->display_name ); ?>">
+				<span class="echo-up-avatar__ring" style="--echo-up-avatar-size:<?php echo (int) $size; ?>px">
+					<?php echo get_avatar( $user->ID, $size ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				</span>
+				<span class="echo-up-avatar__badge" aria-hidden="true"></span>
+			</a>
+
+			<h1 class="echo-up-rail__name"><?php echo esc_html( $user->display_name ); ?></h1>
+			<p class="echo-up-rail__tagline"><?php echo esc_html( '' !== $tagline ? $tagline : ( $bio ? $bio : get_bloginfo( 'description' ) ) ); ?></p>
+
+			<nav class="echo-up-nav" aria-label="<?php esc_attr_e( '个人主页导航', 'echo' ); ?>">
+				<a class="echo-up-nav__item is-active" href="<?php echo esc_url( echo_user_url( $user->ID ) ); ?>">
+					<?php echo_user_icon( 'home' ); ?><span><?php esc_html_e( '主页', 'echo' ); ?></span>
+				</a>
+				<a class="echo-up-nav__item" href="#echo-up-posts">
+					<?php echo_user_icon( 'archive' ); ?><span><?php esc_html_e( '文章', 'echo' ); ?></span>
+				</a>
+				<a class="echo-up-nav__item" href="#echo-up-search">
+					<?php echo_user_icon( 'search' ); ?><span><?php esc_html_e( '搜索', 'echo' ); ?></span>
+				</a>
+				<?php if ( function_exists( 'echo_links_config' ) ) : ?>
+					<?php
+					$links_page = get_page_by_path( sanitize_title( echo_links_config( 'links_slug', 'links' ) ) );
+					$links_url  = ( $links_page && 'publish' === $links_page->post_status ) ? get_permalink( $links_page ) : home_url( '/links/' );
+					?>
+					<a class="echo-up-nav__item" href="<?php echo esc_url( $links_url ); ?>">
+						<?php echo_user_icon( 'link' ); ?><span><?php esc_html_e( '链接', 'echo' ); ?></span>
+					</a>
+				<?php endif; ?>
+
+				<?php if ( $is_me && function_exists( 'echo_front_post_can_write' ) && echo_front_post_can_write() ) : ?>
+					<a class="echo-up-nav__item" href="<?php echo esc_url( function_exists( 'echo_front_post_url' ) ? echo_front_post_url() : home_url( '/write/' ) ); ?>">
+						<?php echo_user_icon( 'pen' ); ?><span><?php esc_html_e( '写文章', 'echo' ); ?></span>
+					</a>
+				<?php endif; ?>
+
+				<?php if ( $is_me && $my_url ) : ?>
+					<a class="echo-up-nav__item" href="<?php echo esc_url( $my_url ); ?>">
+						<?php echo_user_icon( 'user' ); ?><span><?php esc_html_e( '个人中心', 'echo' ); ?></span>
+					</a>
+				<?php elseif ( ! $logged && function_exists( 'echo_auth_url' ) ) : ?>
+					<a class="echo-up-nav__item" href="<?php echo esc_url( echo_auth_url( 'login' ) ); ?>">
+						<?php echo_user_icon( 'login' ); ?><span><?php esc_html_e( '登录', 'echo' ); ?></span>
+					</a>
+				<?php endif; ?>
+			</nav>
+
+			<?php if ( $site ) : ?>
+				<a class="echo-up-rail__site" href="<?php echo esc_url( $site ); ?>" target="_blank" rel="noopener noreferrer nofollow">
+					<?php echo esc_html( preg_replace( '#^https?://#i', '', $site ) ); ?>
+				</a>
+			<?php endif; ?>
+
+			<?php if ( echo_user_config( 'user_portal_dark', true ) ) : ?>
+				<button class="echo-up-dark-toggle" type="button" aria-label="<?php esc_attr_e( '切换深色模式', 'echo' ); ?>" aria-pressed="false">
+					<span class="echo-up-dark-toggle__icon"><?php echo_user_icon( 'moon' ); ?></span>
+					<span class="echo-up-dark-toggle__label"><?php esc_html_e( '深色模式', 'echo' ); ?></span>
+					<span class="echo-up-dark-toggle__switch" aria-hidden="true"><span></span></span>
+				</button>
+			<?php endif; ?>
+		</div>
+	</aside>
+	<?php
+}
+
+/**
+ * 中间文章卡片流
+ *
+ * @param WP_User $user 用户对象。
+ * @return void
+ */
+function echo_user_portal_feed( $user ) {
+	$count = max( 0, min( 50, absint( echo_user_config( 'user_portal_posts', 12 ) ) ) );
+	$cover = trim( (string) echo_user_config( 'user_portal_cover', '' ) );
+
+	// 顶部封面横幅：优先后台自定义图，否则用主题默认渐变
+	$cover_style = '';
+	if ( '' !== $cover ) {
+		$cover_style = ' style="background-image:url(' . esc_url( $cover ) . ')"';
+	}
+	?>
+	<div class="echo-up-feed">
+		<div class="echo-up-cover<?php echo '' !== $cover ? ' echo-up-cover--custom' : ''; ?>"<?php echo $cover_style; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+			<div class="echo-up-cover__content">
+				<p class="echo-up-cover__hello"><?php esc_html_e( 'Welcome to my blog', 'echo' ); ?></p>
+				<h2 class="echo-up-cover__title"><?php echo esc_html( $user->display_name ); ?></h2>
+				<p class="echo-up-cover__desc"><?php echo esc_html( echo_user_config( 'user_portal_tagline', get_bloginfo( 'description' ) ) ); ?></p>
+			 </div>
+		</div>
+
+		<?php echo_user_render_feedback(); ?>
+
+		<?php if ( 0 === $count ) : ?>
+			<section class="echo-up-card echo-up-empty">
+				<p><?php esc_html_e( '暂无展示的文章，可在后台开启文章展示。', 'echo' ); ?></p>
+			</section>
+		<?php else : ?>
+			<?php
+			$posts = get_posts(
+				array(
+					'author'      => $user->ID,
+					'numberposts' => $count,
+					'post_type'   => 'post',
+					'post_status' => 'publish',
+				)
+			);
+			?>
+			<div class="echo-up-posts" id="echo-up-posts">
+				<?php if ( empty( $posts ) ) : ?>
+					<section class="echo-up-card echo-up-empty">
+						<p><?php esc_html_e( '还没有发布文章。', 'echo' ); ?></p>
+					</section>
+				<?php else : ?>
+					<?php foreach ( $posts as $post ) : ?>
+						<?php setup_postdata( $post ); ?>
+						<article class="echo-up-card echo-up-post">
+							<a class="echo-up-post__thumb" href="<?php echo esc_url( get_permalink( $post ) ); ?>" aria-label="<?php echo esc_attr( get_the_title( $post ) ); ?>">
+								<?php
+								if ( has_post_thumbnail( $post ) ) {
+									the_post_thumbnail( 'medium_large', array( 'loading' => 'lazy' ) );
+								} else {
+									?>
+									<span class="echo-up-post__thumb-ph" aria-hidden="true">
+										<?php echo_user_icon( 'pen' ); ?>
+									</span>
+									<?php
+								}
+								?>
+							</a>
+							<div class="echo-up-post__body">
+								<div class="echo-up-post__badges">
+									<?php echo echo_get_categories(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								</div>
+								<h2 class="echo-up-post__title">
+									<a href="<?php echo esc_url( get_permalink( $post ) ); ?>"><?php echo esc_html( get_the_title( $post ) ); ?></a>
+								</h2>
+								<p class="echo-up-post__excerpt"><?php echo esc_html( wp_trim_words( wp_strip_all_tags( get_the_excerpt( $post ) ), 60, '…' ) ); ?></p>
+								<div class="echo-up-post__meta">
+									<span><?php echo_user_icon( 'calendar' ); ?><?php echo esc_html( get_the_date( 'M j, Y', $post ) ); ?></span>
+									<span><?php echo_user_icon( 'clock' ); ?><?php echo esc_html( sprintf( /* translators: %d: 分钟 */ __( '阅读时长 %d 分钟', 'echo' ), echo_user_read_minutes( $post->ID ) ) ); ?></span>
+									<span class="echo-up-post__comments"><?php echo_user_icon( 'comment' ); ?><?php echo esc_html( (int) get_comments_number( $post ) ); ?></span>
+								</div>
+							</div>
+						</article>
+					<?php endforeach; ?>
+					<?php wp_reset_postdata(); ?>
+				<?php endif; ?>
+			</div>
+		<?php endif; ?>
+
+		<?php
+		// 编辑资料入口（本人 / 管理员），折叠在文章流下方，保留原有功能
+		if ( echo_user_can_edit( $user->ID ) ) {
+			echo_user_section_edit( $user );
+		}
+		?>
+	</div>
+	<?php
+}
+
+/**
+ * 右侧：搜索 + 归档 + 分类
+ *
+ * @param WP_User $user 用户对象。
+ * @return void
+ */
+function echo_user_portal_aside( $user ) {
+	global $wpdb;
+
+	// 归档：按年份统计该用户已发布文章
+	$year_rows = $wpdb->get_results(
+		$wpdb->prepare(
+			"SELECT YEAR(post_date) AS y, COUNT(*) AS c FROM {$wpdb->posts} WHERE post_author = %d AND post_type = 'post' AND post_status = 'publish' GROUP BY YEAR(post_date) ORDER BY y DESC",
+			$user->ID
+		)
+	);
+
+	// 分类：统计该用户文章用到的分类
+	$cat_counts = array();
+	$post_ids   = get_posts(
+		array(
+			'author'      => $user->ID,
+			'numberposts' => 200,
+			'post_type'   => 'post',
+			'post_status' => 'publish',
+			'fields'      => 'ids',
+		)
+	);
+	if ( ! empty( $post_ids ) ) {
+		$terms = wp_get_object_terms( $post_ids, 'category' );
+		if ( ! is_wp_error( $terms ) ) {
+			foreach ( $terms as $term ) {
+				if ( ! isset( $cat_counts[ $term->term_id ] ) ) {
+					$cat_counts[ $term->term_id ] = array( 'name' => $term->name, 'count' => 0, 'link' => get_category_link( $term->term_id ) );
+				}
+				++$cat_counts[ $term->term_id ]['count'];
+			}
+		}
+	}
+	uasort(
+		$cat_counts,
+		function ( $a, $b ) {
+			return $b['count'] - $a['count'];
+		}
+	);
+	?>
+	<aside class="echo-up-aside">
+		<section class="echo-up-card echo-up-search" id="echo-up-search">
+			<form class="echo-up-search__form" role="search" method="get" action="<?php echo esc_url( home_url( '/' ) ); ?>">
+				<input type="search" name="s" placeholder="<?php esc_attr_e( '输入关键词…', 'echo' ); ?>" value="<?php echo esc_attr( get_search_query() ); ?>" />
+				<input type="hidden" name="author" value="<?php echo esc_attr( (string) $user->ID ); ?>" />
+				<button type="submit" aria-label="<?php esc_attr_e( '搜索', 'echo' ); ?>"><?php echo_user_icon( 'search' ); ?></button>
+			</form>
+		</section>
+
+		<section class="echo-up-card echo-up-block">
+			<h3 class="echo-up-block__title">
+				<span class="echo-up-block__glyph">&infin;</span>
+				<span><?php esc_html_e( '归档', 'echo' ); ?></span>
+			</h3>
+			<?php if ( empty( $year_rows ) ) : ?>
+				<p class="echo-up-muted"><?php esc_html_e( '暂无归档', 'echo' ); ?></p>
+			<?php else : ?>
+				<ul class="echo-up-archives">
+					<?php foreach ( $year_rows as $row ) : ?>
+						<?php
+						$year_url = add_query_arg(
+							array(
+								'author' => $user->ID,
+								'year'   => $row->y,
+							),
+							home_url( '/' )
+						);
+						?>
+						<li>
+							<a href="<?php echo esc_url( $year_url ); ?>">
+								<span><?php echo esc_html( $row->y ); ?></span>
+								<span class="echo-up-count"><?php echo esc_html( (string) (int) $row->c ); ?></span>
+							</a>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			<?php endif; ?>
+		</section>
+
+		<section class="echo-up-card echo-up-block">
+			<h3 class="echo-up-block__title">
+				<span class="echo-up-block__glyph">#</span>
+				<span><?php esc_html_e( '分类', 'echo' ); ?></span>
+			</h3>
+			<?php if ( empty( $cat_counts ) ) : ?>
+				<p class="echo-up-muted"><?php esc_html_e( '暂无分类', 'echo' ); ?></p>
+			<?php else : ?>
+				<div class="echo-up-tags">
+					<?php foreach ( $cat_counts as $cat ) : ?>
+						<a class="echo-up-tag" href="<?php echo esc_url( $cat['link'] ); ?>"><?php echo esc_html( $cat['name'] ); ?></a>
+					<?php endforeach; ?>
+				</div>
+			<?php endif; ?>
+		</section>
+	</aside>
+	<?php
+}
+
+/**
+ * 三栏主页整体渲染
+ *
+ * @param WP_User $user 用户对象。
+ * @return void
+ */
+function echo_user_portal_render( $user ) {
+	?>
+	<div class="echo-up">
+		<?php echo_user_portal_rail( $user ); ?>
+		<main class="echo-up-main">
+			<?php echo_user_portal_feed( $user ); ?>
+		</main>
+		<?php echo_user_portal_aside( $user ); ?>
+	</div>
+	<?php
+}
+
 /**
  * 页面主体
  *
@@ -933,28 +1289,40 @@ function echo_user_render_page() {
 	$uid = echo_user_current_uid();
 	echo_user_handle_update( $uid );
 
-	if ( ! get_userdata( $uid ) || ! echo_user_config( 'user_enabled', true ) ) {
+	$user = get_userdata( $uid );
+	if ( ! $user || ! echo_user_config( 'user_enabled', true ) ) {
 		wp_safe_redirect( home_url( '/' ) );
 		exit;
 	}
 
 	get_header();
-	?>
-	<main id="primary" class="echo-main">
-		<div class="echo-container">
-			<div class="echo-layout<?php echo echo_user_config( 'user_show_sidebar', false ) ? '' : ' echo-layout--full'; ?>">
-				<div class="echo-content">
-					<?php echo_user_render( $uid ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+
+	// 三栏个人主页：整页自定义容器，脱离默认 .echo-layout（顶部 header 由 CSS 在本页隐藏）
+	if ( echo_user_config( 'user_portal', true ) ) :
+		?>
+		<main id="primary" class="echo-main echo-main--user-portal">
+			<?php echo_user_portal_render( $user ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+		</main>
+		<?php
+	else :
+		?>
+		<main id="primary" class="echo-main">
+			<div class="echo-container">
+				<div class="echo-layout<?php echo echo_user_config( 'user_show_sidebar', false ) ? '' : ' echo-layout--full'; ?>">
+					<div class="echo-content">
+						<?php echo_user_render( $uid ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					</div>
+					<?php
+					if ( echo_user_config( 'user_show_sidebar', false ) ) {
+						get_sidebar();
+					}
+					?>
 				</div>
-				<?php
-				if ( echo_user_config( 'user_show_sidebar', false ) ) {
-					get_sidebar();
-				}
-				?>
 			</div>
-		</div>
-	</main>
-	<?php
+		</main>
+		<?php
+	endif;
+
 	get_footer();
 }
 
@@ -995,6 +1363,8 @@ function echo_sanitize_user_settings( $input, &$output ) {
 		'user_show_posts',
 		'user_show_comments',
 		'user_show_sidebar',
+		'user_portal',
+		'user_portal_dark',
 	);
 	foreach ( $bool_keys as $bool_key ) {
 		$output[ $bool_key ] = isset( $input[ $bool_key ] ) && '1' === (string) $input[ $bool_key ];
@@ -1020,6 +1390,15 @@ function echo_sanitize_user_settings( $input, &$output ) {
 	$custom_css = isset( $input['user_custom_css'] ) ? wp_strip_all_tags( $input['user_custom_css'] ) : '';
 	$custom_css = preg_replace( '/<\s*\/?\s*style\b[^>]*>/i', '', $custom_css );
 	$output['user_custom_css'] = $custom_css;
+
+	// 三栏个人主页
+	$tagline = isset( $input['user_portal_tagline'] ) ? sanitize_text_field( $input['user_portal_tagline'] ) : '';
+	$output['user_portal_tagline'] = wp_strip_all_tags( $tagline );
+
+	$output['user_portal_posts'] = $clamp( isset( $input['user_portal_posts'] ) ? $input['user_portal_posts'] : $defaults['user_portal_posts'], 50 );
+
+	$cover = isset( $input['user_portal_cover'] ) ? esc_url_raw( trim( (string) $input['user_portal_cover'] ) ) : '';
+	$output['user_portal_cover'] = $cover;
 }
 
 /**

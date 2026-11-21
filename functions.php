@@ -135,6 +135,15 @@ function echo_scripts() {
 		wp_enqueue_style( 'echo-front-post', get_template_directory_uri() . '/assets/css/front-post.css', array( 'echo-style' ), $fp_ver );
 	}
 
+	// 三栏个人主页样式：仅在 /uid/{id} 且开启 portal 时加载
+	if ( function_exists( 'echo_user_current_uid' ) && echo_user_current_uid() && function_exists( 'echo_user_config' ) && echo_user_config( 'user_portal', true ) ) {
+		$up_path = get_template_directory() . '/assets/css/user-portal.css';
+		if ( file_exists( $up_path ) ) {
+			$up_ver = ECHO_VERSION . '.' . filemtime( $up_path );
+			wp_enqueue_style( 'echo-user-portal', get_template_directory_uri() . '/assets/css/user-portal.css', array( 'echo-style' ), $up_ver );
+		}
+	}
+
 	// 交互脚本
 	$main_path = get_template_directory() . '/assets/js/main.js';
 	$main_ver  = file_exists( $main_path ) ? ECHO_VERSION . '.' . filemtime( $main_path ) : ECHO_VERSION;

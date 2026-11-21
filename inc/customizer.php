@@ -519,6 +519,11 @@ function echo_settings_init() {
 		array( 'user_recent_comments', __( '最近评论数量', 'echo' ), 'echo_field_number', array( 'min' => 0, 'max' => 20, 'step' => 1, 'desc' => __( '填 0 不显示。', 'echo' ) ) ),
 		array( 'user_show_sidebar', __( '显示侧边栏', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '默认关闭，整页展示资料。', 'echo' ) ) ),
 		array( 'user_card_style', __( '卡片风格', 'echo' ), 'echo_field_select', array( 'options' => array( 'auto' => __( '跟随全局风格', 'echo' ), 'classic' => __( '强制经典', 'echo' ), 'miuix' => __( '强制 Miuix', 'echo' ) ) ) ),
+		array( 'user_portal', __( '三栏个人主页', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '开启后个人主页显示为博客式三栏：左侧资料导航、中间文章卡片流、右侧搜索/归档/分类，并隐藏该页顶部横条。', 'echo' ) ) ),
+		array( 'user_portal_tagline', __( '主页签名', 'echo' ), 'echo_field_text', array( 'desc' => __( '显示在头像下方与封面横幅上；留空则使用用户简介。', 'echo' ) ) ),
+		array( 'user_portal_posts', __( '主页文章数量', 'echo' ), 'echo_field_number', array( 'min' => 0, 'max' => 50, 'step' => 1, 'desc' => __( '中间卡片流展示的文章数量，填 0 不显示文章。', 'echo' ) ) ),
+		array( 'user_portal_cover', __( '封面图地址', 'echo' ), 'echo_field_text', array( 'desc' => __( '主页顶部横幅的自定义图片 URL；留空使用主题默认渐变封面。', 'echo' ) ) ),
+		array( 'user_portal_dark', __( '显示深色模式开关', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '在左侧栏显示深色模式切换按钮（仅本页生效，自动记忆）。', 'echo' ) ) ),
 		array( 'user_custom_css', __( '自定义 CSS', 'echo' ), 'echo_field_textarea', array( 'rows' => 5, 'class' => 'echo-code-textarea', 'desc' => __( '仅填写 CSS，会追加到前台样式末尾。不要写 <style> 标签。', 'echo' ) ) ),
 	);
 

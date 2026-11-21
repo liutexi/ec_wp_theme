@@ -17,6 +17,7 @@
 		initSubmitGuard();
 		initEmailCode();
 		initPageProgress();
+		initUserPortalDarkMode();
 	});
 
 	/**
@@ -783,5 +784,60 @@
 		});
 
 		window.addEventListener('pageshow', hide);
+	}
+
+	/**
+	 * 个人主页深色模式切换
+	 * - 仅作用于 body.echo-user-portal
+	 * - localStorage 记忆偏好，键名按用户区分，避免多账号串味
+	 * - 首次进入跟随系统 prefers-color-scheme
+	 */
+	function initUserPortalDarkMode() {
+		var body = document.body;
+		if (!body || !body.classList.contains('echo-user-portal')) {
+			return;
+		}
+
+		var btn = document.querySelector('.echo-up-dark-toggle');
+		if (!btn) {
+			return;
+		}
+
+		// 以主页用户 ID 作为存储键的一部分
+		var navItem = document.querySelector('.echo-up-nav__item');
+		var uidMatch = navItem && navItem.href ? navItem.href.match(/[?&]echo_uid=(\d+)|[^\/]*\/(\d+)\/?$/) : null;
+		var uid = uidMatch ? (uidMatch[1] || uidMatch[2]) : '0';
+		var storageKey = 'echoUpDark_' + uid;
+
+		var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+		var saved = null;
+		try {
+			saved = window.localStorage.getItem(storageKey);
+		} catch (e) {
+			saved = null;
+		}
+
+		var enabled = saved === null ? prefersDark : saved === '1';
+
+		function apply(on) {
+			body.classList.toggle('echo-up-dark', on);
+			btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+			var label = btn.querySelector('.echo-up-dark-toggle__label');
+			if (label) {
+				label.textContent = on ? '浅色模式' : '深色模式';
+			}
+		}
+
+		apply(enabled);
+
+		btn.addEventListener('click', function () {
+			enabled = !enabled;
+			apply(enabled);
+			try {
+				window.localStorage.setItem(storageKey, enabled ? '1' : '0');
+			} catch (e) {
+				/* 隐私模式下存储不可用，忽略 */
+			}
+		});
 	}
 })();
