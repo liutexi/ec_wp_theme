@@ -3,7 +3,7 @@ Contributors: LogicTneXus
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: V0.0.2-Preview-a3e0f51
+Stable tag: V0.0.2-Preview-ceb17f4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Tags: blog, two-columns, right-sidebar, responsive-layout, custom-menu, threaded-comments, translation-ready
@@ -88,6 +88,11 @@ Echo 是一款简洁、专注阅读体验的博客 / 社区风格 WordPress 主�
 「Echo 设置 → 我的界面」底部有「自定义 CSS」输入框，也可直接修改 style.css 中的 :root 变量。
 
 == 更新日志 ==
+
+= V0.0.2-Preview-ceb17f4 =
+* 个人主页三栏配色全面回归主题变量：主题色、圆角、阴影、卡片随后台设置与 Miuix 风格联动
+* 修复深色模式：补全全局深色背景（消除白底黑块）、去除占位封面蓝色光晕、同步 color-scheme 使原生控件跟随
+* 封面渐变改为主题色同色系，头像去掉彩虹环与绿点，封面文案中文化
 
 = V0.0.2-Preview-a3e0f51 =
 * 个人主页（/uid/{id}）重构为博客式三栏布局：左侧资料卡与图标导航、中间文章卡片流、右侧搜索/按年归档/分类标签云
