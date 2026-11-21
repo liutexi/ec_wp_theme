@@ -965,7 +965,6 @@ function echo_user_portal_rail( $user ) {
 				<span class="echo-up-avatar__ring" style="--echo-up-avatar-size:<?php echo (int) $size; ?>px">
 					<?php echo get_avatar( $user->ID, $size ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				</span>
-				<span class="echo-up-avatar__badge" aria-hidden="true"></span>
 			</a>
 
 			<h1 class="echo-up-rail__name"><?php echo esc_html( $user->display_name ); ?></h1>
@@ -1045,7 +1044,7 @@ function echo_user_portal_feed( $user ) {
 	<div class="echo-up-feed">
 		<div class="echo-up-cover<?php echo '' !== $cover ? ' echo-up-cover--custom' : ''; ?>"<?php echo $cover_style; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 			<div class="echo-up-cover__content">
-				<p class="echo-up-cover__hello"><?php esc_html_e( 'Welcome to my blog', 'echo' ); ?></p>
+				<p class="echo-up-cover__hello"><?php esc_html_e( '欢迎来到我的博客', 'echo' ); ?></p>
 				<h2 class="echo-up-cover__title"><?php echo esc_html( $user->display_name ); ?></h2>
 				<p class="echo-up-cover__desc"><?php echo esc_html( echo_user_config( 'user_portal_tagline', get_bloginfo( 'description' ) ) ); ?></p>
 			 </div>

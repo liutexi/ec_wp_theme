@@ -6,39 +6,58 @@
  */
 
 /* ============================================================
-   1. 局部深色变量（本页专用，不污染全站）
+   1. 风格变量：全部派生自主题本身，随后台主题色 / Miuix 风格联动
+   ------------------------------------------------------------
+   浅色：直接复用主题现有变量（--echo-primary / --echo-surface /
+   --echo-text / --echo-shadow / --echo-radius 等），不引入平行色板。
+   深色：用 color-mix 从主题色派生同色系暗色，保证换主题色后依然协调。
    ============================================================ */
 body.echo-user-portal {
-    --echo-up-bg: #f4f5fb;
-    --echo-up-surface: #ffffff;
-    --echo-up-surface-2: #fafbff;
-    --echo-up-text: #1f2335;
-    --echo-up-text-2: #6b7090;
-    --echo-up-text-3: #98a0bd;
-    --echo-up-line: #e9ebf5;
-    --echo-up-primary: #2563eb;
-    --echo-up-primary-soft: rgba(37, 99, 235, 0.09);
-    --echo-up-accent: #7c5cff;
-    --echo-up-shadow: 0 6px 24px rgba(36, 44, 94, 0.06);
-    --echo-up-shadow-lg: 0 12px 34px rgba(36, 44, 94, 0.1);
-    --echo-up-radius: 16px;
-    --echo-up-radius-sm: 10px;
-    background: var(--echo-up-bg);
+    --echo-up-surface: var(--echo-surface);
+    --echo-up-surface-2: var(--echo-bg-alt);
+    --echo-up-text: var(--echo-text);
+    --echo-up-text-2: var(--echo-text-secondary);
+    --echo-up-text-3: var(--echo-text-muted);
+    --echo-up-line: var(--echo-border);
+    --echo-up-primary: var(--echo-primary);
+    --echo-up-primary-hover: var(--echo-primary-hover, var(--echo-primary));
+    --echo-up-primary-soft: color-mix(in srgb, var(--echo-primary) 9%, transparent);
+    /* 同色系深一档，仅用于封面渐变与点缀，不引入外来色 */
+    --echo-up-accent: color-mix(in srgb, var(--echo-primary) 72%, #000000);
+    --echo-up-shadow: var(--echo-shadow, 0 1px 3px rgba(0, 0, 0, 0.06));
+    --echo-up-shadow-lg: var(--echo-shadow-lg, 0 10px 30px rgba(0, 0, 0, 0.08));
+    --echo-up-radius: var(--echo-radius, 10px);
+    --echo-up-radius-sm: var(--echo-radius-sm, 6px);
+    color-scheme: light;
+    background: var(--echo-bg-alt);
 }
 
+/* 深色：从主题色派生，保持换色联动（不支持 color-mix 时回退到固定值） */
 body.echo-user-portal.echo-up-dark {
-    --echo-up-bg: #0f1117;
-    --echo-up-surface: #191c25;
-    --echo-up-surface-2: #202431;
-    --echo-up-text: #e8eaf2;
-    --echo-up-text-2: #a9aec4;
-    --echo-up-text-3: #777e99;
-    --echo-up-line: #2a2f3d;
-    --echo-up-primary: #6d94ff;
-    --echo-up-primary-soft: rgba(109, 148, 255, 0.14);
-    --echo-up-accent: #a58bff;
-    --echo-up-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
-    --echo-up-shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.42);
+    color-scheme: dark;
+    background: #0e1015;
+    --echo-up-surface: #181b22;
+    --echo-up-surface-2: #20242d;
+    --echo-up-text: #e8eaf0;
+    --echo-up-text-2: #a9afbe;
+    --echo-up-text-3: #767d8d;
+    --echo-up-line: #2b303a;
+    --echo-up-primary: color-mix(in srgb, var(--echo-primary) 72%, #ffffff);
+    --echo-up-primary-hover: color-mix(in srgb, var(--echo-primary) 55%, #ffffff);
+    --echo-up-primary-soft: color-mix(in srgb, var(--echo-primary) 22%, transparent);
+    --echo-up-accent: color-mix(in srgb, var(--echo-primary) 45%, #000000);
+    --echo-up-shadow: 0 6px 22px rgba(0, 0, 0, 0.3);
+    --echo-up-shadow-lg: 0 12px 34px rgba(0, 0, 0, 0.42);
+}
+
+/* 不支持 color-mix 的旧浏览器：给深色主色一个安全回退 */
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+    body.echo-user-portal.echo-up-dark {
+        --echo-up-primary: #8ab4ff;
+        --echo-up-primary-hover: #a9c7ff;
+        --echo-up-primary-soft: rgba(138, 180, 255, 0.16);
+        --echo-up-accent: #1d4ed8;
+    }
 }
 
 /* 本页隐藏顶部横向 header；搜索浮层也隐藏（功能已移入左/右栏） */
@@ -111,9 +130,10 @@ body.echo-user-portal .echo-main {
     display: inline-block;
     width: var(--echo-up-avatar-size, 96px);
     height: var(--echo-up-avatar-size, 96px);
-    padding: 4px;
+    padding: 3px;
     border-radius: 50%;
-    background: conic-gradient(from 180deg, var(--echo-up-primary), var(--echo-up-accent), #f0a, var(--echo-up-primary));
+    background: var(--echo-up-surface);
+    border: 1px solid var(--echo-up-line);
     box-shadow: var(--echo-up-shadow);
 }
 
@@ -121,21 +141,10 @@ body.echo-user-portal .echo-main {
     display: block;
     width: 100%;
     height: 100%;
-    border: 3px solid var(--echo-up-surface);
+    border: 0;
     border-radius: 50%;
     object-fit: cover;
     background: var(--echo-up-surface-2);
-}
-
-.echo-up-avatar__badge {
-    position: absolute;
-    right: 4px;
-    bottom: 8px;
-    width: 16px;
-    height: 16px;
-    border: 3px solid var(--echo-up-surface);
-    border-radius: 50%;
-    background: #37d67a;
 }
 
 .echo-up-rail__name {
@@ -241,7 +250,7 @@ body.echo-user-portal .echo-main {
     width: 34px;
     height: 18px;
     border-radius: 999px;
-    background: #cfd4e6;
+    background: var(--echo-up-line);
     transition: background 0.18s ease;
 }
 
@@ -281,20 +290,19 @@ body.echo-up-dark .echo-up-dark-toggle__icon .echo-up-icon {
 
 .echo-up-cover {
     position: relative;
-    min-height: 232px;
+    min-height: 210px;
     display: flex;
     align-items: flex-end;
-    padding: 28px 30px;
+    padding: 26px 30px;
     border-radius: var(--echo-up-radius);
-    box-shadow: var(--echo-up-shadow-lg);
+    box-shadow: var(--echo-up-shadow);
     overflow: hidden;
     color: #fff;
-    background-color: #5b6ee1;
+    background-color: var(--echo-up-primary);
     background-image:
-        radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.35), transparent 42%),
-        radial-gradient(circle at 82% 12%, rgba(255, 180, 220, 0.5), transparent 46%),
-        radial-gradient(circle at 70% 88%, rgba(120, 90, 255, 0.55), transparent 50%),
-        linear-gradient(135deg, #6a7ff0 0%, #8a5cf0 48%, #e86fb0 100%);
+        radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.22), transparent 45%),
+        radial-gradient(circle at 88% 85%, rgba(0, 0, 0, 0.12), transparent 50%),
+        linear-gradient(135deg, var(--echo-up-primary) 0%, var(--echo-up-accent) 100%);
     background-size: cover;
     background-position: center;
 }
@@ -366,7 +374,7 @@ body.echo-up-dark .echo-up-dark-toggle__icon .echo-up-icon {
     width: 100%;
     aspect-ratio: 16 / 7;
     overflow: hidden;
-    background: linear-gradient(135deg, #dfe6ff, #f6e0ff);
+    background: var(--echo-up-surface-2);
 }
 
 .echo-up-post__thumb img {
@@ -387,7 +395,8 @@ body.echo-up-dark .echo-up-dark-toggle__icon .echo-up-icon {
     justify-content: center;
     width: 100%;
     height: 100%;
-    color: rgba(37, 99, 235, 0.4);
+    color: var(--echo-up-text-3);
+    opacity: 0.45;
 }
 
 .echo-up-post__thumb-ph .echo-up-icon {
@@ -548,7 +557,7 @@ body.echo-up-dark .echo-up-dark-toggle__icon .echo-up-icon {
 }
 
 .echo-up-search__form button:hover {
-    background: var(--echo-up-accent);
+    background: var(--echo-up-primary-hover);
 }
 
 .echo-up-search__form button .echo-up-icon {
