@@ -3,7 +3,7 @@ Contributors: LogicTneXus
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: V0.0.2-Preview-ceb17f4
+Stable tag: V0.0.2-Preview-9362eb6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Tags: blog, two-columns, right-sidebar, responsive-layout, custom-menu, threaded-comments, translation-ready
@@ -88,6 +88,11 @@ Echo 是一款简洁、专注阅读体验的博客 / 社区风格 WordPress 主�
 「Echo 设置 → 我的界面」底部有「自定义 CSS」输入框，也可直接修改 style.css 中的 :root 变量。
 
 == 更新日志 ==
+
+= V0.0.2-Preview-9362eb6 =
+* 个人主页导航完全可自定义：每位用户可独立设置左侧导航的显示/隐藏、拖拽排序、改名称与链接、切换图标、添加自定义项
+* 三处编辑入口：个人主页左栏「编辑导航」、前台个人中心「主页导航」模块、后台用户资料页（管理员可编辑他人）
+* 配置存于用户 meta，前后台共用清洗校验（nonce/权限/危险链接过滤/去重）；后台可关闭前台编辑权限
 
 = V0.0.2-Preview-ceb17f4 =
 * 个人主页三栏配色全面回归主题变量：主题色、圆角、阴影、卡片随后台设置与 Miuix 风格联动
