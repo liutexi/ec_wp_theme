@@ -45,6 +45,9 @@ require get_template_directory() . '/inc/admin-posts.php';
 // 引入前台发文章（需在 customizer 之前加载，默认值要合并进设置）
 require get_template_directory() . '/inc/front-post.php';
 
+// 引入外链跳转提醒中转页
+require get_template_directory() . '/inc/link-go.php';
+
 // 引入配置备份 / 导出 / 导入
 require get_template_directory() . '/inc/backup.php';
 
@@ -157,6 +160,28 @@ function echo_scripts() {
 			),
 		)
 	);
+
+	// 外链跳转提醒：样式与拦截脚本（全站加载，入口在 JS 内按开关判断是否生效）
+	if ( function_exists( 'echo_lgo_config' ) ) {
+		$lgo_css = get_template_directory() . '/assets/css/link-go.css';
+		$lgo_css_ver = file_exists( $lgo_css ) ? ECHO_VERSION . '.' . filemtime( $lgo_css ) : ECHO_VERSION;
+		wp_enqueue_style( 'echo-lgo', get_template_directory_uri() . '/assets/css/link-go.css', array( 'echo-style' ), $lgo_css_ver );
+
+		$lgo_js = get_template_directory() . '/assets/js/link-go.js';
+		$lgo_js_ver = file_exists( $lgo_js ) ? ECHO_VERSION . '.' . filemtime( $lgo_js ) : ECHO_VERSION;
+		wp_enqueue_script( 'echo-lgo', get_template_directory_uri() . '/assets/js/link-go.js', array(), $lgo_js_ver, true );
+		wp_localize_script(
+			'echo-lgo',
+			'echoLgo',
+			array(
+				'enabled'   => (bool) echo_lgo_config( 'lgo_enabled', true ),
+				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+				'nonce'     => wp_create_nonce( 'echo_lgo' ),
+				'whitelist' => function_exists( 'echo_lgo_whitelist_domains' ) ? echo_lgo_whitelist_domains() : array(),
+				'autoText'  => __( '%d 秒后自动跳转…', 'echo' ),
+			)
+		);
+	}
 
 	// 评论回复脚本
 	if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {

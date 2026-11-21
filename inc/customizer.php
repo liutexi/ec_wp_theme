@@ -44,7 +44,8 @@ function echo_default_settings() {
 		echo_social_defaults(),
 		echo_user_defaults(),
 		echo_links_defaults(),
-		echo_front_post_defaults()
+		echo_front_post_defaults(),
+		echo_lgo_defaults()
 	);
 }
 
@@ -96,6 +97,7 @@ function echo_settings_sections_map() {
 		'echo_section_user'      => __( '用户主页', 'echo' ),
 		'echo_section_categories' => __( '文章分类', 'echo' ),
 		'echo_section_front_post' => __( '前台发文章', 'echo' ),
+		'echo_section_link_go'   => __( '外链中转页', 'echo' ),
 		'echo_section_links'      => __( '友情链接', 'echo' ),
 		'echo_section_permalink' => __( '固定链接', 'echo' ),
 	);
@@ -672,6 +674,32 @@ function echo_settings_init() {
 		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_front_post', $args );
 	}
 
+	// 外链中转页
+	add_settings_section(
+		'echo_section_link_go',
+		__( '外链中转页', 'echo' ),
+		'__return_false',
+		'echo-settings'
+	);
+
+	$echo_lgo_fields = array(
+		array( 'lgo_enabled', __( '启用外链跳转提醒', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '开启后，全站外部链接点击时先显示提醒中转页，再跳转到目标网站。', 'echo' ) ) ),
+		array( 'lgo_base', __( '中转页别名', 'echo' ), 'echo_field_lgo_base', array() ),
+		array( 'lgo_mode', __( '跳转方式', 'echo' ), 'echo_field_select', array( 'options' => array( 'auto' => __( '倒计时自动跳转', 'echo' ), 'manual' => __( '手动点击才跳转', 'echo' ) ) ) ),
+		array( 'lgo_delay', __( '倒计时秒数', 'echo' ), 'echo_field_number', array( 'min' => 1, 'max' => 30, 'step' => 1, 'suffix' => __( '秒', 'echo' ) ) ),
+		array( 'lgo_title', __( '提醒标题', 'echo' ), 'echo_field_text', array() ),
+		array( 'lgo_message', __( '提醒文案', 'echo' ), 'echo_field_text', array() ),
+		array( 'lgo_btn_text', __( '继续按钮文字', 'echo' ), 'echo_field_text', array() ),
+		array( 'lgo_new_tab', __( '目标链接新窗口打开', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'lgo_whitelist', __( '白名单域名', 'echo' ), 'echo_field_textarea', array( 'rows' => 5, 'class' => 'echo-code-textarea', 'desc' => __( '每行一个域名，这些域名的链接不经过中转。支持 *.example.com 匹配子域。', 'echo' ) ) ),
+	);
+
+	foreach ( $echo_lgo_fields as $field ) {
+		$args            = isset( $field[3] ) ? $field[3] : array();
+		$args['label_for'] = $field[0];
+		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_link_go', $args );
+	}
+
 	// 友情链接（数据在独立区块管理，这里放显示参数）
 	add_settings_section(
 		'echo_section_links',
@@ -907,6 +935,7 @@ function echo_sanitize_settings( $input ) {
 
 	// 前台发文章
 	echo_sanitize_front_post_settings( $input, $output );
+	echo_sanitize_link_go_settings( $input, $output );
 
 	return $output;
 }
