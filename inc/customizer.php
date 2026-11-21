@@ -524,6 +524,7 @@ function echo_settings_init() {
 		array( 'user_portal_posts', __( '主页文章数量', 'echo' ), 'echo_field_number', array( 'min' => 0, 'max' => 50, 'step' => 1, 'desc' => __( '中间卡片流展示的文章数量，填 0 不显示文章。', 'echo' ) ) ),
 		array( 'user_portal_cover', __( '封面图地址', 'echo' ), 'echo_field_text', array( 'desc' => __( '主页顶部横幅的自定义图片 URL；留空使用主题默认渐变封面。', 'echo' ) ) ),
 		array( 'user_portal_dark', __( '显示深色模式开关', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '在左侧栏显示深色模式切换按钮（仅本页生效，自动记忆）。', 'echo' ) ) ),
+		array( 'user_nav_edit', __( '允许前台编辑导航', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '开启后，用户可在个人主页与个人中心自定义左侧导航（显隐/排序/改名换链接/自定义项）；后台用户资料页始终可编辑。', 'echo' ) ) ),
 		array( 'user_custom_css', __( '自定义 CSS', 'echo' ), 'echo_field_textarea', array( 'rows' => 5, 'class' => 'echo-code-textarea', 'desc' => __( '仅填写 CSS，会追加到前台样式末尾。不要写 <style> 标签。', 'echo' ) ) ),
 	);
 

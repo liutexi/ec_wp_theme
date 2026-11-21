@@ -144,6 +144,18 @@ function echo_scripts() {
 		}
 	}
 
+	// 个人主页导航编辑器样式与脚本（体积很小，全站加载以确保个人主页/个人中心任意访问方式生效）
+	$nav_css = get_template_directory() . '/assets/css/nav-editor.css';
+	if ( file_exists( $nav_css ) ) {
+		$nav_css_ver = ECHO_VERSION . '.' . filemtime( $nav_css );
+		wp_enqueue_style( 'echo-nav-editor', get_template_directory_uri() . '/assets/css/nav-editor.css', array( 'echo-style' ), $nav_css_ver );
+	}
+	$nav_js = get_template_directory() . '/assets/js/nav-editor.js';
+	if ( file_exists( $nav_js ) ) {
+		$nav_js_ver = ECHO_VERSION . '.' . filemtime( $nav_js );
+		wp_enqueue_script( 'echo-nav-editor', get_template_directory_uri() . '/assets/js/nav-editor.js', array(), $nav_js_ver, true );
+	}
+
 	// 交互脚本
 	$main_path = get_template_directory() . '/assets/js/main.js';
 	$main_ver  = file_exists( $main_path ) ? ECHO_VERSION . '.' . filemtime( $main_path ) : ECHO_VERSION;

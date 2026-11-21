@@ -43,6 +43,7 @@ function echo_user_defaults() {
 		'user_portal_posts'    => 12,
 		'user_portal_cover'    => '',
 		'user_portal_dark'     => true,
+		'user_nav_edit'        => true,
 	);
 }
 
@@ -930,6 +931,409 @@ function echo_user_icon( $name ) {
 	echo '<svg class="echo-up-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' . $paths[ $name ] . '</svg>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 }
 
+/* ============================================================
+ * 个人主页导航（每位用户独立配置，存 user meta）
+ * ============================================================ */
+
+/**
+ * 内置导航项注册表。
+ *
+ * 每个内置项提供动态解析的 URL（依赖当前用户/页面），用户可覆盖名称、
+ * 图标、显隐与顺序；URL 也可被用户自定义覆盖（custom_url）。
+ *
+ * @param WP_User $user 用户对象。
+ * @return array key => array( label, icon, url, cap )
+ */
+function echo_portal_nav_builtins( $user ) {
+	$my_url = function_exists( 'echo_my_page_url' ) ? echo_my_page_url() : '';
+	$links_url = '';
+	if ( function_exists( 'echo_links_config' ) ) {
+		$links_page = get_page_by_path( sanitize_title( echo_links_config( 'links_slug', 'links' ) ) );
+		$links_url  = ( $links_page && 'publish' === $links_page->post_status ) ? get_permalink( $links_page ) : home_url( '/links/' );
+	}
+
+	$items = array(
+		'home'    => array(
+			'label' => __( '主页', 'echo' ),
+			'icon'  => 'home',
+			'url'   => echo_user_url( $user->ID ),
+			'cap'   => '',
+		),
+		'posts'   => array(
+			'label' => __( '文章', 'echo' ),
+			'icon'  => 'archive',
+			'url'   => '#echo-up-posts',
+			'cap'   => '',
+		),
+		'search'  => array(
+			'label' => __( '搜索', 'echo' ),
+			'icon'  => 'search',
+			'url'   => '#echo-up-search',
+			'cap'   => '',
+		),
+		'write'   => array(
+			'label' => __( '写文章', 'echo' ),
+			'icon'  => 'pen',
+			'url'   => function_exists( 'echo_front_post_url' ) ? echo_front_post_url() : home_url( '/write/' ),
+			'cap'   => 'write', // 特殊：仅本人且有写文章权限时显示
+		),
+		'profile' => array(
+			'label' => __( '个人中心', 'echo' ),
+			'icon'  => 'user',
+			'url'   => $my_url,
+			'cap'   => 'owner', // 特殊：仅本人显示
+		),
+		'login'   => array(
+			'label' => __( '登录', 'echo' ),
+			'icon'  => 'login',
+			'url'   => function_exists( 'echo_auth_url' ) ? echo_auth_url( 'login' ) : wp_login_url(),
+			'cap'   => 'guest', // 特殊：仅访客显示
+		),
+	);
+
+	if ( $links_url ) {
+		$items['links'] = array(
+			'label' => __( '链接', 'echo' ),
+			'icon'  => 'link',
+			'url'   => $links_url,
+			'cap'   => '',
+		);
+	}
+
+	return $items;
+}
+
+/**
+ * 默认导航配置（按顺序）。
+ *
+ * @param WP_User $user 用户对象。
+ * @return array 导航项列表。
+ */
+function echo_portal_nav_defaults( $user ) {
+	$defaults = array(
+		array( 'key' => 'home', 'enabled' => true ),
+		array( 'key' => 'posts', 'enabled' => true ),
+		array( 'key' => 'search', 'enabled' => true ),
+		array( 'key' => 'links', 'enabled' => true ),
+		array( 'key' => 'write', 'enabled' => true ),
+		array( 'key' => 'profile', 'enabled' => true ),
+		array( 'key' => 'login', 'enabled' => true ),
+	);
+	$out = array();
+	foreach ( $defaults as $i => $row ) {
+		$out[] = array(
+			'id'      => $row['key'],
+			'type'    => 'builtin',
+			'key'     => $row['key'],
+			'label'   => '',
+			'icon'    => '',
+			'url'     => '',
+			'newtab'  => false,
+			'enabled' => true,
+			'order'   => $i,
+		);
+	}
+	return $out;
+}
+
+/**
+ * 读取某用户的导航配置。
+ *
+ * @param int $uid 用户 ID。
+ * @return array 导航项列表。
+ */
+function echo_portal_nav_get( $uid ) {
+	$raw = get_user_meta( absint( $uid ), 'echo_portal_nav', true );
+	if ( ! is_array( $raw ) || empty( $raw ) ) {
+		return echo_portal_nav_defaults( get_userdata( $uid ) ? get_userdata( $uid ) : wp_get_current_user() );
+	}
+	return echo_portal_nav_sanitize( $raw );
+}
+
+/**
+ * 清洗导航配置（前后台保存、读取共用）。
+ *
+ * @param array $items 原始导航项列表。
+ * @return array 清洗后的列表。
+ */
+function echo_portal_nav_sanitize( $items ) {
+	if ( ! is_array( $items ) ) {
+		return array();
+	}
+	$allowed_icons = array( 'home', 'archive', 'search', 'link', 'pen', 'user', 'login', 'moon', 'sun', 'calendar', 'clock', 'comment', 'tag', 'bookmark', 'mail', 'globe' );
+	$out     = array();
+	$seen    = array();
+	$max     = 30; // 最多 30 项，防止刷屏
+	$order   = 0;
+
+	foreach ( $items as $item ) {
+		if ( count( $out ) >= $max || ! is_array( $item ) ) {
+			continue;
+		}
+		$raw_type = isset( $item['type'] ) && is_scalar( $item['type'] ) ? $item['type'] : '';
+		$type     = 'custom' === sanitize_key( $raw_type ) ? 'custom' : 'builtin';
+		$raw_key  = isset( $item['key'] ) && is_scalar( $item['key'] ) ? $item['key'] : '';
+		$key      = sanitize_key( $raw_key );
+		$raw_label = isset( $item['label'] ) && is_scalar( $item['label'] ) ? $item['label'] : '';
+		$raw_url   = isset( $item['url'] ) && is_scalar( $item['url'] ) ? $item['url'] : '';
+		$label     = sanitize_text_field( wp_unslash( $raw_label ) );
+		$url       = esc_url_raw( wp_unslash( $raw_url ) );
+
+		if ( 'custom' === $type ) {
+			if ( '' === $label || '' === $url ) {
+				continue;
+			}
+			$id  = 'custom_' . substr( md5( $url . $label . $order ), 0, 8 );
+			$key = 'custom';
+		} else {
+			// 内置项：key 必须在注册表内（放宽到已知全集，渲染时再按上下文过滤）
+			$known = array( 'home', 'posts', 'search', 'links', 'write', 'profile', 'login' );
+			if ( ! in_array( $key, $known, true ) || isset( $seen[ $key ] ) ) {
+				continue;
+			}
+			$seen[ $key ] = true;
+			$id            = $key;
+		}
+
+		$raw_icon = isset( $item['icon'] ) && is_scalar( $item['icon'] ) ? $item['icon'] : '';
+		$icon     = sanitize_key( $raw_icon );
+		if ( ! in_array( $icon, $allowed_icons, true ) ) {
+			$icon = '';
+		}
+
+		// 标签长度限制（兼容未启用 mbstring 的环境）
+		$label = function_exists( 'mb_substr' ) ? mb_substr( $label, 0, 24 ) : substr( $label, 0, 72 );
+
+		$out[] = array(
+			'id'      => $id,
+			'type'    => $type,
+			'key'     => $key,
+			'label'   => $label,
+			'icon'    => $icon,
+			'url'     => $url,
+			'newtab'  => ! empty( $item['newtab'] ) ? true : false,
+			'enabled' => isset( $item['enabled'] ) ? (bool) $item['enabled'] : true,
+			'order'   => $order++,
+		);
+	}
+	return $out;
+}
+
+/**
+ * 渲染个人主页左侧导航（配置驱动）。
+ *
+ * @param WP_User $user 主页用户。
+ * @return void
+ */
+function echo_portal_nav_render( $user ) {
+	$items    = echo_portal_nav_get( $user->ID );
+	$builtins = echo_portal_nav_builtins( $user );
+	$is_me    = get_current_user_id() === (int) $user->ID;
+	$logged   = is_user_logged_in();
+
+	$can_write = $is_me && function_exists( 'echo_front_post_can_write' ) && echo_front_post_can_write();
+
+	echo '<nav class="echo-up-nav" aria-label="' . esc_attr__( '个人主页导航', 'echo' ) . '">';
+
+	foreach ( $items as $item ) {
+		if ( empty( $item['enabled'] ) ) {
+			continue;
+		}
+
+		$label = $item['label'];
+		$icon  = $item['icon'];
+		$url   = $item['url'];
+		$newtab = ! empty( $item['newtab'] );
+
+		if ( 'builtin' === $item['type'] ) {
+			$key = $item['key'];
+			if ( ! isset( $builtins[ $key ] ) ) {
+				continue;
+			}
+			$def = $builtins[ $key ];
+			// 上下文可见性：写文章/个人中心仅本人、登录仅访客
+			if ( 'write' === $key && ! $can_write ) {
+				continue;
+			}
+			if ( 'profile' === $key && ! $is_me ) {
+				continue;
+			}
+			if ( 'login' === $key && $logged ) {
+				continue;
+			}
+			if ( 'links' === $key && ! $def['url'] ) {
+				continue;
+			}
+			$label = '' !== $label ? $label : $def['label'];
+			$icon  = '' !== $icon ? $icon : $def['icon'];
+			$url   = '' !== $url ? $url : $def['url'];
+		}
+
+		if ( '' === $url ) {
+			continue;
+		}
+		$active = ( 'home' === $item['key'] && 'builtin' === $item['type'] ) ? ' is-active' : '';
+		?>
+		<a class="echo-up-nav__item<?php echo esc_attr( $active ); ?>" href="<?php echo esc_url( $url ); ?>"<?php echo $newtab ? ' target="_blank" rel="noopener noreferrer nofollow"' : ''; ?>>
+			<?php if ( $icon && function_exists( 'echo_user_icon' ) ) { echo_user_icon( $icon ); } ?>
+			<span><?php echo esc_html( $label ); ?></span>
+		</a>
+		<?php
+	}
+
+	echo '</nav>';
+}
+
+/**
+ * 保存导航配置（前台个人中心/个人主页共用）。
+ *
+ * @param int    $uid     目标用户 ID。
+ * @param string $nonce_action nonce 动作名。
+ * @return true|WP_Error 成功返回 true，失败返回错误对象。
+ */
+function echo_portal_nav_save( $uid, $nonce_action = 'echo_portal_nav' ) {
+	$uid = absint( $uid );
+	if ( ! $uid || ! get_userdata( $uid ) ) {
+		return new WP_Error( 'no_user', __( '用户不存在。', 'echo' ) );
+	}
+	// 权限：本人或可编辑该用户者
+	if ( get_current_user_id() !== $uid && ! current_user_can( 'edit_user', $uid ) ) {
+		return new WP_Error( 'no_cap', __( '没有权限修改该用户的导航。', 'echo' ) );
+	}
+	if ( ! isset( $_POST['echo_portal_nav_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['echo_portal_nav_nonce'] ) ), $nonce_action ) ) {
+		return new WP_Error( 'nonce', __( '页面已过期，请刷新后重试。', 'echo' ) );
+	}
+	if ( ! isset( $_POST['echo_portal_nav_items'] ) || ! is_array( $_POST['echo_portal_nav_items'] ) ) {
+		return new WP_Error( 'no_items', __( '导航数据格式不正确。', 'echo' ) );
+	}
+
+	$raw   = wp_unslash( $_POST['echo_portal_nav_items'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	$items = echo_portal_nav_sanitize( $raw );
+	update_user_meta( $uid, 'echo_portal_nav', $items );
+	return true;
+}
+
+/**
+ * 前台导航保存处理（PRG），挂在个人主页渲染前。
+ *
+ * @param int $uid 当前主页用户 ID。
+ * @return void
+ */
+function echo_user_handle_nav_update( $uid ) {
+	if ( empty( $_POST['echo_portal_nav_target'] ) ) {
+		return;
+	}
+	$target = absint( wp_unslash( $_POST['echo_portal_nav_target'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	$result = echo_portal_nav_save( $target, 'echo_portal_nav' );
+	$base   = echo_user_url( $uid );
+
+	if ( is_wp_error( $result ) ) {
+		wp_safe_redirect( add_query_arg( array( 'edit_nav' => '1', 'nav_error' => rawurlencode( $result->get_error_message() ) ), $base ) );
+	} else {
+		wp_safe_redirect( add_query_arg( array( 'edit_nav' => '1', 'nav_saved' => '1' ), $base ) );
+	}
+	exit;
+}
+
+/**
+ * 渲染导航编辑器表单（前台个人中心/个人主页、后台用户资料页共用）。
+ *
+ * @param int    $uid     目标用户 ID。
+ * @param string $context 上下文：'front' 或 'admin'，仅用于样式与说明文案。
+ * @param string $from    前台来源标记：'my' 时提交到个人中心处理器。
+ * @return void
+ */
+function echo_portal_nav_editor( $uid, $context = 'front', $from = '' ) {
+	$uid   = absint( $uid );
+	$items = echo_portal_nav_get( $uid );
+	$builtins = echo_portal_nav_builtins( get_userdata( $uid ) ? get_userdata( $uid ) : wp_get_current_user() );
+
+	$icons = array(
+		'home' => __( '主页', 'echo' ), 'archive' => __( '归档', 'echo' ), 'search' => __( '搜索', 'echo' ),
+		'link' => __( '链接', 'echo' ), 'pen' => __( '写作', 'echo' ), 'user' => __( '用户', 'echo' ),
+		'login' => __( '登录', 'echo' ), 'moon' => __( '月亮', 'echo' ), 'sun' => __( '太阳', 'echo' ),
+		'calendar' => __( '日历', 'echo' ), 'clock' => __( '时钟', 'echo' ), 'comment' => __( '评论', 'echo' ),
+		'tag' => __( '标签', 'echo' ), 'bookmark' => __( '书签', 'echo' ), 'mail' => __( '邮件', 'echo' ), 'globe' => __( '地球', 'echo' ),
+	);
+	?>
+	<div class="echo-nav-edit echo-nav-edit--<?php echo esc_attr( $context ); ?>" data-echo-nav-editor>
+		<?php if ( 'front' === $context ) : ?>
+			<div class="echo-nav-edit__head">
+				<h3 class="echo-nav-edit__title"><?php esc_html_e( '编辑主页导航', 'echo' ); ?></h3>
+				<p class="echo-nav-edit__desc"><?php esc_html_e( '自定义左侧导航：开关显隐、拖动排序、改名称与链接，或添加自己的链接。', 'echo' ); ?></p>
+			</div>
+		<?php endif; ?>
+
+		<?php if ( 'admin' !== $context ) : ?>
+		<form class="echo-nav-edit__form" method="post" data-echo-nav-form>
+		<?php endif; ?>
+			<?php wp_nonce_field( 'echo_portal_nav', 'echo_portal_nav_nonce' ); ?>
+			<input type="hidden" name="echo_portal_nav_target" value="<?php echo (int) $uid; ?>" />
+			<?php if ( 'my' === $from ) : ?>
+				<input type="hidden" name="echo_portal_nav_from" value="my" />
+			<?php endif; ?>
+
+			<ul class="echo-nav-edit__list" data-echo-nav-list>
+				<?php foreach ( $items as $i => $item ) : ?>
+					<?php
+					$is_custom = 'custom' === $item['type'];
+					$key       = $item['key'];
+					$def_label = ( ! $is_custom && isset( $builtins[ $key ] ) ) ? $builtins[ $key ]['label'] : '';
+					$def_url   = ( ! $is_custom && isset( $builtins[ $key ] ) ) ? $builtins[ $key ]['url'] : '';
+					$label_val = '' !== $item['label'] ? $item['label'] : $def_label;
+					$url_val   = '' !== $item['url'] ? $item['url'] : $def_url;
+					$icon_val  = $item['icon'];
+					?>
+					<li class="echo-nav-edit__row<?php echo $item['enabled'] ? '' : ' is-disabled'; ?>" data-echo-nav-row>
+						<span class="echo-nav-edit__grip" title="<?php esc_attr_e( '拖动排序', 'echo' ); ?>" aria-hidden="true">⋮⋮</span>
+
+						<label class="echo-nav-edit__on" title="<?php esc_attr_e( '显示/隐藏', 'echo' ); ?>">
+							<input type="hidden" name="echo_portal_nav_items[<?php echo $i; ?>][enabled]" value="0" />
+							<input type="checkbox" name="echo_portal_nav_items[<?php echo $i; ?>][enabled]" value="1" <?php checked( $item['enabled'] ); ?> />
+						</label>
+
+						<span class="echo-nav-edit__ico">
+							<?php if ( $icon_val && function_exists( 'echo_user_icon' ) ) { echo_user_icon( $icon_val ); } ?>
+						</span>
+
+						<div class="echo-nav-edit__fields">
+							<input class="echo-nav-edit__label" type="text" name="echo_portal_nav_items[<?php echo $i; ?>][label]" value="<?php echo esc_attr( $label_val ); ?>" placeholder="<?php esc_attr_e( '名称', 'echo' ); ?>" maxlength="24" />
+							<input class="echo-nav-edit__url" type="text" name="echo_portal_nav_items[<?php echo $i; ?>][url]" value="<?php echo esc_attr( $url_val ); ?>" placeholder="<?php echo $is_custom ? esc_attr__( '链接地址', 'echo' ) : esc_attr__( '留空使用默认地址', 'echo' ); ?>" />
+						</div>
+
+						<select class="echo-nav-edit__icon-select" name="echo_portal_nav_items[<?php echo $i; ?>][icon]" aria-label="<?php esc_attr_e( '图标', 'echo' ); ?>">
+							<option value=""><?php esc_html_e( '默认图标', 'echo' ); ?></option>
+							<?php foreach ( $icons as $ico => $ico_label ) : ?>
+								<option value="<?php echo esc_attr( $ico ); ?>" <?php selected( $icon_val, $ico ); ?>><?php echo esc_html( $ico_label ); ?></option>
+							<?php endforeach; ?>
+						</select>
+
+						<label class="echo-nav-edit__newtab" title="<?php esc_attr_e( '新窗口打开', 'echo' ); ?>">
+							<input type="hidden" name="echo_portal_nav_items[<?php echo $i; ?>][newtab]" value="0" />
+							<input type="checkbox" name="echo_portal_nav_items[<?php echo $i; ?>][newtab]" value="1" <?php checked( $item['newtab'] ); ?> /> <?php esc_html_e( '新窗口', 'echo' ); ?>
+						</label>
+
+						<button type="button" class="echo-nav-edit__del" data-echo-nav-del title="<?php esc_attr_e( '删除', 'echo' ); ?>" aria-label="<?php esc_attr_e( '删除该项', 'echo' ); ?>">×</button>
+
+						<input type="hidden" name="echo_portal_nav_items[<?php echo $i; ?>][type]" value="<?php echo esc_attr( $item['type'] ); ?>" />
+						<input type="hidden" name="echo_portal_nav_items[<?php echo $i; ?>][key]" value="<?php echo esc_attr( $item['key'] ); ?>" />
+					</li>
+				<?php endforeach; ?>
+			</ul>
+
+			<div class="echo-nav-edit__toolbar">
+				<button type="button" class="echo-nav-edit__add" data-echo-nav-add>+ <?php esc_html_e( '添加链接', 'echo' ); ?></button>
+				<?php if ( 'admin' !== $context ) : ?>
+					<button type="submit" class="echo-nav-edit__save"><?php esc_html_e( '保存导航', 'echo' ); ?></button>
+				<?php endif; ?>
+			</div>
+		<?php if ( 'admin' !== $context ) : ?>
+		</form>
+		<?php endif; ?>
+	</div>
+	<?php
+}
+
 /**
  * 估算文章阅读时长（分钟），中文按约 400 字/分钟。
  *
@@ -970,42 +1374,13 @@ function echo_user_portal_rail( $user ) {
 			<h1 class="echo-up-rail__name"><?php echo esc_html( $user->display_name ); ?></h1>
 			<p class="echo-up-rail__tagline"><?php echo esc_html( '' !== $tagline ? $tagline : ( $bio ? $bio : get_bloginfo( 'description' ) ) ); ?></p>
 
-			<nav class="echo-up-nav" aria-label="<?php esc_attr_e( '个人主页导航', 'echo' ); ?>">
-				<a class="echo-up-nav__item is-active" href="<?php echo esc_url( echo_user_url( $user->ID ) ); ?>">
-					<?php echo_user_icon( 'home' ); ?><span><?php esc_html_e( '主页', 'echo' ); ?></span>
-				</a>
-				<a class="echo-up-nav__item" href="#echo-up-posts">
-					<?php echo_user_icon( 'archive' ); ?><span><?php esc_html_e( '文章', 'echo' ); ?></span>
-				</a>
-				<a class="echo-up-nav__item" href="#echo-up-search">
-					<?php echo_user_icon( 'search' ); ?><span><?php esc_html_e( '搜索', 'echo' ); ?></span>
-				</a>
-				<?php if ( function_exists( 'echo_links_config' ) ) : ?>
-					<?php
-					$links_page = get_page_by_path( sanitize_title( echo_links_config( 'links_slug', 'links' ) ) );
-					$links_url  = ( $links_page && 'publish' === $links_page->post_status ) ? get_permalink( $links_page ) : home_url( '/links/' );
-					?>
-					<a class="echo-up-nav__item" href="<?php echo esc_url( $links_url ); ?>">
-						<?php echo_user_icon( 'link' ); ?><span><?php esc_html_e( '链接', 'echo' ); ?></span>
-					</a>
-				<?php endif; ?>
+			<?php echo_portal_nav_render( $user ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 
-				<?php if ( $is_me && function_exists( 'echo_front_post_can_write' ) && echo_front_post_can_write() ) : ?>
-					<a class="echo-up-nav__item" href="<?php echo esc_url( function_exists( 'echo_front_post_url' ) ? echo_front_post_url() : home_url( '/write/' ) ); ?>">
-						<?php echo_user_icon( 'pen' ); ?><span><?php esc_html_e( '写文章', 'echo' ); ?></span>
-					</a>
-				<?php endif; ?>
-
-				<?php if ( $is_me && $my_url ) : ?>
-					<a class="echo-up-nav__item" href="<?php echo esc_url( $my_url ); ?>">
-						<?php echo_user_icon( 'user' ); ?><span><?php esc_html_e( '个人中心', 'echo' ); ?></span>
-					</a>
-				<?php elseif ( ! $logged && function_exists( 'echo_auth_url' ) ) : ?>
-					<a class="echo-up-nav__item" href="<?php echo esc_url( echo_auth_url( 'login' ) ); ?>">
-						<?php echo_user_icon( 'login' ); ?><span><?php esc_html_e( '登录', 'echo' ); ?></span>
-					</a>
-				<?php endif; ?>
-			</nav>
+			<?php if ( $is_me && echo_user_config( 'user_nav_edit', true ) ) : ?>
+				<a class="echo-up-nav__edit" href="<?php echo esc_url( add_query_arg( 'edit_nav', '1', echo_user_url( $user->ID ) ) ); ?>">
+					<?php echo_user_icon( 'pen' ); ?><span><?php esc_html_e( '编辑导航', 'echo' ); ?></span>
+				</a>
+			<?php endif; ?>
 
 			<?php if ( $site ) : ?>
 				<a class="echo-up-rail__site" href="<?php echo esc_url( $site ); ?>" target="_blank" rel="noopener noreferrer nofollow">
@@ -1231,11 +1606,32 @@ function echo_user_portal_aside( $user ) {
  * @return void
  */
 function echo_user_portal_render( $user ) {
+	$is_me    = get_current_user_id() === (int) $user->ID;
+	$edit_nav = $is_me && echo_user_config( 'user_nav_edit', true ) && isset( $_GET['edit_nav'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	?>
 	<div class="echo-up">
 		<?php echo_user_portal_rail( $user ); ?>
 		<main class="echo-up-main">
-			<?php echo_user_portal_feed( $user ); ?>
+			<?php
+			if ( $edit_nav ) :
+				$saved = isset( $_GET['nav_saved'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$error = isset( $_GET['nav_error'] ) ? sanitize_text_field( wp_unslash( $_GET['nav_error'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				?>
+				<div class="echo-nav-panel">
+					<a class="echo-nav-panel__back" href="<?php echo esc_url( echo_user_url( $user->ID ) ); ?>">← <?php esc_html_e( '返回主页', 'echo' ); ?></a>
+					<?php if ( $saved ) : ?>
+						<p class="echo-nav-panel__notice"><?php esc_html_e( '导航已保存。', 'echo' ); ?></p>
+					<?php endif; ?>
+					<?php if ( '' !== $error ) : ?>
+						<p class="echo-nav-panel__error"><?php echo esc_html( $error ); ?></p>
+					<?php endif; ?>
+					<?php echo_portal_nav_editor( $user->ID, 'front' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				</div>
+				<?php
+			else :
+				echo_user_portal_feed( $user );
+			endif;
+			?>
 		</main>
 		<?php echo_user_portal_aside( $user ); ?>
 	</div>
@@ -1287,6 +1683,7 @@ function echo_user_render( $uid ) {
 function echo_user_render_page() {
 	$uid = echo_user_current_uid();
 	echo_user_handle_update( $uid );
+	echo_user_handle_nav_update( $uid );
 
 	$user = get_userdata( $uid );
 	if ( ! $user || ! echo_user_config( 'user_enabled', true ) ) {
@@ -1409,3 +1806,74 @@ function echo_user_css() {
 	$custom = trim( (string) echo_user_config( 'user_custom_css', '' ) );
 	return '' !== $custom ? $custom : '';
 }
+
+/* ============================================================
+ * 后台用户资料页：个人主页导航编辑器
+ * ============================================================ */
+
+/**
+ * 后台「个人资料」页渲染导航编辑器。
+ *
+ * @param WP_User $user 正在编辑的用户。
+ * @return void
+ */
+function echo_portal_nav_admin_field( $user ) {
+	if ( ! $user || ! isset( $user->ID ) ) {
+		return;
+	}
+	$can = current_user_can( 'edit_user', $user->ID );
+	if ( ! $can ) {
+		return;
+	}
+	?>
+	<h2 class="echo-nav-admin-title"><?php esc_html_e( '个人主页导航', 'echo' ); ?></h2>
+	<p class="echo-nav-admin-desc"><?php esc_html_e( '设置该用户 /uid 主页左侧导航栏：显隐、排序、改名换链接、添加自定义项。修改后点击底部「更新个人资料」保存。', 'echo' ); ?></p>
+	<?php
+	echo_portal_nav_editor( $user->ID, 'admin' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+}
+add_action( 'show_user_profile', 'echo_portal_nav_admin_field' );
+add_action( 'edit_user_profile', 'echo_portal_nav_admin_field' );
+
+/**
+ * 后台用户资料页加载导航编辑器样式与脚本。
+ *
+ * @param string $hook 当前管理页 hook_suffix。
+ * @return void
+ */
+function echo_portal_nav_admin_enqueue( $hook ) {
+	if ( 'profile.php' !== $hook && 'user-edit.php' !== $hook ) {
+		return;
+	}
+	$css = get_template_directory() . '/assets/css/nav-editor.css';
+	if ( file_exists( $css ) ) {
+		wp_enqueue_style( 'echo-nav-editor', get_template_directory_uri() . '/assets/css/nav-editor.css', array(), ECHO_VERSION . '.' . filemtime( $css ) );
+	}
+	$js = get_template_directory() . '/assets/js/nav-editor.js';
+	if ( file_exists( $js ) ) {
+		wp_enqueue_script( 'echo-nav-editor', get_template_directory_uri() . '/assets/js/nav-editor.js', array(), ECHO_VERSION . '.' . filemtime( $js ), true );
+	}
+}
+add_action( 'admin_enqueue_scripts', 'echo_portal_nav_admin_enqueue' );
+
+/**
+ * 后台保存用户资料时保存导航配置。
+ *
+ * @param int $user_id 用户 ID。
+ * @return void
+ */
+function echo_portal_nav_admin_save( $user_id ) {
+	if ( empty( $_POST['echo_portal_nav_nonce'] ) || empty( $_POST['echo_portal_nav_items'] ) ) {
+		return;
+	}
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['echo_portal_nav_nonce'] ) ), 'echo_portal_nav' ) ) {
+		return;
+	}
+	if ( ! current_user_can( 'edit_user', $user_id ) ) {
+		return;
+	}
+	$raw   = wp_unslash( $_POST['echo_portal_nav_items'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	$items = echo_portal_nav_sanitize( $raw );
+	update_user_meta( $user_id, 'echo_portal_nav', $items );
+}
+add_action( 'personal_options_update', 'echo_portal_nav_admin_save' );
+add_action( 'edit_user_profile_update', 'echo_portal_nav_admin_save' );

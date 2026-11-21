@@ -78,6 +78,11 @@ function echo_my_modules() {
 			'desc'  => __( '内置入口（写文章 / 编辑资料 / 后台 / 退出）与自定义链接', 'echo' ),
 			'order' => 30,
 		),
+		'portal_nav'      => array(
+			'label' => __( '主页导航', 'echo' ),
+			'desc'  => __( '自定义个人主页左侧导航：显隐、排序、改名换链接、添加自定义项', 'echo' ),
+			'order' => 35,
+		),
 		'recent_posts'    => array(
 			'label' => __( '最近文章', 'echo' ),
 			'desc'  => __( '当前用户最新发布的文章', 'echo' ),
@@ -198,6 +203,36 @@ function echo_my_maybe_redirect_guest() {
 	exit;
 }
 add_action( 'template_redirect', 'echo_my_maybe_redirect_guest' );
+
+/**
+ * 前台导航保存处理（个人中心 /my 提交）。
+ *
+ * 个人主页 /uid 的保存由 echo_user_handle_nav_update 处理；此处仅处理
+ * 从「我的」个人中心提交的表单，避免两处重复。用 echo_portal_nav_from
+ * 标记来源，渲染时无需它。
+ *
+ * @return void
+ */
+function echo_my_handle_nav_update() {
+	if ( empty( $_POST['echo_portal_nav_target'] ) ) {
+		return;
+	}
+	// 个人主页场景由 user-page 处理，此处跳过（其表单不带 from=my）
+	if ( empty( $_POST['echo_portal_nav_from'] ) || 'my' !== sanitize_key( wp_unslash( $_POST['echo_portal_nav_from'] ) ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		return;
+	}
+	$target = absint( wp_unslash( $_POST['echo_portal_nav_target'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	$result = echo_portal_nav_save( $target, 'echo_portal_nav' );
+	$base   = echo_my_page_url();
+
+	if ( is_wp_error( $result ) ) {
+		wp_safe_redirect( add_query_arg( array( 'nav_error' => rawurlencode( $result->get_error_message() ) ), $base ) );
+	} else {
+		wp_safe_redirect( add_query_arg( array( 'nav_saved' => '1' ), $base ) );
+	}
+	exit;
+}
+add_action( 'template_redirect', 'echo_my_handle_nav_update', 5 );
 
 /**
  * 个人中心主渲染入口
@@ -496,6 +531,32 @@ function echo_my_module_quicklinks() {
 				<a class="echo-my-quicklink" href="<?php echo esc_url( $link['url'] ); ?>"><?php echo esc_html( $link['label'] ); ?></a>
 			<?php endforeach; ?>
 		</div>
+	</section>
+	<?php
+}
+
+/**
+ * 模块：主页导航编辑
+ *
+ * @return void
+ */
+function echo_my_module_portal_nav() {
+	if ( ! function_exists( 'echo_portal_nav_editor' ) || ! echo_user_config( 'user_nav_edit', true ) ) {
+		return;
+	}
+	$uid    = get_current_user_id();
+	$saved  = isset( $_GET['nav_saved'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$error  = isset( $_GET['nav_error'] ) ? sanitize_text_field( wp_unslash( $_GET['nav_error'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	?>
+	<section class="echo-my-card echo-my-portalnav">
+		<h2 class="echo-my-card__title"><?php esc_html_e( '主页导航', 'echo' ); ?></h2>
+		<?php if ( $saved ) : ?>
+			<p class="echo-my-notice echo-my-notice--ok"><?php esc_html_e( '导航已保存。', 'echo' ); ?></p>
+		<?php endif; ?>
+		<?php if ( '' !== $error ) : ?>
+			<p class="echo-my-notice echo-my-notice--err"><?php echo esc_html( $error ); ?></p>
+		<?php endif; ?>
+		<?php echo_portal_nav_editor( $uid, 'front', 'my' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 	</section>
 	<?php
 }
