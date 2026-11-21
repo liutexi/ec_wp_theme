@@ -1,0 +1,266 @@
+/* ============================================================
+ * Echo 阅读互动：互动条 / 卡片阅读量 / 热门排行 / 收藏列表
+ * 全部复用主题变量，深浅色自动适配，作用域独立不污染全站。
+ * ============================================================ */
+
+/* ---------- 图标基础 ---------- */
+.echo-eng-icon {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    vertical-align: -0.15em;
+    flex: 0 0 auto;
+}
+
+/* ---------- 卡片 meta 里的阅读量 ---------- */
+.echo-card__meta .echo-eng-views {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--echo-text-muted);
+}
+.echo-card__meta .echo-eng-icon {
+    width: 15px;
+    height: 15px;
+}
+
+/* ---------- 文章页互动条 ---------- */
+.echo-eng-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 28px;
+    padding: 18px 22px;
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius);
+    background: var(--echo-bg-alt);
+}
+
+.echo-eng-bar__stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--echo-text-secondary);
+    font-size: 0.95rem;
+}
+.echo-eng-bar__stat .echo-eng-icon {
+    color: var(--echo-primary);
+}
+.echo-eng-bar__stat > span:first-of-type {
+    font-weight: 600;
+    color: var(--echo-text);
+}
+.echo-eng-bar__unit {
+    font-size: 0.8rem;
+    color: var(--echo-text-muted);
+}
+
+.echo-eng-bar__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* ---------- 点赞 / 收藏按钮 ---------- */
+.echo-eng-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 38px;
+    padding: 7px 16px;
+    border: 1px solid var(--echo-border);
+    border-radius: 999px;
+    background: var(--echo-surface);
+    color: var(--echo-text-secondary);
+    font-size: 0.9rem;
+    font-family: inherit;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.18s ease, border-color 0.18s ease,
+        background 0.18s ease, transform 0.12s ease;
+    -webkit-appearance: none;
+    appearance: none;
+}
+.echo-eng-btn:hover {
+    color: var(--echo-primary);
+    border-color: var(--echo-primary);
+}
+.echo-eng-btn:active {
+    transform: scale(0.96);
+}
+.echo-eng-btn:focus-visible {
+    outline: 2px solid var(--echo-primary);
+    outline-offset: 2px;
+}
+.echo-eng-btn.is-busy {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.echo-eng-btn__count {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+/* 点赞激活：红色（中文互联网惯例，红=喜欢） */
+.echo-eng-btn--like.is-active {
+    color: #e11d48;
+    border-color: color-mix(in srgb, #e11d48 45%, var(--echo-border));
+    background: color-mix(in srgb, #e11d48 10%, var(--echo-surface));
+}
+.echo-eng-btn--like.is-active .echo-eng-icon {
+    fill: #e11d48;
+}
+
+/* 收藏激活：主题色 */
+.echo-eng-btn--fav.is-active {
+    color: var(--echo-primary);
+    border-color: color-mix(in srgb, var(--echo-primary) 50%, var(--echo-border));
+    background: color-mix(in srgb, var(--echo-primary) 10%, var(--echo-surface));
+}
+.echo-eng-btn--fav.is-active .echo-eng-icon {
+    fill: var(--echo-primary);
+}
+
+/* color-mix 回退（旧浏览器） */
+@supports not (color: color-mix(in srgb, red 10%, blue)) {
+    .echo-eng-btn--like.is-active {
+        border-color: #f1a2b5;
+        background: #fff1f4;
+    }
+    .echo-eng-btn--fav.is-active {
+        border-color: var(--echo-primary);
+        background: transparent;
+    }
+}
+
+/* ---------- 热门排行小工具 / 短代码 ---------- */
+.echo-eng-hot {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: echo-hot;
+}
+.echo-eng-hot__title {
+    margin: 0 0 14px;
+    font-size: 1.05rem;
+    color: var(--echo-text);
+}
+.echo-eng-hot__item {
+    counter-increment: echo-hot;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--echo-border);
+}
+.echo-eng-hot__item:last-child {
+    border-bottom: none;
+}
+.echo-eng-hot__item::before {
+    content: counter(echo-hot);
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: var(--echo-bg-alt);
+    color: var(--echo-text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+.echo-eng-hot__item:nth-child(-n+3)::before {
+    background: var(--echo-primary);
+    color: #fff;
+}
+.echo-eng-hot__item a {
+    flex: 1 1 auto;
+    color: var(--echo-text);
+    font-size: 0.92rem;
+    line-height: 1.5;
+    text-decoration: none;
+    transition: color 0.18s ease;
+}
+.echo-eng-hot__item a:hover {
+    color: var(--echo-primary);
+}
+.echo-eng-hot__views {
+    flex: 0 0 auto;
+    color: var(--echo-text-muted);
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+.echo-eng-hot-shortcode {
+    margin: 24px 0;
+    padding: 20px;
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius);
+    background: var(--echo-surface);
+}
+
+/* ---------- 个人中心「我的收藏」 ---------- */
+.echo-my-favorites__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.echo-my-favorites__link {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.echo-my-favorites__remove {
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: var(--echo-bg-alt);
+    color: var(--echo-text-muted);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.18s ease, background 0.18s ease;
+}
+.echo-my-favorites__remove:hover {
+    color: #e11d48;
+    background: color-mix(in srgb, #e11d48 12%, var(--echo-bg-alt));
+}
+.echo-my-favorites__remove.is-busy {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* ---------- 深色模式兜底 ---------- */
+@media (prefers-color-scheme: dark) {
+    .echo-eng-bar {
+        background: color-mix(in srgb, var(--echo-primary) 5%, var(--echo-surface));
+    }
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 600px) {
+    .echo-eng-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px;
+    }
+    .echo-eng-bar__actions {
+        width: 100%;
+    }
+    .echo-eng-btn {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+}

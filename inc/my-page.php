@@ -93,6 +93,11 @@ function echo_my_modules() {
 			'desc'  => __( '当前用户最新发表的评论及所属文章', 'echo' ),
 			'order' => 50,
 		),
+		'favorites'       => array(
+			'label' => __( '我的收藏', 'echo' ),
+			'desc'  => __( '收藏过的文章列表（需在「阅读互动」中启用收藏）', 'echo' ),
+			'order' => 60,
+		),
 	);
 }
 
@@ -634,6 +639,57 @@ function echo_my_module_recent_comments() {
 				<?php endforeach; ?>
 			</ul>
 		<?php endif; ?>
+	</section>
+	<?php
+}
+
+/**
+ * 模块：我的收藏
+ *
+ * @return void
+ */
+function echo_my_module_favorites() {
+	if ( ! function_exists( 'echo_eng_config' ) || ! echo_eng_config( 'eng_favorite_enable', true ) ) {
+		return;
+	}
+	$ids = function_exists( 'echo_eng_user_list' ) ? echo_eng_user_list( 'favorite' ) : array();
+	if ( empty( $ids ) ) {
+		?>
+		<section class="echo-my-card echo-my-list">
+			<h2 class="echo-my-card__title"><?php esc_html_e( '我的收藏', 'echo' ); ?></h2>
+			<p class="echo-my-empty"><?php esc_html_e( '还没有收藏文章，在文章页点击「收藏」即可加入。', 'echo' ); ?></p>
+		</section>
+		<?php
+		return;
+	}
+
+	$posts = get_posts(
+		array(
+			'post_type'      => 'post',
+			'post_status'    => 'publish',
+			'post__in'       => $ids,
+			'posts_per_page' => count( $ids ),
+			'orderby'        => 'post__in',
+		)
+	);
+	?>
+	<section class="echo-my-card echo-my-list">
+		<h2 class="echo-my-card__title"><?php esc_html_e( '我的收藏', 'echo' ); ?></h2>
+		<ul class="echo-my-list__items echo-my-favorites">
+			<?php foreach ( $posts as $post ) : ?>
+				<li class="echo-my-favorites__item">
+					<a class="echo-my-favorites__link" href="<?php echo esc_url( get_permalink( $post ) ); ?>">
+						<?php echo esc_html( get_the_title( $post ) ); ?>
+					</a>
+					<?php if ( function_exists( 'echo_eng_card_meta' ) ) : ?>
+						<?php echo_eng_card_meta( $post->ID ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<?php endif; ?>
+					<button type="button" class="echo-my-favorites__remove"
+						data-eng-remove-fav data-post-id="<?php echo (int) $post->ID; ?>"
+						title="<?php esc_attr_e( '取消收藏', 'echo' ); ?>">×</button>
+				</li>
+			<?php endforeach; ?>
+		</ul>
 	</section>
 	<?php
 }

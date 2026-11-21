@@ -48,7 +48,8 @@ function echo_default_settings() {
 		echo_user_defaults(),
 		echo_links_defaults(),
 		echo_front_post_defaults(),
-		echo_lgo_defaults()
+		echo_lgo_defaults(),
+		function_exists( 'echo_eng_defaults' ) ? echo_eng_defaults() : array()
 	);
 }
 
@@ -101,6 +102,7 @@ function echo_settings_sections_map() {
 		'echo_section_categories' => __( '文章分类', 'echo' ),
 		'echo_section_front_post' => __( '前台发文章', 'echo' ),
 		'echo_section_link_go'   => __( '外链中转页', 'echo' ),
+		'echo_section_eng'       => __( '阅读互动', 'echo' ),
 		'echo_section_links'      => __( '友情链接', 'echo' ),
 		'echo_section_permalink' => __( '固定链接', 'echo' ),
 	);
@@ -747,6 +749,28 @@ function echo_settings_init() {
 		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_link_go', $args );
 	}
 
+	// 阅读互动
+	add_settings_section(
+		'echo_section_eng',
+		__( '阅读互动', 'echo' ),
+		'__return_false',
+		'echo-settings'
+	);
+
+	$echo_eng_fields = array(
+		array( 'eng_views_enable', __( '启用阅读量统计', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '统计文章阅读次数，并在文章卡片与文章页显示。同一访客在去重窗口内重复访问只计一次。', 'echo' ) ) ),
+		array( 'eng_view_dedup_h', __( '阅读量去重窗口', 'echo' ), 'echo_field_number', array( 'min' => 0, 'max' => 720, 'step' => 1, 'suffix' => __( '小时', 'echo' ), 'desc' => __( '同一访客在该时长内重复阅读同一篇不重复计数；填 0 关闭去重（每次访问都计）。', 'echo' ) ) ),
+		array( 'eng_like_enable', __( '启用点赞', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '文章页显示点赞按钮，仅登录用户可点赞，每人每篇一次，可取消。', 'echo' ) ) ),
+		array( 'eng_favorite_enable', __( '启用收藏', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '文章页显示收藏按钮，收藏的文章会汇总到个人中心「我的收藏」。', 'echo' ) ) ),
+		array( 'eng_hot_count', __( '热门文章数量', 'echo' ), 'echo_field_number', array( 'min' => 1, 'max' => 20, 'step' => 1, 'desc' => __( '[echo_hot_posts] 短代码默认显示条数，也可在小工具中单独设置。', 'echo' ) ) ),
+	);
+
+	foreach ( $echo_eng_fields as $field ) {
+		$args            = isset( $field[3] ) ? $field[3] : array();
+		$args['label_for'] = $field[0];
+		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_eng', $args );
+	}
+
 	// 友情链接（数据在独立区块管理，这里放显示参数）
 	add_settings_section(
 		'echo_section_links',
@@ -989,6 +1013,11 @@ function echo_sanitize_settings( $input ) {
 	// 前台发文章
 	echo_sanitize_front_post_settings( $input, $output );
 	echo_sanitize_link_go_settings( $input, $output );
+
+	// 阅读互动
+	if ( function_exists( 'echo_sanitize_eng_settings' ) ) {
+		echo_sanitize_eng_settings( $input, $output );
+	}
 
 	return $output;
 }

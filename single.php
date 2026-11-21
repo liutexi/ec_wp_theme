@@ -67,6 +67,13 @@ get_header();
 								<?php the_tags( '', '', '' ); ?>
 							</div>
 						<?php endif; ?>
+
+						<?php
+						// 阅读互动条（阅读量 / 点赞 / 收藏）
+						if ( function_exists( 'echo_eng_bar' ) ) {
+							echo_eng_bar();
+						}
+						?>
 					</article>
 
 					<nav class="echo-post-nav" aria-label="<?php esc_attr_e( '文章导航', 'echo' ); ?>">

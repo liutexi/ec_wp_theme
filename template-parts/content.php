@@ -23,6 +23,11 @@
 		<span class="echo-card__comments">
 			<?php comments_number( __( '0 条评论', 'echo' ), __( '1 条评论', 'echo' ), __( '% 条评论', 'echo' ) ); ?>
 		</span>
+		<?php
+		if ( function_exists( 'echo_eng_card_meta' ) ) {
+			echo_eng_card_meta();
+		}
+		?>
 	</div>
 
 	<h2 class="echo-card__title">

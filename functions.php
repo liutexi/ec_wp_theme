@@ -33,6 +33,9 @@ require get_template_directory() . '/inc/user-page.php';
 // 引入友情链接（默认值需在 customizer 之前合并）
 require get_template_directory() . '/inc/links.php';
 
+// 引入阅读互动（阅读量 / 点赞 / 收藏 / 热门排行，默认值需在 customizer 之前合并）
+require get_template_directory() . '/inc/engagement.php';
+
 // 设置页图标
 require get_template_directory() . '/inc/settings-icons.php';
 
@@ -154,6 +157,38 @@ function echo_scripts() {
 	if ( file_exists( $nav_js ) ) {
 		$nav_js_ver = ECHO_VERSION . '.' . filemtime( $nav_js );
 		wp_enqueue_script( 'echo-nav-editor', get_template_directory_uri() . '/assets/js/nav-editor.js', array(), $nav_js_ver, true );
+	}
+
+	// 阅读互动：样式与交互脚本（全站加载，文章页互动条、卡片阅读量、热门小工具均会用）
+	if ( function_exists( 'echo_eng_config' ) ) {
+		$eng_css = get_template_directory() . '/assets/css/engagement.css';
+		if ( file_exists( $eng_css ) ) {
+			$eng_css_ver = ECHO_VERSION . '.' . filemtime( $eng_css );
+			wp_enqueue_style( 'echo-eng', get_template_directory_uri() . '/assets/css/engagement.css', array( 'echo-style' ), $eng_css_ver );
+		}
+		$eng_js = get_template_directory() . '/assets/js/engagement.js';
+		if ( file_exists( $eng_js ) ) {
+			$eng_js_ver = ECHO_VERSION . '.' . filemtime( $eng_js );
+			wp_enqueue_script( 'echo-eng', get_template_directory_uri() . '/assets/js/engagement.js', array(), $eng_js_ver, true );
+			wp_localize_script(
+				'echo-eng',
+				'echoEng',
+				array(
+					'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+					'nonce'       => wp_create_nonce( 'echo_eng' ),
+					'logged'      => is_user_logged_in(),
+					'likeOn'      => (bool) echo_eng_config( 'eng_like_enable', true ),
+					'favOn'       => (bool) echo_eng_config( 'eng_favorite_enable', true ),
+					'needLogin'   => __( '请先登录后再操作', 'echo' ),
+					'loggingIn'   => __( '处理中…', 'echo' ),
+					'likedText'   => __( '已点赞', 'echo' ),
+					'likeText'    => __( '点赞', 'echo' ),
+					'favedText'   => __( '已收藏', 'echo' ),
+					'favText'     => __( '收藏', 'echo' ),
+					'failedText'  => __( '操作失败，请重试', 'echo' ),
+				)
+			);
+		}
 	}
 
 	// 交互脚本
