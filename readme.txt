@@ -3,7 +3,7 @@ Contributors: LogicTneXus
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: V0.0.2-Preview-6c9a7ae
+Stable tag: V0.0.2-Preview-a3e0f51
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Tags: blog, two-columns, right-sidebar, responsive-layout, custom-menu, threaded-comments, translation-ready
@@ -88,6 +88,13 @@ Echo 是一款简洁、专注阅读体验的博客 / 社区风格 WordPress 主�
 「Echo 设置 → 我的界面」底部有「自定义 CSS」输入框，也可直接修改 style.css 中的 :root 变量。
 
 == 更新日志 ==
+
+= V0.0.2-Preview-a3e0f51 =
+* 个人主页（/uid/{id}）重构为博客式三栏布局：左侧资料卡与图标导航、中间文章卡片流、右侧搜索/按年归档/分类标签云
+* 三栏首页仅在个人页隐藏顶部横条并把登录/写文章/个人中心等入口移入左侧导航，不影响其他页面
+* 文章卡片支持特色图、分类徽章、日期与阅读时长估算；归档与分类数据由该用户文章自动统计
+* 左侧新增深色模式开关，仅本页生效、按用户记忆、首次跟随系统；新增后台设置（总开关/签名/文章数/封面图/深色开关）
+* 关闭「三栏个人主页」总开关时自动回退到旧版个人主页布局，向后兼容
 
 = V0.0.2-Preview-6c9a7ae =
 * 写文章支持选择输入格式：可视化 / Markdown / HTML，可在设置中勾选可用模式与默认模式
