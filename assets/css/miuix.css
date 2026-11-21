@@ -310,6 +310,11 @@ body.echo-style-miuix .echo-entry-content pre {
     color: #e6edf3;
     padding: 18px 20px;
     overflow-x: auto;
+    /* 固定深色代码块：锁定配色，防止系统深色/强制深色模式反色导致文字不可读 */
+    color-scheme: dark;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    scrollbar-color: rgba(255, 255, 255, 0.22) rgba(255, 255, 255, 0.05);
+    scrollbar-width: thin;
 }
 
 /* 代码块内的 code 必须重置掉行内代码样式；高亮插件的 span 保留自身颜色 */

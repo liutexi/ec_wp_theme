@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // 主题常量
-define( 'ECHO_VERSION', 'v0.0.2-preview-17bc1a2' );
+define( 'ECHO_VERSION', 'v0.0.3-preview-frontpost' );
 
 // 主题仓库地址：前台 / 后台页脚与 Theme URI 统一引用，避免写错
 define( 'ECHO_REPO_URL', 'https://github.com/liutexi/ec_wp_theme' );
@@ -41,6 +41,9 @@ require get_template_directory() . '/inc/customizer.php';
 
 // 引入后台文章功能增强
 require get_template_directory() . '/inc/admin-posts.php';
+
+// 引入前台发文章（需在 customizer 之前加载，默认值要合并进设置）
+require get_template_directory() . '/inc/front-post.php';
 
 // 引入配置备份 / 导出 / 导入
 require get_template_directory() . '/inc/backup.php';

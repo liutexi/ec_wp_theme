@@ -463,7 +463,10 @@ function echo_my_module_quicklinks() {
 		}
 		switch ( $key ) {
 			case 'new_post':
-				$url = admin_url( 'post-new.php' );
+				// 启用前台发文章时优先跳到前台撰写页，否则回退到后台编辑器
+				$url = ( function_exists( 'echo_front_post_can_write' ) && echo_front_post_can_write() )
+					? echo_front_post_url()
+					: admin_url( 'post-new.php' );
 				break;
 			case 'edit_profile':
 				$url = admin_url( 'profile.php' );

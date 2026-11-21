@@ -43,7 +43,8 @@ function echo_default_settings() {
 		echo_mail_defaults(),
 		echo_social_defaults(),
 		echo_user_defaults(),
-		echo_links_defaults()
+		echo_links_defaults(),
+		echo_front_post_defaults()
 	);
 }
 
@@ -94,6 +95,7 @@ function echo_settings_sections_map() {
 		'echo_section_social'    => __( '聚合登录', 'echo' ),
 		'echo_section_user'      => __( '用户主页', 'echo' ),
 		'echo_section_categories' => __( '文章分类', 'echo' ),
+		'echo_section_front_post' => __( '前台发文章', 'echo' ),
 		'echo_section_links'      => __( '友情链接', 'echo' ),
 		'echo_section_permalink' => __( '固定链接', 'echo' ),
 	);
@@ -642,6 +644,34 @@ function echo_settings_init() {
 		'echo-settings'
 	);
 
+	// 前台发文章
+	add_settings_section(
+		'echo_section_front_post',
+		__( '前台发文章', 'echo' ),
+		'__return_false',
+		'echo-settings'
+	);
+
+	$echo_fp_fields = array(
+		array( 'fp_enabled', __( '启用前台发文章', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '开启后，具备发文权限的登录用户可通过 /write 页面撰写、编辑自己的文章。', 'echo' ) ) ),
+		array( 'fp_base', __( '页面别名', 'echo' ), 'echo_field_fp_base', array() ),
+		array( 'fp_allow_status', __( '可用的提交方式', 'echo' ), 'echo_field_fp_status', array() ),
+		array( 'fp_default_status', __( '默认提交方式', 'echo' ), 'echo_field_select', array( 'options' => array( 'draft' => __( '存为草稿', 'echo' ), 'pending' => __( '提交审核', 'echo' ), 'publish' => __( '直接发布', 'echo' ) ), 'desc' => __( '新建文章时默认选中的状态。', 'echo' ) ) ),
+		array( 'fp_allow_category', __( '允许选择分类', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'fp_allow_tags', __( '允许填写标签', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'fp_allow_thumbnail', __( '允许上传封面', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'fp_thumbnail_max_kb', __( '封面大小上限', 'echo' ), 'echo_field_number', array( 'min' => 256, 'max' => 8192, 'step' => 256, 'suffix' => 'KB' ) ),
+		array( 'fp_content_min', __( '正文最少字数', 'echo' ), 'echo_field_number', array( 'min' => 0, 'max' => 5000, 'step' => 50, 'desc' => __( '0 表示不限制。', 'echo' ) ) ),
+		array( 'fp_nav', __( '导航栏显示入口', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '在有发文权限的用户导航栏显示「写文章」入口。', 'echo' ) ) ),
+		array( 'fp_nav_label', __( '入口文字', 'echo' ), 'echo_field_text', array( 'desc' => __( '默认「写文章」。', 'echo' ) ) ),
+	);
+
+	foreach ( $echo_fp_fields as $field ) {
+		$args            = isset( $field[3] ) ? $field[3] : array();
+		$args['label_for'] = $field[0];
+		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_front_post', $args );
+	}
+
 	// 友情链接（数据在独立区块管理，这里放显示参数）
 	add_settings_section(
 		'echo_section_links',
@@ -874,6 +904,9 @@ function echo_sanitize_settings( $input ) {
 
 	// 友情链接
 	echo_sanitize_links_settings( $input, $output );
+
+	// 前台发文章
+	echo_sanitize_front_post_settings( $input, $output );
 
 	return $output;
 }

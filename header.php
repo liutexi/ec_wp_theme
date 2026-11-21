@@ -49,6 +49,7 @@
 
 		<div class="echo-header__actions">
 			<?php echo_auth_nav_links(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+			<?php if ( function_exists( 'echo_front_post_nav_link' ) ) { echo_front_post_nav_link(); } // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			<?php echo_my_nav_link(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 
 			<button class="echo-search-toggle" aria-label="<?php esc_attr_e( '搜索', 'echo' ); ?>" aria-expanded="false">

@@ -1,0 +1,285 @@
+/* ==========================================================================
+   前台发文章（inc/front-post.php / template-write.php）
+   复用主题变量，遵循经典与 Miuix 两种风格
+   ========================================================================== */
+
+.echo-write-nav-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 14px;
+    border-radius: var(--echo-radius-sm, 6px);
+    background: var(--echo-primary, #2563eb);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    transition: background var(--echo-transition, 0.2s ease), color var(--echo-transition, 0.2s ease);
+}
+
+.echo-write-nav-link:hover,
+.echo-write-nav-link:focus-visible {
+    background: var(--echo-primary-hover, #1d4ed8);
+    color: #fff;
+}
+
+.echo-write-card {
+    background: var(--echo-surface, #fff);
+    border: 1px solid var(--echo-border, #e5e7eb);
+    border-radius: var(--echo-radius, 10px);
+    box-shadow: var(--echo-shadow, 0 1px 3px rgba(0, 0, 0, 0.06));
+    padding: 28px 32px;
+    margin-bottom: 24px;
+}
+
+.echo-write-card__title {
+    font-size: 20px;
+    margin-bottom: 20px;
+}
+
+.echo-write-field {
+    margin-bottom: 22px;
+}
+
+.echo-write-field:last-child {
+    margin-bottom: 0;
+}
+
+.echo-write-label {
+    display: block;
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 8px;
+    color: var(--echo-text, #1f2328);
+}
+
+.echo-write-req {
+    color: #e5484d;
+}
+
+.echo-write-input,
+.echo-write-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--echo-border, #e5e7eb);
+    border-radius: var(--echo-radius-sm, 6px);
+    background: var(--echo-bg, #fff);
+    color: var(--echo-text, #1f2328);
+    font: inherit;
+    font-size: 15px;
+    transition: border-color var(--echo-transition, 0.2s ease), box-shadow var(--echo-transition, 0.2s ease);
+}
+
+.echo-write-input:focus,
+.echo-write-textarea:focus {
+    outline: none;
+    border-color: var(--echo-primary, #2563eb);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.echo-write-textarea {
+    resize: vertical;
+    line-height: 1.7;
+}
+
+/* 编辑器容器 */
+.echo-write-field #wp-echo_fp_content-wrap {
+    border: 1px solid var(--echo-border, #e5e7eb);
+    border-radius: var(--echo-radius-sm, 6px);
+    overflow: hidden;
+}
+
+.echo-write-field .wp-editor-container {
+    border: 1px solid var(--echo-border, #e5e7eb);
+}
+
+/* 分类 / 状态选择 */
+.echo-write-cats,
+.echo-write-statuses {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+}
+
+.echo-write-check,
+.echo-write-radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.echo-write-check input,
+.echo-write-radio input {
+    accent-color: var(--echo-primary, #2563eb);
+}
+
+/* 封面 */
+.echo-write-file {
+    display: block;
+    font-size: 14px;
+}
+
+.echo-write-thumb-current {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.echo-write-thumb-current img {
+    border-radius: var(--echo-radius-sm, 6px);
+    border: 1px solid var(--echo-border, #e5e7eb);
+    max-width: 96px;
+}
+
+.echo-write-hint {
+    font-size: 13px;
+    color: var(--echo-text-muted, #8b949e);
+    margin: 8px 0 0;
+}
+
+/* 蜜罐：视觉隐藏但占据布局之外 */
+.echo-write-hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* 操作按钮 */
+.echo-write-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 6px;
+}
+
+.echo-write-submit {
+    cursor: pointer;
+    border: none;
+}
+
+/* 提示 */
+.echo-write-alert {
+    padding: 12px 16px;
+    border-radius: var(--echo-radius-sm, 6px);
+    margin-bottom: 20px;
+    font-size: 15px;
+}
+
+.echo-write-alert--error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+}
+
+.echo-write-alert--success {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #047857;
+}
+
+/* 我的文章列表 */
+.echo-write-posts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.echo-write-posts__item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--echo-border, #e5e7eb);
+}
+
+.echo-write-posts__item:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.echo-write-posts__title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.echo-write-posts__meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    font-size: 13px;
+    color: var(--echo-text-muted, #8b949e);
+}
+
+.echo-write-status {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.echo-write-status--publish {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.echo-write-status--pending {
+    background: #fffbeb;
+    color: #b45309;
+}
+
+.echo-write-status--draft {
+    background: var(--echo-bg-alt, #f6f7f9);
+    color: var(--echo-text-secondary, #57606a);
+}
+
+.echo-write-empty {
+    color: var(--echo-text-muted, #8b949e);
+    margin: 0;
+}
+
+.echo-write-guest p {
+    color: var(--echo-text-secondary, #57606a);
+}
+
+/* 响应式 */
+@media (max-width: 600px) {
+    .echo-write-card {
+        padding: 20px 18px;
+    }
+
+    .echo-write-posts__item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+}
+
+/* Miuix 风格下的微调 */
+body.echo-my-card-miuix .echo-write-card,
+body.echo-ui-miuix .echo-write-card {
+    border-radius: calc(var(--echo-radius, 10px) + 4px);
+}
+
+/* 深色模式（若主题支持） */
+@media (prefers-color-scheme: dark) {
+    .echo-write-alert--error {
+        background: #2b1214;
+        border-color: #7f1d1d;
+        color: #fca5a5;
+    }
+
+    .echo-write-alert--success {
+        background: #0c2a20;
+        border-color: #14532d;
+        color: #6ee7b7;
+    }
+}

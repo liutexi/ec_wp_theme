@@ -3,7 +3,7 @@ Contributors: LogicTneXus
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: v0.0.2-preview-17bc1a2
+Stable tag: v0.0.3-preview-frontpost
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Tags: blog, two-columns, right-sidebar, responsive-layout, custom-menu, threaded-comments, translation-ready
@@ -88,6 +88,13 @@ Echo 是一款简洁、专注阅读体验的博客 / 社区风格 WordPress 主�
 「Echo 设置 → 我的界面」底部有「自定义 CSS」输入框，也可直接修改 style.css 中的 :root 变量。
 
 == 更新日志 ==
+
+= v0.0.3-preview-frontpost =
+* 新增前台发文章：登录用户无需进入后台即可在 /write 页面撰写、编辑自己的文章
+* 支持标题、可视化正文、分类、标签、摘要与封面图上传，提交方式可选草稿 / 待审核 / 直接发布（按权限）
+* 新增「Echo 设置 → 前台发文章」分类：开关、页面别名、可用状态、字段与字数限制、导航入口均可配置
+* 个人中心「写文章」快捷入口与导航栏入口自动指向前台撰写页
+* 修复代码块深色模式适配：锁定 color-scheme 防止系统深色/强制深色反色，补齐深色滚动条与常见语法高亮配色
 
 = v0.0.2-preview-17bc1a2 =
 * 新增原生 SMTP 发信：主机、端口、SSL / STARTTLS、认证、发件人、超时均可配置，无需再装邮件插件

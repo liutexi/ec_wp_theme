@@ -4,7 +4,7 @@ Theme URI: https://github.com/liutexi/ec_wp_theme
 Author: LogicTneXus
 Author URI: https://github.com/liutexi
 Description: Echo 是一款简洁、专注阅读体验的博客/论坛风格 WordPress 主题，响应式设计，适合个人博客与内容社区。
-Version: v0.0.2-preview-17bc1a2
+Version: v0.0.3-preview-frontpost
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
@@ -699,6 +699,9 @@ body.echo-no-sidebar .echo-sidebar {
     font-family: var(--echo-mono);
     white-space: pre;
     tab-size: 4;
+    /* 代码块固定为深色方案；锁定 color-scheme 防止系统深色/强制深色模式把深底浅字反转成浅底浅字 */
+    color-scheme: dark;
+    border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 /* 代码块内的 code 一律重置，避免继承「行内代码」的灰底/粉色/圆角 */
@@ -2740,6 +2743,104 @@ body.echo-style-miuix .echo-single--auth {
 @media (hover: none) {
     .echo-code-copy {
         opacity: 1;
+    }
+}
+
+/* ==========================================================================
+   代码块深色模式适配
+   代码块固定为深色配色（GitHub 风格），需阻止浏览器/系统的自动深色反色，
+   并保证在系统浅色与深色模式下都有稳定的对比度。
+   ========================================================================== */
+
+/* 代码块及其外壳锁定深色配色，避免强制深色模式反转成浅底浅字 */
+.echo-entry-content pre,
+.echo-code-wrap,
+.echo-code-wrap > pre {
+    color-scheme: dark;
+}
+
+/* 浅色滚动条在深色代码块上几乎不可见，改为深色轨道 + 半透明滑块 */
+.echo-entry-content pre::-webkit-scrollbar {
+    height: 10px;
+    width: 10px;
+}
+
+.echo-entry-content pre::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 999px;
+}
+
+.echo-entry-content pre::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+}
+
+.echo-entry-content pre::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.36);
+}
+
+/* Firefox 滚动条配色 */
+.echo-entry-content pre {
+    scrollbar-color: rgba(255, 255, 255, 0.22) rgba(255, 255, 255, 0.05);
+    scrollbar-width: thin;
+}
+
+/* 代码块内选中文字的对比度 */
+.echo-entry-content pre ::selection,
+.echo-entry-content pre code ::selection {
+    background: rgba(56, 139, 253, 0.45);
+    color: #ffffff;
+}
+
+/*
+ * 语法高亮常见 token 的深色兜底配色。
+ * 仅针对注入到 pre/code 内、且未自带深色主题的 span 提供可读的前景色；
+ * 使用较低特异性，插件自带配色（更具体或后加载）仍可覆盖。
+ */
+.echo-entry-content pre code .token.comment,
+.echo-entry-content pre code .hljs-comment {
+    color: #8b949e;
+}
+
+.echo-entry-content pre code .token.keyword,
+.echo-entry-content pre code .hljs-keyword,
+.echo-entry-content pre code .token.selector,
+.echo-entry-content pre code .hljs-selector-tag {
+    color: #ff7b72;
+}
+
+.echo-entry-content pre code .token.string,
+.echo-entry-content pre code .hljs-string,
+.echo-entry-content pre code .token.attr-value,
+.echo-entry-content pre code .hljs-attr {
+    color: #a5d6ff;
+}
+
+.echo-entry-content pre code .token.number,
+.echo-entry-content pre code .hljs-number,
+.echo-entry-content pre code .token.literal,
+.echo-entry-content pre code .hljs-literal {
+    color: #79c0ff;
+}
+
+.echo-entry-content pre code .token.function,
+.echo-entry-content pre code .hljs-function,
+.echo-entry-content pre code .token.title,
+.echo-entry-content pre code .hljs-title {
+    color: #d2a8ff;
+}
+
+.echo-entry-content pre code .token.variable,
+.echo-entry-content pre code .hljs-variable,
+.echo-entry-content pre code .token.parameter,
+.echo-entry-content pre code .hljs-params {
+    color: #ffa657;
+}
+
+/* 系统深色模式下：行内代码背景随主题变量可能偏深，提升文字与边框对比度 */
+@media (prefers-color-scheme: dark) {
+    .echo-entry-content pre {
+        border-color: rgba(255, 255, 255, 0.12);
     }
 }
 
