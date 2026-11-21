@@ -3,7 +3,7 @@ Contributors: LogicTneXus
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: V0.0.2-Preview-acff310
+Stable tag: V0.0.2-Preview-bac29fc
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Tags: blog, two-columns, right-sidebar, responsive-layout, custom-menu, threaded-comments, translation-ready
@@ -89,7 +89,10 @@ Echo 是一款简洁、专注阅读体验的博客 / 社区风格 WordPress 主�
 
 == 更新日志 ==
 
-= V0.0.2-Preview-acff310 =
+= V0.0.2-Preview-bac29fc =
+* 新增外链跳转提醒中转页：全站外部链接点击时先经 /go 中转页提醒（显示目标网站与网址）再跳转
+* 跳转方式后台可控：倒计时自动（1-30 秒）或手动点击；标题/文案/按钮/新窗口均可配置，支持白名单域名
+* 安全：目标地址存服务端 transient、链接只含随机 token，仅允许 http/https 外链，防止开放重定向
 * 新增前台文章管理：管理员（编辑/管理员角色）可在 /write 列表查看全站文章，直接发布、编辑、删除任意文章
 * 一键发布：管理员可将待审核/草稿文章直接发布；删除采用移入回收站，可在后台还原（独立 nonce 与确认弹窗）
 * 作者本人可编辑、删除自己的文章；管理员状态选项始终包含「直接发布」
