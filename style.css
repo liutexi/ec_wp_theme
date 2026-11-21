@@ -815,6 +815,19 @@ body.echo-no-sidebar .echo-sidebar {
 }
 
 /* 表格美化 */
+/* 表格外层滚动容器：JS 注入，窄屏横向滚动，避免列被压成竖排单字 */
+.echo-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 1.5em 0;
+    border-radius: var(--echo-radius-sm);
+}
+
+.echo-table-wrap table {
+    margin: 0;
+}
+
 .echo-entry-content table {
     width: 100%;
     border-collapse: collapse;
@@ -823,6 +836,19 @@ body.echo-no-sidebar .echo-sidebar {
     border-radius: var(--echo-radius-sm);
     overflow: hidden;
     box-shadow: var(--echo-shadow);
+}
+
+/* 窄屏：表格设最小宽度触发横向滚动，单元格保持可读不折成单字 */
+@media (max-width: 700px) {
+    .echo-table-wrap table {
+        min-width: 520px;
+    }
+    .echo-entry-content th,
+    .echo-entry-content td {
+        white-space: normal;
+        word-break: break-word;
+        min-width: 90px;
+    }
 }
 
 .echo-entry-content th,
@@ -1419,7 +1445,9 @@ body.echo-no-sidebar .echo-sidebar {
     }
 
     .echo-brand__logo {
-        max-width: 120px;
+        max-width: 108px;
+        height: 34px;
+        max-height: 34px;
     }
 
     .echo-card {
@@ -1428,6 +1456,17 @@ body.echo-no-sidebar .echo-sidebar {
 
     .echo-thumbnail {
         margin: -20px -20px 16px;
+    }
+
+    /* 移动端封面限高，避免整屏被一张重复大图占满 */
+    .echo-thumbnail img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        object-position: center;
+    }
+    .echo-thumbnail--placeholder {
+        height: 200px;
     }
 
     .echo-card__title {
@@ -1446,6 +1485,45 @@ body.echo-no-sidebar .echo-sidebar {
     align-self: flex-start;
     border-radius: 50%;
     object-fit: cover;
+}
+
+/* 移动端评论区优化 */
+@media (max-width: 600px) {
+    .echo-comments {
+        padding: 20px 16px;
+        margin-top: 24px;
+        border-radius: 12px;
+    }
+    .echo-comments__title {
+        font-size: 1.2rem;
+    }
+    .comment-list .comment-body {
+        gap: 10px;
+        padding: 14px;
+    }
+    .comment-list .comment-body .avatar {
+        flex-basis: 38px;
+        width: 38px;
+        height: 38px;
+    }
+    /* 长链接 / 长 URL 在窄屏自动换行，避免撑宽气泡 */
+    .comment-list .comment-text,
+    .comment-list .comment-text a {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+    /* 嵌套回复减小缩进，避免多层后内容过窄 */
+    .comment-list .children {
+        margin-left: 12px;
+        padding-left: 12px;
+    }
+    /* 评论表单：表情按钮与提交按钮排布更紧凑 */
+    .comment-form .echo-emoji-btn {
+        margin: 6px 0 4px;
+    }
+    .comment-form .submit {
+        width: 100%;
+    }
 }
 
 /* ==========================================================================
@@ -3157,6 +3235,47 @@ body.echo-style-miuix .echo-single--links {
     overflow: visible;
     clip: auto;
     white-space: normal;
+}
+
+/* 裸社交按钮：wp_login_form()/login_form 钩子注入时没有 .echo-social__list 容器，
+   单独约束尺寸与横排，避免在个人中心等处被渲染成占满整宽的大圆图标 */
+.echo-social-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    max-width: 44px !important;
+    padding: 8px !important;
+    margin: 0 !important;
+    border: 1px solid var(--echo-border, #d0d7de) !important;
+    border-radius: 50% !important;
+    background: var(--echo-surface, #fff) !important;
+    vertical-align: middle;
+    transition: transform var(--echo-transition, 0.2s), border-color var(--echo-transition, 0.2s);
+}
+
+.echo-social-btn:hover {
+    transform: translateY(-2px);
+    border-color: var(--echo-primary, #2563eb) !important;
+}
+
+.echo-social-btn img,
+.echo-social-btn svg {
+    width: 22px !important;
+    height: 22px !important;
+    max-width: 22px !important;
+    max-height: 22px !important;
+    object-fit: contain;
+}
+
+/* 登录表单里 wp_login_form 把 social 按钮塞进 <p>，改为紧凑横排 */
+.echo-my-guest .echo-social-btn,
+.login .echo-social-btn {
+    margin: 4px 6px 0 0 !important;
 }
 
 /* ==========================================================================

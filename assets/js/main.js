@@ -18,7 +18,24 @@
 		initEmailCode();
 		initPageProgress();
 		initUserPortalDarkMode();
+		initTableScroll();
 	});
+
+	/**
+	 * 正文表格横向滚动：窄屏下给表格包一层可滚动容器，避免列被压成竖排单字
+	 */
+	function initTableScroll() {
+		var tables = document.querySelectorAll('.echo-entry-content table, .comment-text table');
+		Array.prototype.forEach.call(tables, function (table) {
+			if (table.parentNode && table.parentNode.classList && table.parentNode.classList.contains('echo-table-wrap')) {
+				return;
+			}
+			var wrap = document.createElement('div');
+			wrap.className = 'echo-table-wrap';
+			table.parentNode.insertBefore(wrap, table);
+			wrap.appendChild(table);
+		});
+	}
 
 	/**
 	 * 移动端导航菜单切换
