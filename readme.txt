@@ -3,7 +3,7 @@ Contributors: LogicTneXus
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: v0.0.3-preview-frontpost
+Stable tag: V0.0.2-Preview-ae2c85d
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Tags: blog, two-columns, right-sidebar, responsive-layout, custom-menu, threaded-comments, translation-ready
@@ -89,7 +89,7 @@ Echo 是一款简洁、专注阅读体验的博客 / 社区风格 WordPress 主�
 
 == 更新日志 ==
 
-= v0.0.3-preview-frontpost =
+= V0.0.2-Preview-ae2c85d =
 * 新增前台发文章：登录用户无需进入后台即可在 /write 页面撰写、编辑自己的文章
 * 支持标题、可视化正文、分类、标签、摘要与封面图上传，提交方式可选草稿 / 待审核 / 直接发布（按权限）
 * 新增「Echo 设置 → 前台发文章」分类：开关、页面别名、可用状态、字段与字数限制、导航入口均可配置
