@@ -75,6 +75,16 @@ body.echo-style-miuix .echo-brand__dot {
     box-shadow: none;
 }
 
+body.echo-style-miuix .echo-brand__textlogo {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+body.echo-style-miuix .echo-brand__textlogo-accent {
+    color: var(--echo-primary);
+}
+
 body.echo-style-miuix .echo-nav li a {
     padding: 7px 14px;
     border-radius: 999px;

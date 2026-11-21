@@ -26,6 +26,11 @@
 				$echo_custom_logo_id = get_theme_mod( 'custom_logo' );
 				$echo_logo_image     = wp_get_attachment_image( $echo_custom_logo_id, 'full', false, array( 'class' => 'echo-brand__logo' ) );
 				echo '<a class="echo-brand__link" href="' . esc_url( home_url( '/' ) ) . '" rel="home">' . $echo_logo_image . '</a>';
+			} elseif ( echo_get_setting( 'text_logo_enable', true ) ) {
+				// 文字 Logo（强调前缀用主题色）
+				echo '<a class="echo-brand__link echo-brand__textlogo" href="' . esc_url( home_url( '/' ) ) . '" rel="home">';
+				echo echo_render_text_logo(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo '</a>';
 			} else {
 				echo '<span class="echo-brand__dot"></span>';
 				echo '<a class="echo-brand__link" href="' . esc_url( home_url( '/' ) ) . '" rel="home">' . get_bloginfo( 'name' ) . '</a>';

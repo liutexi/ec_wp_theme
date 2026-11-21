@@ -31,6 +31,9 @@ function echo_default_settings() {
 		'footer_credit'    => true,
 		'hide_tagline'     => false,
 		'custom_logo'      => 0,
+		'text_logo_enable' => true,
+		'text_logo'        => 'EcHo',
+		'text_logo_accent' => 'Ec',
 		'hide_admin_bar'   => false,
 		'exclude_categories' => array(),
 		'show_category_badge' => true,
@@ -546,6 +549,42 @@ function echo_settings_init() {
 	);
 
 	add_settings_field(
+		'echo_text_logo_enable',
+		__( '启用文字 Logo', 'echo' ),
+		'echo_field_checkbox',
+		'echo-settings',
+		'echo_section_identity',
+		array(
+			'label_for' => 'text_logo_enable',
+			'desc'      => __( '未上传图片 Logo 时，在导航栏显示文字 Logo；优先级低于图片 Logo。', 'echo' ),
+		)
+	);
+
+	add_settings_field(
+		'echo_text_logo',
+		__( '文字 Logo 内容', 'echo' ),
+		'echo_field_text',
+		'echo-settings',
+		'echo_section_identity',
+		array(
+			'label_for' => 'text_logo',
+			'desc'      => __( '显示在导航栏的品牌文字，例如 EcHo。', 'echo' ),
+		)
+	);
+
+	add_settings_field(
+		'echo_text_logo_accent',
+		__( '强调部分', 'echo' ),
+		'echo_field_text',
+		'echo-settings',
+		'echo_section_identity',
+		array(
+			'label_for' => 'text_logo_accent',
+			'desc'      => __( '文字开头的这一段会用主题色高亮，例如 Ec；留空则整段同色。', 'echo' ),
+		)
+	);
+
+	add_settings_field(
 		'echo_site_title',
 		__( '站点标题', 'echo' ),
 		'echo_field_site_title',
@@ -856,6 +895,12 @@ function echo_sanitize_settings( $input ) {
 	// Logo：存附件 ID，并同步到 WordPress 的 custom_logo 选项
 	$output['custom_logo'] = isset( $input['custom_logo'] ) ? absint( $input['custom_logo'] ) : 0;
 	set_theme_mod( 'custom_logo', $output['custom_logo'] );
+
+	// 文字 Logo
+	$output['text_logo_enable'] = isset( $input['text_logo_enable'] ) && '1' === (string) $input['text_logo_enable'];
+	$echo_text_logo             = isset( $input['text_logo'] ) ? sanitize_text_field( wp_unslash( $input['text_logo'] ) ) : '';
+	$output['text_logo']        = '' !== $echo_text_logo ? $echo_text_logo : $defaults['text_logo'];
+	$output['text_logo_accent'] = isset( $input['text_logo_accent'] ) ? sanitize_text_field( wp_unslash( $input['text_logo_accent'] ) ) : '';
 
 	// 站点标题 / 副标题：同步到 WordPress 标准选项
 	if ( isset( $input['site_title'] ) ) {
@@ -1593,6 +1638,29 @@ function echo_field_site_tagline( $args ) {
 		'<input type="text" id="echo_site_tagline" name="echo_settings[site_tagline]" value="%s" class="regular-text" />',
 		esc_attr( get_bloginfo( 'description' ) )
 	);
+}
+
+/**
+ * 渲染文字 Logo 的 HTML（强调前缀用主题色）
+ *
+ * @return string 已转义的 Logo HTML。
+ */
+function echo_render_text_logo() {
+	$text   = (string) echo_get_setting( 'text_logo', 'EcHo' );
+	$accent = (string) echo_get_setting( 'text_logo_accent', 'Ec' );
+
+	if ( '' === $text ) {
+		$text = 'EcHo';
+	}
+
+	if ( '' !== $accent && 0 === strpos( $text, $accent ) ) {
+		$rest  = function_exists( 'mb_substr' ) ? mb_substr( $text, mb_strlen( $accent ) ) : substr( $text, strlen( $accent ) );
+		$html  = '<span class="echo-brand__textlogo-accent">' . esc_html( $accent ) . '</span>';
+		$html .= esc_html( $rest );
+		return $html;
+	}
+
+	return esc_html( $text );
 }
 
 /**

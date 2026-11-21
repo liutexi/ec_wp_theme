@@ -169,6 +169,19 @@ ul, ol {
     color: var(--echo-primary);
 }
 
+/* 文字 Logo */
+.echo-brand__textlogo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 1;
+    padding: 2px 0;
+}
+
+.echo-brand__textlogo-accent {
+    color: var(--echo-primary);
+}
+
 /* 自定义 logo 图片 */
 .echo-brand__logo {
     display: block;
