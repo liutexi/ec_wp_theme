@@ -34,7 +34,7 @@
     border-radius: 18px;
     background: linear-gradient(135deg, var(--echo-primary, #2563eb), var(--echo-accent, #0ea5e9));
     color: #fff;
-    box-shadow: 0 8px 22px rgba(37, 99, 235, 0.28);
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--echo-primary, #2563eb) 28%, transparent);
 }
 
 .echo-lgo-card__icon svg {
@@ -120,11 +120,11 @@
 .echo-lgo-btn--primary {
     background: linear-gradient(135deg, var(--echo-primary, #2563eb), var(--echo-accent, #0ea5e9));
     color: #fff;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--echo-primary, #2563eb) 28%, transparent);
 }
 
 .echo-lgo-btn--primary:hover {
-    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.38);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--echo-primary, #2563eb) 38%, transparent);
     transform: translateY(-1px);
 }
 

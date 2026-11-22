@@ -127,7 +127,7 @@
     border-radius: 16px;
     background: linear-gradient(135deg, var(--echo-primary, #2563eb), var(--echo-accent, #0ea5e9));
     color: #fff;
-    box-shadow: 0 12px 32px rgba(37, 99, 235, 0.24);
+    box-shadow: 0 12px 32px color-mix(in srgb, var(--echo-primary, #2563eb) 24%, transparent);
     overflow: hidden;
 }
 
@@ -245,7 +245,7 @@
     height: 38px;
     flex: 0 0 auto;
     border-radius: 10px;
-    background: rgba(37, 99, 235, 0.1);
+    background: color-mix(in srgb, var(--echo-primary, #2563eb) 10%, transparent);
     color: var(--echo-primary, #2563eb);
 }
 
@@ -336,7 +336,7 @@
 .echo-fp-input:focus {
     outline: none;
     border-color: var(--echo-primary, #2563eb);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--echo-primary, #2563eb) 12%, transparent);
 }
 
 .echo-fp-input::placeholder {
@@ -365,7 +365,7 @@
 
 .echo-fp-field #wp-echo_fp_content-wrap:focus-within {
     border-color: var(--echo-primary, #2563eb);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--echo-primary, #2563eb) 12%, transparent);
 }
 
 .echo-fp-field .wp-editor-container {
@@ -429,11 +429,11 @@
     background: var(--echo-primary, #2563eb);
     border-color: var(--echo-primary, #2563eb);
     color: #fff;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--echo-primary, #2563eb) 25%, transparent);
 }
 
 .echo-fp-chip input:focus-visible + span {
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--echo-primary, #2563eb) 22%, transparent);
 }
 
 /* 通用勾选 */
@@ -489,7 +489,7 @@
 
 .echo-fp-upload:hover {
     border-color: var(--echo-primary, #2563eb);
-    background: rgba(37, 99, 235, 0.04);
+    background: color-mix(in srgb, var(--echo-primary, #2563eb) 4%, transparent);
     color: var(--echo-primary, #2563eb);
 }
 
@@ -517,7 +517,7 @@
     border-style: solid;
     border-color: var(--echo-primary, #2563eb);
     color: var(--echo-primary, #2563eb);
-    background: rgba(37, 99, 235, 0.05);
+    background: color-mix(in srgb, var(--echo-primary, #2563eb) 5%, transparent);
 }
 
 .echo-fp-hint {
@@ -574,7 +574,7 @@
 
 .echo-fp-status-option input:checked + .echo-fp-status-option__body {
     border-color: var(--echo-primary, #2563eb);
-    background: rgba(37, 99, 235, 0.05);
+    background: color-mix(in srgb, var(--echo-primary, #2563eb) 5%, transparent);
     box-shadow: 0 0 0 1px var(--echo-primary, #2563eb);
 }
 
@@ -583,7 +583,7 @@
 }
 
 .echo-fp-status-option input:focus-visible + .echo-fp-status-option__body {
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--echo-primary, #2563eb) 20%, transparent);
 }
 
 /* --------------------------------------------------------------------------
@@ -624,14 +624,14 @@
     padding: 12px 26px;
     border-radius: 10px;
     background: linear-gradient(135deg, var(--echo-primary, #2563eb), var(--echo-accent, #0ea5e9));
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--echo-primary, #2563eb) 30%, transparent);
     font-size: 15px;
     transition: transform var(--echo-transition, 0.2s ease), box-shadow var(--echo-transition, 0.2s ease);
 }
 
 .echo-fp-submit:hover {
     background: linear-gradient(135deg, var(--echo-primary-hover, #1d4ed8), #0284c7);
-    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.38);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--echo-primary, #2563eb) 38%, transparent);
     transform: translateY(-1px);
 }
 
@@ -677,7 +677,7 @@
     height: 64px;
     margin-bottom: 18px;
     border-radius: 18px;
-    background: rgba(37, 99, 235, 0.1);
+    background: color-mix(in srgb, var(--echo-primary, #2563eb) 10%, transparent);
     color: var(--echo-primary, #2563eb);
 }
 
@@ -1095,7 +1095,7 @@ body.echo-ui-miuix .echo-fp-panel {
 .echo-fp-codearea:focus {
     outline: none;
     border-color: var(--echo-primary, #2563eb);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--echo-primary, #2563eb) 12%, transparent);
 }
 
 .echo-fp-editor-hint {
