@@ -138,6 +138,10 @@ get_header();
 							<label><?php esc_html_e( '请留空', 'echo' ); ?><input type="text" name="echo_fp_hp" value="" tabindex="-1" autocomplete="off" /></label>
 						</div>
 
+						<!-- 桌面端双栏：主栏（文章内容）+ 侧栏（发布设置/封面发布） -->
+						<div class="echo-fp-grid">
+						<div class="echo-fp-grid__main">
+
 						<!-- 面板一：文章内容 -->
 						<section class="echo-fp-panel">
 							<div class="echo-fp-panel__head">
@@ -225,6 +229,9 @@ get_header();
 								</div>
 							</div>
 						</section>
+
+						</div><!-- /.echo-fp-grid__main -->
+						<aside class="echo-fp-grid__side">
 
 						<!-- 面板二：发布设置 -->
 						<section class="echo-fp-panel">
@@ -343,6 +350,9 @@ get_header();
 								<?php endif; ?>
 							</div>
 						</section>
+
+						</aside><!-- /.echo-fp-grid__side -->
+						</div><!-- /.echo-fp-grid -->
 
 						<!-- 底部操作栏 -->
 						<div class="echo-fp-submitbar">
