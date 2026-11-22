@@ -39,6 +39,9 @@ require get_template_directory() . '/inc/engagement.php';
 // 引入表情模块（[.xxx] 短代码渲染 + 评论/写文章选择器，默认值需在 customizer 之前合并）
 require get_template_directory() . '/inc/emoji.php';
 
+// 引入相关文章推荐模块（按分类/标签匹配，默认值需在 customizer 之前合并）
+require get_template_directory() . '/inc/related.php';
+
 // 设置页图标
 require get_template_directory() . '/inc/settings-icons.php';
 
@@ -191,6 +194,15 @@ function echo_scripts() {
 					'failedText'  => __( '操作失败，请重试', 'echo' ),
 				)
 			);
+		}
+	}
+
+	// 相关文章推荐：仅文章页且开启时加载样式
+	if ( is_singular( 'post' ) && function_exists( 'echo_rel_config' ) && echo_rel_config( 'rel_enable', true ) ) {
+		$rel_css = get_template_directory() . '/assets/css/related.css';
+		if ( file_exists( $rel_css ) ) {
+			$rel_css_ver = ECHO_VERSION . '.' . filemtime( $rel_css );
+			wp_enqueue_style( 'echo-rel', get_template_directory_uri() . '/assets/css/related.css', array( 'echo-style' ), $rel_css_ver );
 		}
 	}
 

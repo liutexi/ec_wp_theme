@@ -87,6 +87,13 @@ get_header();
 					</nav>
 
 					<?php
+					// 相关文章推荐
+					if ( function_exists( 'echo_related_posts' ) ) {
+						echo_related_posts();
+					}
+					?>
+
+					<?php
 					// 评论
 					if ( comments_open() || get_comments_number() ) {
 						comments_template();

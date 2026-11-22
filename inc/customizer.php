@@ -50,7 +50,8 @@ function echo_default_settings() {
 		echo_front_post_defaults(),
 		echo_lgo_defaults(),
 		function_exists( 'echo_eng_defaults' ) ? echo_eng_defaults() : array(),
-		function_exists( 'echo_emoji_defaults' ) ? echo_emoji_defaults() : array()
+		function_exists( 'echo_emoji_defaults' ) ? echo_emoji_defaults() : array(),
+		function_exists( 'echo_rel_defaults' ) ? echo_rel_defaults() : array()
 	);
 }
 
@@ -105,6 +106,7 @@ function echo_settings_sections_map() {
 		'echo_section_link_go'   => __( '外链中转页', 'echo' ),
 		'echo_section_eng'       => __( '阅读互动', 'echo' ),
 		'echo_section_emoji'      => __( '表情', 'echo' ),
+		'echo_section_rel'       => __( '相关文章', 'echo' ),
 		'echo_section_links'      => __( '友情链接', 'echo' ),
 		'echo_section_permalink' => __( '固定链接', 'echo' ),
 	);
@@ -797,6 +799,28 @@ function echo_settings_init() {
 		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_emoji', $args );
 	}
 
+	// 相关文章
+	add_settings_section(
+		'echo_section_rel',
+		__( '相关文章', 'echo' ),
+		'__return_false',
+		'echo-settings'
+	);
+
+	$echo_rel_fields = array(
+		array( 'rel_enable', __( '显示相关文章', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '在文章底部「上一篇/下一篇」下方显示相关文章推荐。', 'echo' ) ) ),
+		array( 'rel_count', __( '推荐数量', 'echo' ), 'echo_field_number', array( 'min' => 1, 'max' => 12, 'step' => 1, 'desc' => __( '最多显示的相关文章条数，1–12 条。', 'echo' ) ) ),
+		array( 'rel_method', __( '匹配方式', 'echo' ), 'echo_field_select', array( 'options' => array( 'both' => __( '分类 + 标签（推荐）', 'echo' ), 'category' => __( '仅同分类', 'echo' ), 'tag' => __( '仅同标签', 'echo' ) ), 'desc' => __( '按同分类、同标签或两者结合匹配相关文章。', 'echo' ) ) ),
+		array( 'rel_show_thumb', __( '显示缩略图', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '相关文章卡片显示文章特色图；无特色图时用占位块。', 'echo' ) ) ),
+		array( 'rel_title', __( '区块标题', 'echo' ), 'echo_field_text', array( 'desc' => __( '相关文章区块的标题文字，默认「相关文章」。', 'echo' ) ) ),
+	);
+
+	foreach ( $echo_rel_fields as $field ) {
+		$args              = isset( $field[3] ) ? $field[3] : array();
+		$args['label_for'] = $field[0];
+		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_rel', $args );
+	}
+
 	// 友情链接（数据在独立区块管理，这里放显示参数）
 	add_settings_section(
 		'echo_section_links',
@@ -1046,6 +1070,9 @@ function echo_sanitize_settings( $input ) {
 	}
 	if ( function_exists( 'echo_sanitize_emoji_settings' ) ) {
 		echo_sanitize_emoji_settings( $input, $output );
+	}
+	if ( function_exists( 'echo_sanitize_rel_settings' ) ) {
+		echo_sanitize_rel_settings( $input, $output );
 	}
 
 	return $output;

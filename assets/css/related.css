@@ -1,0 +1,131 @@
+/* ============================================================
+ * Echo 相关文章推荐
+ * 复用主题变量，深浅色自动适配，作用域独立不污染全站。
+ * ============================================================ */
+
+.echo-rel {
+    margin-top: 32px;
+    padding: 24px;
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius);
+    background: var(--echo-surface);
+    box-shadow: var(--echo-shadow);
+}
+
+.echo-rel__title {
+    margin: 0 0 18px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--echo-text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.echo-rel__title::before {
+    content: '';
+    width: 4px;
+    height: 1.1em;
+    border-radius: 2px;
+    background: var(--echo-primary);
+}
+
+.echo-rel__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.echo-rel__item {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--echo-border);
+    border-radius: var(--echo-radius-sm);
+    background: var(--echo-bg);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: transform var(--echo-transition), box-shadow var(--echo-transition), border-color var(--echo-transition);
+}
+
+.echo-rel__item:hover {
+    transform: translateY(-3px);
+    border-color: var(--echo-primary);
+    box-shadow: var(--echo-shadow-lg);
+}
+
+.echo-rel__thumb {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--echo-bg-alt);
+}
+
+.echo-rel__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform var(--echo-transition);
+}
+
+.echo-rel__item:hover .echo-rel__thumb img {
+    transform: scale(1.05);
+}
+
+.echo-rel__thumb-ph {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--echo-bg-alt), color-mix(in srgb, var(--echo-primary) 8%, var(--echo-bg-alt)));
+}
+
+.echo-rel__body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px 14px;
+}
+
+.echo-rel__name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--echo-text);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.echo-rel__item:hover .echo-rel__name {
+    color: var(--echo-primary);
+}
+
+.echo-rel__date {
+    font-size: 0.78rem;
+    color: var(--echo-text-muted);
+}
+
+/* 无缩略图时 body 作为主体，补足内边距 */
+.echo-rel:not(:has(.echo-rel__thumb)) .echo-rel__body {
+    min-height: 72px;
+    justify-content: center;
+}
+
+@media (max-width: 600px) {
+    .echo-rel {
+        padding: 18px 14px;
+    }
+    .echo-rel__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+    .echo-rel__body {
+        padding: 10px;
+    }
+    .echo-rel__name {
+        font-size: 0.88rem;
+    }
+}
