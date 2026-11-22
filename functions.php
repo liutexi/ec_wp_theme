@@ -27,6 +27,9 @@ require get_template_directory() . '/inc/mail.php';
 // 彩虹聚合登录适配
 require get_template_directory() . '/inc/social-login.php';
 
+// 云湖 OAuth2 登录（独立接入，复用社交登录的用户绑定与会话流程）
+require get_template_directory() . '/inc/yunhu-login.php';
+
 // 引入用户主页（/uid/{id}）与自助资料编辑
 require get_template_directory() . '/inc/user-page.php';
 

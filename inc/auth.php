@@ -369,9 +369,14 @@ function echo_auth_do_login() {
 		return;
 	}
 
-	$login    = isset( $_POST['log'] ) ? sanitize_text_field( wp_unslash( $_POST['log'] ) ) : '';
+	$login    = isset( $_POST['log'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['log'] ) ) ) : '';
 	$password = isset( $_POST['pwd'] ) ? (string) $_POST['pwd'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- 密码不能清洗。
 	$remember = ! empty( $_POST['rememberme'] );
+
+	// 邮箱不区分大小写：输入含 @ 时统一转小写，避免大小写导致登录失败。
+	if ( '' !== $login && is_email( $login ) ) {
+		$login = strtolower( $login );
+	}
 
 	if ( '' === $login ) {
 		echo_auth_set_feedback( 'error', __( '请填写用户名或邮箱。', 'echo' ), 'log' );
@@ -503,7 +508,14 @@ function echo_auth_do_register() {
 		if ( $throttle ) {
 			echo_auth_throttle_clear( 'register' );
 		}
-		wp_safe_redirect( add_query_arg( 'registered', '1', echo_auth_url( 'login' ) ) );
+		// 随机密码邮件模式：若开启自动登录则直接登录，否则跳登录页。
+		if ( echo_auth_config( 'auth_auto_login', true ) ) {
+			wp_set_current_user( $user_id );
+			wp_set_auth_cookie( $user_id, true, is_ssl() );
+			wp_safe_redirect( echo_auth_after_login_url() );
+		} else {
+			wp_safe_redirect( add_query_arg( 'registered', '1', echo_auth_url( 'login' ) ) );
+		}
 		exit;
 	}
 

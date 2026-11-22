@@ -466,9 +466,29 @@ function echo_social_rest_login( $request ) {
 function echo_social_redirect_after_login() {
 	$redirect = isset( $_SESSION['echo_social_redirect'] ) ? $_SESSION['echo_social_redirect'] : '';
 	unset( $_SESSION['echo_social_redirect'] );
-	if ( ! is_string( $redirect ) || '' === $redirect || preg_match( '/\.css$/i', $redirect ) ) {
-		$redirect = home_url();
+
+	$fallback = function_exists( 'echo_auth_after_login_url' ) ? echo_auth_after_login_url() : home_url();
+	if ( ! is_string( $redirect ) || '' === $redirect || preg_match( '/\.(css|js|png|jpe?g|gif|svg|ico)$/i', $redirect ) ) {
+		$redirect = $fallback;
 	}
+
+	// 智能跳转：若目标仍是登录 / 注册页自身，则回退到默认落地页，避免"登录后又回登录页"。
+	$path = wp_parse_url( $redirect, PHP_URL_PATH );
+	if ( is_string( $path ) ) {
+		$auth_slugs = array();
+		if ( function_exists( 'echo_auth_config' ) ) {
+			$auth_slugs[] = trim( (string) echo_auth_config( 'auth_login_slug', 'login' ), '/' );
+			$auth_slugs[] = trim( (string) echo_auth_config( 'auth_register_slug', 'register' ), '/' );
+		}
+		$auth_slugs = array_filter( $auth_slugs, 'strlen' );
+		foreach ( $auth_slugs as $slug ) {
+			if ( '/' . $slug === untrailingslashit( $path ) || 0 === strpos( $path, '/' . $slug . '/' ) ) {
+				$redirect = $fallback;
+				break;
+			}
+		}
+	}
+
 	wp_safe_redirect( $redirect );
 	exit;
 }

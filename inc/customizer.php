@@ -45,6 +45,7 @@ function echo_default_settings() {
 		echo_auth_defaults(),
 		echo_mail_defaults(),
 		echo_social_defaults(),
+		function_exists( 'echo_yh_defaults' ) ? echo_yh_defaults() : array(),
 		echo_user_defaults(),
 		echo_links_defaults(),
 		echo_front_post_defaults(),
@@ -500,6 +501,47 @@ function echo_settings_init() {
 			'instant'   => false,
 			'desc'      => __( '用户未上传自定义头像时优先使用社交头像，再回退 Gravatar。', 'echo' ),
 		)
+	);
+
+	// 云湖登录（独立 OAuth2，与彩虹登录分别配置）
+	add_settings_field(
+		'echo_yh_enable',
+		__( '启用云湖登录', 'echo' ),
+		'echo_field_checkbox',
+		'echo-settings',
+		'echo_section_social',
+		array(
+			'label_for' => 'yh_enable',
+			'instant'   => false,
+			'desc'      => __( '独立 OAuth2 登录，不依赖彩虹登录。需在云湖开放平台创建应用并把下方回调地址登记为完全一致的地址。', 'echo' ),
+		)
+	);
+	add_settings_field(
+		'echo_yh_client_id',
+		__( '云湖 Client ID', 'echo' ),
+		'echo_field_text',
+		'echo-settings',
+		'echo_section_social',
+		array( 'label_for' => 'yh_client_id' )
+	);
+	add_settings_field(
+		'echo_yh_client_secret',
+		__( '云湖 Client Secret', 'echo' ),
+		'echo_field_text',
+		'echo-settings',
+		'echo_section_social',
+		array(
+			'label_for' => 'yh_client_secret',
+			'desc'      => __( '仅保存在服务端，不会输出到前台。', 'echo' ),
+		)
+	);
+	add_settings_field(
+		'echo_yh_callback_hint',
+		__( '云湖回调地址', 'echo' ),
+		'echo_field_yh_callback',
+		'echo-settings',
+		'echo_section_social',
+		array( 'label_for' => 'yh_callback_hint' )
 	);
 
 	// 用户主页（UID）
@@ -1054,6 +1096,11 @@ function echo_sanitize_settings( $input ) {
 	// 彩虹聚合登录
 	echo_sanitize_social_settings( $input, $output );
 
+	// 云湖登录
+	if ( function_exists( 'echo_sanitize_yh_settings' ) ) {
+		echo_sanitize_yh_settings( $input, $output );
+	}
+
 	// 用户主页
 	echo_sanitize_user_settings( $input, $output );
 
@@ -1583,6 +1630,21 @@ function echo_field_permalink_structure( $args ) {
  * @param array $args 字段参数。
  * @return void
  */
+/**
+ * 云湖回调地址（只读展示，供复制到开放平台登记）。
+ *
+ * @param array $args 字段参数。
+ * @return void
+ */
+function echo_field_yh_callback( $args ) {
+	$url = home_url( 'index.php/wp-json/echo-yunhu/callback/' );
+	printf(
+		'<p class="description" style="margin:0 0 6px;">%s</p><code class="echo-yh-callback" style="display:inline-block;padding:6px 10px;background:var(--echo-bg-alt,#f6f7f9);border:1px solid var(--echo-border,#e5e7eb);border-radius:6px;word-break:break-all;font-size:12px;">%s</code>',
+		esc_html__( '请在云湖应用后台登记此地址（协议 / 域名 / 路径 / 斜杠需完全一致）：', 'echo' ),
+		esc_html( $url )
+	);
+}
+
 function echo_field_rewrite_help( $args ) {
 	$software = isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : '';
 	$is_nginx = ( false !== stripos( $software, 'nginx' ) );
