@@ -19,9 +19,22 @@ get_header();
 			</h1>
 		</header>
 
+		<?php
+		// 搜索增强：历史 / 热词 / 文章·用户 Tab / 排序
+		if ( function_exists( 'echo_se_render_panel' ) ) {
+			echo_se_render_panel();
+		}
+		?>
+
 		<div class="echo-layout">
 			<div class="echo-content">
-				<?php if ( have_posts() ) : ?>
+				<?php
+				// 用户 Tab：显示相关用户，隐藏文章列表
+				$echo_se_type = isset( $_GET['type'] ) ? sanitize_key( wp_unslash( $_GET['type'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				if ( 'user' === $echo_se_type && function_exists( 'echo_se_render_users' ) ) :
+					echo_se_render_users();
+				elseif ( have_posts() ) :
+				?>
 					<p class="echo-page-header__desc">
 						<?php
 						/* translators: %s: 结果数量 */

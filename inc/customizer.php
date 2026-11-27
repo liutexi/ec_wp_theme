@@ -52,7 +52,11 @@ function echo_default_settings() {
 		echo_lgo_defaults(),
 		function_exists( 'echo_eng_defaults' ) ? echo_eng_defaults() : array(),
 		function_exists( 'echo_emoji_defaults' ) ? echo_emoji_defaults() : array(),
-		function_exists( 'echo_rel_defaults' ) ? echo_rel_defaults() : array()
+		function_exists( 'echo_rel_defaults' ) ? echo_rel_defaults() : array(),
+		function_exists( 'echo_cl_defaults' ) ? echo_cl_defaults() : array(),
+		function_exists( 'echo_sh_defaults' ) ? echo_sh_defaults() : array(),
+		function_exists( 'echo_ci_defaults' ) ? echo_ci_defaults() : array(),
+		function_exists( 'echo_se_defaults' ) ? echo_se_defaults() : array()
 	);
 }
 
@@ -108,6 +112,10 @@ function echo_settings_sections_map() {
 		'echo_section_eng'       => __( '阅读互动', 'echo' ),
 		'echo_section_emoji'      => __( '表情', 'echo' ),
 		'echo_section_rel'       => __( '相关文章', 'echo' ),
+		'echo_section_comment'   => __( '评论互动', 'echo' ),
+		'echo_section_share'     => __( '分享按钮', 'echo' ),
+		'echo_section_checkin'   => __( '签到打卡', 'echo' ),
+		'echo_section_search'    => __( '搜索增强', 'echo' ),
 		'echo_section_links'      => __( '友情链接', 'echo' ),
 		'echo_section_permalink' => __( '固定链接', 'echo' ),
 	);
@@ -863,6 +871,62 @@ function echo_settings_init() {
 		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_rel', $args );
 	}
 
+	// 评论互动
+	add_settings_section( 'echo_section_comment', __( '评论互动', 'echo' ), '__return_false', 'echo-settings' );
+	$echo_cl_fields = array(
+		array( 'cl_enable', __( '启用评论点赞', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '每条评论显示点赞按钮，仅登录用户可点赞，可取消。', 'echo' ) ) ),
+		array( 'cl_floor', __( '显示楼层号', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '在评论作者旁显示 #1、#2 楼层号。', 'echo' ) ) ),
+		array( 'cl_badge', __( '显示身份标识', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '文章作者与管理员的评论显示身份徽章。', 'echo' ) ) ),
+		array( 'cl_hot_sort', __( '默认按热度排序', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '默认按点赞数排序评论；访客可用 ?corder=hot / ?corder= 切换。', 'echo' ) ) ),
+	);
+	foreach ( $echo_cl_fields as $field ) {
+		$args              = isset( $field[3] ) ? $field[3] : array();
+		$args['label_for'] = $field[0];
+		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_comment', $args );
+	}
+
+	// 分享按钮
+	add_settings_section( 'echo_section_share', __( '分享按钮', 'echo' ), '__return_false', 'echo-settings' );
+	$echo_sh_fields = array(
+		array( 'sh_enable', __( '启用分享按钮', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '在文章正文前后显示分享按钮组。', 'echo' ) ) ),
+		array( 'sh_position', __( '显示位置', 'echo' ), 'echo_field_select', array( 'options' => array( 'after' => __( '正文之后', 'echo' ), 'before' => __( '正文之前', 'echo' ) ) ) ),
+		array( 'sh_qq', __( '显示 QQ', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'sh_qzone', __( '显示 QQ 空间', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'sh_weibo', __( '显示微博', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+		array( 'sh_copy', __( '显示复制链接', 'echo' ), 'echo_field_checkbox', array( 'instant' => false ) ),
+	);
+	foreach ( $echo_sh_fields as $field ) {
+		$args              = isset( $field[3] ) ? $field[3] : array();
+		$args['label_for'] = $field[0];
+		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_share', $args );
+	}
+
+	// 签到打卡
+	add_settings_section( 'echo_section_checkin', __( '签到打卡', 'echo' ), '__return_false', 'echo-settings' );
+	$echo_ci_fields = array(
+		array( 'ci_enable', __( '启用签到打卡', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '开启后个人主页侧栏显示签到卡片，也可用短代码 [echo_checkin] 插入到任意页面。仅记录累计/连续天数，不涉及积分商城。', 'echo' ) ) ),
+	);
+	foreach ( $echo_ci_fields as $field ) {
+		$args              = isset( $field[3] ) ? $field[3] : array();
+		$args['label_for'] = $field[0];
+		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_checkin', $args );
+	}
+
+	// 搜索增强
+	add_settings_section( 'echo_section_search', __( '搜索增强', 'echo' ), '__return_false', 'echo-settings' );
+	$echo_se_fields = array(
+		array( 'se_enable', __( '启用搜索增强', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '在搜索结果页显示历史/热词/Tab/排序增强面板。', 'echo' ) ) ),
+		array( 'se_history', __( '搜索历史', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '浏览器本地保存最近 8 条搜索词（仅本机可见）。', 'echo' ) ) ),
+		array( 'se_hot', __( '热门搜索词', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '按站内搜索次数统计热词（一周内），显示在搜索页。', 'echo' ) ) ),
+		array( 'se_user_tab', __( '用户 Tab', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '搜索结果页增加「用户」Tab，可搜索站内用户。', 'echo' ) ) ),
+		array( 'se_sort', __( '排序切换', 'echo' ), 'echo_field_checkbox', array( 'instant' => false, 'desc' => __( '搜索结果页提供默认/最新/最早/标题排序切换。', 'echo' ) ) ),
+	);
+	foreach ( $echo_se_fields as $field ) {
+		$args              = isset( $field[3] ) ? $field[3] : array();
+		$args['label_for'] = $field[0];
+		add_settings_field( 'echo_' . $field[0], $field[1], $field[2], 'echo-settings', 'echo_section_search', $args );
+	}
+
 	// 友情链接（数据在独立区块管理，这里放显示参数）
 	add_settings_section(
 		'echo_section_links',
@@ -1120,6 +1184,19 @@ function echo_sanitize_settings( $input ) {
 	}
 	if ( function_exists( 'echo_sanitize_rel_settings' ) ) {
 		echo_sanitize_rel_settings( $input, $output );
+	}
+	// 社区互动增强
+	if ( function_exists( 'echo_sanitize_cl_settings' ) ) {
+		echo_sanitize_cl_settings( $input, $output );
+	}
+	if ( function_exists( 'echo_sanitize_sh_settings' ) ) {
+		echo_sanitize_sh_settings( $input, $output );
+	}
+	if ( function_exists( 'echo_sanitize_ci_settings' ) ) {
+		echo_sanitize_ci_settings( $input, $output );
+	}
+	if ( function_exists( 'echo_sanitize_se_settings' ) ) {
+		echo_sanitize_se_settings( $input, $output );
 	}
 
 	return $output;

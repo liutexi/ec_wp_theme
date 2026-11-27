@@ -45,6 +45,12 @@ require get_template_directory() . '/inc/emoji.php';
 // 引入相关文章推荐模块（按分类/标签匹配，默认值需在 customizer 之前合并）
 require get_template_directory() . '/inc/related.php';
 
+// 社区互动增强：评论点赞/楼层、分享、签到、搜索增强（默认值需在 customizer 之前合并）
+require get_template_directory() . '/inc/comment-like.php';
+require get_template_directory() . '/inc/share.php';
+require get_template_directory() . '/inc/checkin.php';
+require get_template_directory() . '/inc/search-enhance.php';
+
 // 设置页图标
 require get_template_directory() . '/inc/settings-icons.php';
 
@@ -238,6 +244,35 @@ function echo_scripts() {
 		}
 	}
 
+	// 社区互动增强：共享样式与脚本（评论点赞 / 分享 / 签到 / 搜索增强）
+	$extra_css = get_template_directory() . '/assets/css/community.css';
+	if ( file_exists( $extra_css ) ) {
+		$extra_css_ver = ECHO_VERSION . '.' . filemtime( $extra_css );
+		wp_enqueue_style( 'echo-community', get_template_directory_uri() . '/assets/css/community.css', array( 'echo-style' ), $extra_css_ver );
+	}
+	$extra_js = get_template_directory() . '/assets/js/community.js';
+	if ( file_exists( $extra_js ) ) {
+		$extra_js_ver = ECHO_VERSION . '.' . filemtime( $extra_js );
+		wp_enqueue_script( 'echo-community', get_template_directory_uri() . '/assets/js/community.js', array(), $extra_js_ver, true );
+		wp_localize_script(
+			'echo-community',
+			'echoCommunity',
+			array(
+				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
+				'clNonce'       => wp_create_nonce( 'echo_cl' ),
+				'ciNonce'       => wp_create_nonce( 'echo_ci' ),
+				'logged'        => is_user_logged_in(),
+				'needLogin'     => __( '请先登录后再操作', 'echo' ),
+				'copied'        => __( '链接已复制', 'echo' ),
+				'copyFail'      => __( '复制失败，请手动复制', 'echo' ),
+				'signSuccess'   => __( '签到成功！', 'echo' ),
+				'signFail'      => __( '签到失败，请重试', 'echo' ),
+				'historyTitle'  => __( '搜索历史', 'echo' ),
+				'clearHistory'  => __( '清空', 'echo' ),
+			)
+		);
+	}
+
 	// 交互脚本
 	$main_path = get_template_directory() . '/assets/js/main.js';
 	$main_ver  = file_exists( $main_path ) ? ECHO_VERSION . '.' . filemtime( $main_path ) : ECHO_VERSION;
@@ -426,6 +461,10 @@ function echo_comment( $comment, $args, $depth ) {
 						'<span class="fn">%s</span>',
 						get_comment_author_link()
 					);
+					// 社区互动：楼层号 + 作者/管理员标识
+					if ( function_exists( 'echo_cl_render_meta' ) ) {
+						echo_cl_render_meta( $comment );
+					}
 					?>
 				</div>
 				<div class="comment-metadata">
@@ -450,6 +489,14 @@ function echo_comment( $comment, $args, $depth ) {
 				<div class="comment-text">
 					<?php comment_text(); ?>
 				</div>
+				<?php
+				// 社区互动：评论点赞按钮
+				if ( function_exists( 'echo_cl_render_like' ) ) {
+					echo '<div class="comment-actions">';
+					echo_cl_render_like( $comment );
+					echo '</div>';
+				}
+				?>
 				<div class="reply">
 					<?php
 					comment_reply_link(

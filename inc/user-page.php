@@ -1552,6 +1552,15 @@ function echo_user_portal_aside( $user ) {
 			</form>
 		</section>
 
+		<?php
+		// 每日签到卡片（后台开启时显示）
+		if ( function_exists( 'echo_ci_is_on' ) && echo_ci_is_on() ) :
+			?>
+			<section class="echo-up-card">
+				<?php echo_ci_render( $user->ID ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+			</section>
+		<?php endif; ?>
+
 		<section class="echo-up-card echo-up-block">
 			<h3 class="echo-up-block__title">
 				<span class="echo-up-block__glyph">&infin;</span>
