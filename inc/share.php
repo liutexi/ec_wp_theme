@@ -78,7 +78,17 @@ function echo_sh_render( $post_id = 0 ) {
 	}
 	$url   = rawurlencode( get_permalink( $post_id ) );
 	$title = rawurlencode( get_the_title( $post_id ) );
-	$desc  = rawurlencode( wp_strip_all_tags( get_the_excerpt( $post_id ) ) );
+	// 不能用 get_the_excerpt()：无手动摘要的文章会触发 wp_trim_excerpt →
+	// apply_filters('the_content') → 再次进入 echo_sh_inject → 无限递归耗尽内存。
+	// 直接读 post 对象字段，绕过所有 the_content filter。
+	$desc_raw = '';
+	$post_obj = get_post( $post_id );
+	if ( $post_obj && ! is_wp_error( $post_obj ) ) {
+		$desc_raw = $post_obj->post_excerpt ? $post_obj->post_excerpt : $post_obj->post_content;
+		$desc_raw = wp_strip_all_tags( strip_shortcodes( $desc_raw ) );
+		$desc_raw = wp_trim_words( $desc_raw, 55, '' );
+	}
+	$desc  = rawurlencode( $desc_raw );
 	$thumb = '';
 	if ( has_post_thumbnail( $post_id ) ) {
 		$thumb = rawurlencode( get_the_post_thumbnail_url( $post_id, 'medium' ) );
@@ -123,15 +133,23 @@ function echo_sh_render( $post_id = 0 ) {
  * @return string
  */
 function echo_sh_inject( $content ) {
+	static $injecting = false;
+	// 递归守卫：the_content filter 内间接再触发 the_content 时直接放行，
+	// 避免任何潜在的无限递归（如摘要生成、其它插件 filter）。
+	if ( $injecting ) {
+		return $content;
+	}
 	if ( ! is_singular( 'post' ) || ! in_the_loop() || ! is_main_query() ) {
 		return $content;
 	}
 	if ( ! echo_sh_is_on() ) {
 		return $content;
 	}
+	$injecting = true;
 	ob_start();
 	echo_sh_render( get_the_ID() );
 	$box = ob_get_clean();
+	$injecting = false;
 	return 'before' === echo_sh_config( 'sh_position', 'after' ) ? $box . $content : $content . $box;
 }
 add_filter( 'the_content', 'echo_sh_inject', 20 );
