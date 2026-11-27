@@ -1945,6 +1945,86 @@ body.echo-my-card-classic .echo-my-card {
         font-size: 0.85rem;
     }
 
+    /* 个人中心：手机端整体节奏收紧，卡片更易读 */
+    .echo-my {
+        gap: 14px;
+    }
+    .echo-my-card {
+        padding: 18px 16px;
+    }
+    .echo-my-card__title {
+        font-size: 1rem;
+        margin-bottom: 14px;
+    }
+    /* 资料卡：头像+昵称一行，编辑按钮换行独占，避免挤压 */
+    .echo-my-profile__head {
+        gap: 12px;
+    }
+    .echo-my-profile__avatar .avatar {
+        width: 72px;
+        height: 72px;
+    }
+    .echo-my-profile__name {
+        font-size: 1.15rem;
+    }
+    .echo-my-profile__edit {
+        margin-left: 0;
+        align-self: flex-start;
+        min-height: 38px;
+    }
+    .echo-my-profile__meta {
+        gap: 6px 14px;
+        font-size: 0.8rem;
+    }
+    /* 统计：三列在窄屏保持，但内边距/字号收紧防挤 */
+    .echo-my-stats__grid {
+        gap: 8px;
+    }
+    .echo-my-stats__item {
+        padding: 12px 4px;
+    }
+    .echo-my-stats__value {
+        font-size: 1.05rem;
+    }
+    .echo-my-stats__label {
+        font-size: 0.72rem;
+    }
+    /* 快捷入口：两列铺满，点击区域够大 */
+    .echo-my-quicklinks__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+    .echo-my-quicklink {
+        padding: 12px 8px;
+        min-height: 44px;
+    }
+    /* 列表项：日期与摘要在窄屏换行，避免文字截断 */
+    .echo-my-list__items li {
+        padding: 12px 0;
+    }
+    .echo-my-list__date {
+        display: block;
+        margin-top: 4px;
+        font-size: 0.75rem;
+    }
+    .echo-my-list__excerpt {
+        font-size: 0.82rem;
+        line-height: 1.55;
+    }
+    /* 登录表单：输入框宽度100%、按钮不溢出 */
+    .echo-my-guest .login-username,
+    .echo-my-guest .login-password {
+        width: 100%;
+    }
+    .echo-my-guest__actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .echo-my-guest__actions .echo-btn {
+        width: 100%;
+        text-align: center;
+    }
+
     .echo-back-to-top {
         right: 16px;
         bottom: 16px;

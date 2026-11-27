@@ -434,8 +434,15 @@
     }
 
     .echo-share__btn {
-        min-width: 40px;
-        padding: 8px;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 10px;
+    }
+
+    /* 移动端隐藏文字后，官方品牌图标放大更易辨识 */
+    .echo-share__btn svg {
+        width: 20px;
+        height: 20px;
     }
 
     .echo-se-block {

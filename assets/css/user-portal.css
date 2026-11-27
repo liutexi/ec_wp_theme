@@ -722,6 +722,93 @@ body.echo-up-dark .echo-up-dark-toggle__icon .echo-up-icon {
     .echo-up-aside {
         grid-template-columns: minmax(0, 1fr);
     }
+
+    /* ---- 手机端精细适配 ---- */
+    /* 容器左右留白收紧，卡片之间呼吸感更均匀 */
+    .echo-up {
+        gap: 18px;
+        padding: 14px 12px 44px;
+    }
+
+    /* 资料侧栏：头像与昵称横向紧凑，导航单列铺满更好点按 */
+    .echo-up-rail__inner {
+        padding: 20px 18px 18px;
+    }
+    /* 头像内联设置了该变量，移动端用 !important 收紧尺寸 */
+    .echo-up-avatar__ring {
+        --echo-up-avatar-size: 84px !important;
+    }
+    .echo-up-rail__name {
+        font-size: 1.35rem;
+    }
+    .echo-up-nav {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 6px;
+        margin-top: 4px;
+    }
+    .echo-up-nav__item {
+        justify-content: flex-start;
+        padding: 11px 14px;
+        font-size: 0.92rem;
+        min-height: 44px;
+    }
+    .echo-up-dark-toggle {
+        width: 100%;
+        justify-content: center;
+        min-height: 44px;
+    }
+
+    /* 封面：标题自适应，描述不挤成一团 */
+    .echo-up-cover {
+        min-height: 168px;
+        padding: 20px;
+    }
+    .echo-up-cover__content {
+        max-width: 100%;
+    }
+    .echo-up-cover__title {
+        font-size: 1.55rem;
+    }
+    .echo-up-cover__desc {
+        font-size: 0.9rem;
+        line-height: 1.55;
+    }
+
+    /* 文章卡片：缩略图比例更扁，正文内边距、标题与摘要更舒展 */
+    .echo-up-posts {
+        gap: 16px;
+    }
+    .echo-up-post__thumb {
+        aspect-ratio: 16 / 6;
+    }
+    .echo-up-post__body {
+        padding: 16px 16px 18px;
+    }
+    .echo-up-post__title {
+        font-size: 1.18rem;
+        line-height: 1.4;
+    }
+    .echo-up-post__excerpt {
+        font-size: 0.9rem;
+        line-height: 1.65;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        overflow: hidden;
+    }
+    .echo-up-post__meta {
+        flex-wrap: wrap;
+        gap: 8px 14px;
+        font-size: 0.8rem;
+    }
+
+    /* 右侧卡片：搜索/归档/分类在窄屏内边距统一 */
+    .echo-up-aside {
+        gap: 16px;
+    }
+    .echo-up-card {
+        padding: 16px;
+    }
 }
 
 /* 尊重减少动画偏好 */
